@@ -1,0 +1,12 @@
+[package]
+name = "ble"
+version = "0.0.1"
+authors = ["Daniel Gallagher <pdanielgallagher@gmail.com>"]
+categories = ["embedded", "hardware-support", "no-std"]
+description = "Implementation of the BLE spec"
+keywords = ["ble"]
+license = "MIT/Apache-2.0"
+repository = "https://github.com/danielgallagher0/ble"
+
+[dependencies]
+nb = "0.1.1"
