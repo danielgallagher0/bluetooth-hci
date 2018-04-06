@@ -6,7 +6,7 @@ categories = ["embedded", "hardware-support", "no-std"]
 description = "Implementation of the BLE spec"
 keywords = ["ble"]
 license = "MIT/Apache-2.0"
-repository = "https://github.com/danielgallagher0/ble"
+repository = "https://github.com/danielgallagher0/ble-rs"
 readme = "README.md"
 
 [dependencies]
