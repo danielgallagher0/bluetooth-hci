@@ -3,7 +3,9 @@
 
 extern crate nb;
 
+pub mod event;
 pub mod hci;
+mod opcode;
 
 /// List of possible error codes, Bluetooth Spec 5.0, Table 1.1
 #[repr(u8)]
@@ -34,77 +36,53 @@ pub enum Status {
     ConnectionTerminatedByHost = 0x16,
     RepeatedAttempts = 0x17,
     PairingNotAllowed = 0x18,
-    /*
-0x19 Unknown LMP PDU
-0x1A Unsupported Remote Feature / Unsupported LMP Feature
-0x1B SCO Offset Rejected
-0x1C SCO Interval Rejected
-0x1D SCO Air Mode Rejected
-0x1E Invalid LMP Parameters / Invalid LL Parameters
-0x1F Unspecified Error
-0x20 Unsupported LMP Parameter Value / Unsupported LL Parameter Value
-        0x21 Role Change Not Allowed
-0x22 LMP Response Timeout / LL Response Timeout
-0x23 LMP Error Transaction Collision / LL Procedure Collision
-0x24 LMP PDU Not Allowed
-0x25 Encryption Mode Not Acceptable
-0x26 Link Key cannot be Changed
-0x27 Requested QoS Not Supported
-0x28 Instant Passed
-0x29 Pairing With Unit Key Not Supported
-0x2A Different Transaction Collision
-0x2B Reserved for Future Use
-0x2C QoS Unacceptable Parameter
-0x2D QoS Rejected
-0x2E Channel Classification Not Supported
-0x2F Insufficient Security
-0x30 Parameter Out Of Mandatory Range
-0x31 Reserved for Future Use
-0x32 Role Switch Pending
-0x33 Reserved for Future Use
-0x34 Reserved Slot Violation
-0x35 Role Switch Failed
-0x36 Extended Inquiry Response Too Large
-0x37 Secure Simple Pairing Not Supported By Host
-0x38 Host Busy - Pairing
-0x39 Connection Rejected due to No Suitable Channel Found
-0x3A Controller Busy
-0x3B Unacceptable Connection Parameters
-0x3C Advertising Timeout
-0x3D Connection Terminated due to MIC Failure
-0x3E Connection Failed to be Established
-0x3F MAC Connection Failed
-0x40 Coarse Clock Adjustment Rejected but Will Try to Adjust Using Clock Dragging
-0x41 Type0 Submap Not Defined
-0x42 Unknown Advertising Identifier
-0x43 Limit Reached
-0x44 Operation Cancelled by Host
-*/
+    UnknownLmpPdu = 0x19,
+    UnsupportedRemoteFeature = 0x1A,
+    ScoOffsetRejected = 0x1B,
+    ScoIntervalRejected = 0x1C,
+    ScoAirModeRejected = 0x1D,
+    InvalidLmpParameters = 0x1E,
+    UnspecifiedError = 0x1F,
+    UnsupportedLmpParameterValue = 0x20,
+    RoleChangeNotAllowed = 0x21,
+    LmpResponseTimeout = 0x22,
+    LmpTransactionCollision = 0x23,
+    LmpPduNotAllowed = 0x24,
+    EncryptionModeNotAcceptable = 0x25,
+    LinkKeyCannotBeChanged = 0x26,
+    RequestedQosNotSupported = 0x27,
+    InstantPassed = 0x28,
+    PairingWithUnitKeyNotSupported = 0x29,
+    DifferentTransactionCollision = 0x2A,
+    ReservedforFutureUse = 0x2B,
+    QosUnacceptableParameter = 0x2C,
+    QosRejected = 0x2D,
+    ChannelClassificationNotSupported = 0x2E,
+    InsufficientSecurity = 0x2F,
+    ParameterOutOfMandatoryRange = 0x30,
+    ReservedForFutureUse49 = 0x31,
+    RoleSwitchPending = 0x32,
+    ReservedForFutureUse51 = 0x33,
+    ReservedSlotViolation = 0x34,
+    RoleSwitchFailed = 0x35,
+    ExtendedInquiryResponseTooLarge = 0x36,
+    SecureSimplePairingNotSupportedByHost = 0x37,
+    HostBusyPairing = 0x38,
+    ConnectionRejectedNoSuitableChannel = 0x39,
+    ControllerBusy = 0x3A,
+    UnacceptableConnectionParameters = 0x3B,
+    AdvertisingTimeout = 0x3C,
+    ConnectionTerminatedMicFailure = 0x3D,
+    ConnectionFailedToEstablish = 0x3E,
+    MacConnectionFailed = 0x3F,
+    CoarseClockAdjustmentRejectedDraggingAttempted = 0x40,
+    Type0SubmapNotDefined = 0x41,
+    UnknownAdvertisingId = 0x42,
+    LimitReached = 0x43,
+    OperationCancelledByHost = 0x44,
 }
 
-/// Values returned by local version information query. Bluetooth Specification 5.0, Vol 2 Part E,
-/// 7.4.1: Read Local Version Information Command
-pub struct LocalVersionInfo {
-    pub hci_version: u8,
-    pub hci_revision: u16,
-    pub lmp_version: u8,
-    pub manufacturer_name: u16,
-    pub lmp_subversion: u16,
-}
-
-pub enum ReturnParameters {
-    None,
-    ReadLocalVersion(LocalVersionInfo),
-}
-
-pub struct CommandComplete {
-    pub num_hci_command_packets: u8,
-    pub return_params: ReturnParameters,
-}
-
-pub enum Event {
-    CommandComplete(CommandComplete),
-}
+pub use event::Event;
 
 pub trait Controller {
     type Error;
