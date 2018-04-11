@@ -10,6 +10,7 @@ pub enum Error {
     BadLength,
 }
 
+#[derive(Clone, Debug)]
 pub enum Event {
     CommandComplete(command::CommandComplete),
 }

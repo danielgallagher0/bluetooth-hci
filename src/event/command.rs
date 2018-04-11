@@ -1,5 +1,6 @@
 /// Values returned by local version information query. Bluetooth Specification 5.0, Vol 2 Part E,
 /// 7.4.1: Read Local Version Information Command
+#[derive(Clone, Debug)]
 pub struct LocalVersionInfo {
     pub hci_version: u8,
     pub hci_revision: u16,
@@ -24,11 +25,13 @@ impl LocalVersionInfo {
     }
 }
 
+#[derive(Clone, Debug)]
 pub enum ReturnParameters {
     None,
     ReadLocalVersion(LocalVersionInfo),
 }
 
+#[derive(Clone, Debug)]
 pub struct CommandComplete {
     pub num_hci_command_packets: u8,
     pub return_params: ReturnParameters,
