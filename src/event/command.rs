@@ -49,7 +49,7 @@ impl CommandComplete {
 
         let params = match as_u16(bytes[1], bytes[2]) {
             ::opcode::LOCAL_VERSION_INFO => {
-                ReturnParameters::ReadLocalVersion(LocalVersionInfo::new(&bytes[3..])?)
+                ReturnParameters::ReadLocalVersion(LocalVersionInfo::new(&bytes)?)
             }
             _ => ReturnParameters::None,
         };
