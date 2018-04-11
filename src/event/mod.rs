@@ -7,7 +7,7 @@ pub const PACKET_HEADER_LENGTH: usize = 2;
 #[derive(Copy, Clone, Debug)]
 pub enum Error {
     UnknownEvent(u8),
-    BadLength,
+    BadLength(usize, usize),
 }
 
 #[derive(Clone, Debug)]
@@ -19,7 +19,7 @@ pub fn parse_event(packet: Packet) -> Result<Event, Error> {
     if packet.0.len() < PACKET_HEADER_LENGTH
         || packet.0.len() < PACKET_HEADER_LENGTH + packet.0[1] as usize
     {
-        return Err(Error::BadLength);
+        return Err(Error::BadLength(packet.0.len(), PACKET_HEADER_LENGTH + packet.0[1] as usize));
     }
 
     match packet.0[0] {

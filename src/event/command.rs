@@ -12,7 +12,7 @@ pub struct LocalVersionInfo {
 impl LocalVersionInfo {
     fn new(bytes: &[u8]) -> Result<LocalVersionInfo, ::event::Error> {
         if bytes.len() < 8 {
-            return Err(::event::Error::BadLength);
+            return Err(::event::Error::BadLength(bytes.len(), 8));
         }
 
         Ok(LocalVersionInfo {
@@ -40,7 +40,7 @@ pub struct CommandComplete {
 impl CommandComplete {
     pub fn new(bytes: &[u8]) -> Result<CommandComplete, ::event::Error> {
         if bytes.len() < 3 {
-            return Err(::event::Error::BadLength);
+            return Err(::event::Error::BadLength(bytes.len(), 3));
         }
 
         let params = match (bytes[1] as u16) << 8 | bytes[2] as u16 {
