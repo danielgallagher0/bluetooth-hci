@@ -5,6 +5,14 @@ struct Header {
     param_len: u8,
 }
 
+fn lsb_of(s: u16) -> u8 {
+    (s & 0xFF) as u8
+}
+
+fn msb_of(s: u16) -> u8 {
+    (s >> 8) as u8
+}
+
 impl Header {
     fn new(op_code: u16, plen: usize) -> Header {
         Header {
@@ -15,8 +23,8 @@ impl Header {
 
     fn into_bytes(self) -> [u8; 3] {
         [
-            (self.op_code >> 8) as u8,
-            (self.op_code & 0xFF) as u8,
+            lsb_of(self.op_code),
+            msb_of(self.op_code),
             self.param_len,
         ]
     }
