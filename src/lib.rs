@@ -88,5 +88,6 @@ pub trait Controller {
     type Error;
 
     fn write(&mut self, header: &[u8], payload: &[u8]) -> nb::Result<(), Self::Error>;
-    fn read(&mut self) -> nb::Result<Event, Self::Error>;
+    fn read_into(&mut self, buffer: &mut [u8]) -> nb::Result<(), Self::Error>;
+    fn peek(&mut self, n: usize) -> nb::Result<u8, Self::Error>;
 }
