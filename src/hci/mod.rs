@@ -1,5 +1,7 @@
 extern crate nb;
 
+pub mod cmd_link;
+pub mod event_link;
 pub mod uart;
 
 const PACKET_TYPE_HCI_COMMAND: u8 = 0x01;
