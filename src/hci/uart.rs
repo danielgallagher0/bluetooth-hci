@@ -1,15 +1,15 @@
 extern crate nb;
 
 #[derive(Copy, Clone, Debug)]
-pub enum Error<E> {
+pub enum Error<E, VE> {
     BadPacketType(u8),
-    BLE(::event::Error),
+    BLE(::event::Error<VE>),
     Comm(E),
 }
 
 #[derive(Clone, Debug)]
-pub enum Packet {
-    Event(::Event),
+pub enum Packet<Vendor> {
+    Event(::Event<Vendor>),
 }
 
 pub struct CommandHeader {
@@ -17,8 +17,10 @@ pub struct CommandHeader {
     param_len: u8,
 }
 
-pub trait Hci<E>: super::Hci<E, CommandHeader> {
-    fn read(&mut self) -> nb::Result<Packet, Error<E>>;
+pub trait Hci<E, Vendor, VE>: super::Hci<E, CommandHeader> {
+    fn read(&mut self) -> nb::Result<Packet<Vendor>, Error<E, VE>>
+    where
+        Vendor: ::event::VendorEvent<Error = VE>;
 }
 
 impl super::HciHeader for CommandHeader {
@@ -49,16 +51,17 @@ impl super::HciHeader for CommandHeader {
     }
 }
 
-fn rewrap_error<E>(e: nb::Error<E>) -> nb::Error<Error<E>> {
+fn rewrap_error<E, VE>(e: nb::Error<E>) -> nb::Error<Error<E, VE>> {
     match e {
         nb::Error::WouldBlock => nb::Error::WouldBlock,
         nb::Error::Other(err) => nb::Error::Other(Error::Comm(err)),
     }
 }
 
-fn read_event<E, T>(controller: &mut T) -> nb::Result<::Event, Error<E>>
+fn read_event<E, T, Vendor, VE>(controller: &mut T) -> nb::Result<::Event<Vendor>, Error<E, VE>>
 where
     T: ::Controller<Error = E>,
+    Vendor: ::event::VendorEvent<Error = VE>,
 {
     const MAX_EVENT_LENGTH: usize = 255;
     const PACKET_HEADER_LENGTH: usize = 1;
@@ -77,11 +80,14 @@ where
     )).map_err(|e| nb::Error::Other(Error::BLE(e)))
 }
 
-impl<E, T> Hci<E> for T
+impl<E, Vendor, VE, T> Hci<E, Vendor, VE> for T
 where
     T: ::Controller<Error = E>,
 {
-    fn read(&mut self) -> nb::Result<Packet, Error<E>> {
+    fn read(&mut self) -> nb::Result<Packet<Vendor>, Error<E, VE>>
+    where
+        Vendor: ::event::VendorEvent<Error = VE>,
+    {
         match self.peek(0).map_err(rewrap_error)? {
             super::PACKET_TYPE_HCI_EVENT => Ok(Packet::Event(read_event(self)?)),
             x => Err(nb::Error::Other(Error::BadPacketType(x))),

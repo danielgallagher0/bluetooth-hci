@@ -1,8 +1,8 @@
 extern crate nb;
 
 #[derive(Copy, Clone, Debug)]
-pub enum Error<E> {
-    BLE(::event::Error),
+pub enum Error<E, VError> {
+    BLE(::event::Error<VError>),
     Comm(E),
 }
 
@@ -11,8 +11,10 @@ pub struct EventHeader {
     param_len: u8,
 }
 
-pub trait Hci<E>: super::Hci<E, EventHeader> {
-    fn read(&mut self) -> nb::Result<::Event, Error<E>>;
+pub trait Hci<E, Vendor, VE>: super::Hci<E, EventHeader> {
+    fn read(&mut self) -> nb::Result<::Event<Vendor>, Error<E, VE>>
+    where
+        Vendor: ::event::VendorEvent<Error = VE>;
 }
 
 impl super::HciHeader for EventHeader {
@@ -41,18 +43,21 @@ impl super::HciHeader for EventHeader {
     }
 }
 
-fn rewrap_error<E>(e: nb::Error<E>) -> nb::Error<Error<E>> {
+fn rewrap_error<E, VE>(e: nb::Error<E>) -> nb::Error<Error<E, VE>> {
     match e {
         nb::Error::WouldBlock => nb::Error::WouldBlock,
         nb::Error::Other(err) => nb::Error::Other(Error::Comm(err)),
     }
 }
 
-impl<E, T> Hci<E> for T
+impl<E, Vendor, VE, T> Hci<E, Vendor, VE> for T
 where
     T: ::Controller<Error = E>,
 {
-    fn read(&mut self) -> nb::Result<::Event, Error<E>> {
+    fn read(&mut self) -> nb::Result<::Event<Vendor>, Error<E, VE>>
+    where
+        Vendor: ::event::VendorEvent<Error = VE>,
+    {
         const MAX_EVENT_LENGTH: usize = 255;
         const EVENT_HEADER_LENGTH: usize = 2;
         const PARAM_LEN_BYTE: usize = 1;

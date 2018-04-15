@@ -12,7 +12,7 @@ pub struct LocalVersionInfo {
 use super::as_u16;
 
 impl LocalVersionInfo {
-    fn new(bytes: &[u8]) -> Result<LocalVersionInfo, ::event::Error> {
+    fn new<VE>(bytes: &[u8]) -> Result<LocalVersionInfo, ::event::Error<VE>> {
         if bytes.len() < 8 {
             return Err(::event::Error::BadLength(bytes.len(), 8));
         }
@@ -40,7 +40,7 @@ pub struct CommandComplete {
 }
 
 impl CommandComplete {
-    pub fn new(bytes: &[u8]) -> Result<CommandComplete, ::event::Error> {
+    pub fn new<VE>(bytes: &[u8]) -> Result<CommandComplete, ::event::Error<VE>> {
         if bytes.len() < 3 {
             return Err(::event::Error::BadLength(bytes.len(), 3));
         }
