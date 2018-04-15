@@ -7,6 +7,16 @@ pub mod event;
 pub mod hci;
 mod opcode;
 
+pub use event::Event;
+
+pub trait Controller {
+    type Error;
+
+    fn write(&mut self, header: &[u8], payload: &[u8]) -> nb::Result<(), Self::Error>;
+    fn read_into(&mut self, buffer: &mut [u8]) -> nb::Result<(), Self::Error>;
+    fn peek(&mut self, n: usize) -> nb::Result<u8, Self::Error>;
+}
+
 /// List of possible error codes, Bluetooth Spec 5.0, Table 1.1
 #[repr(u8)]
 #[derive(Copy, Clone, Debug)]
@@ -80,14 +90,4 @@ pub enum Status {
     UnknownAdvertisingId = 0x42,
     LimitReached = 0x43,
     OperationCancelledByHost = 0x44,
-}
-
-pub use event::Event;
-
-pub trait Controller {
-    type Error;
-
-    fn write(&mut self, header: &[u8], payload: &[u8]) -> nb::Result<(), Self::Error>;
-    fn read_into(&mut self, buffer: &mut [u8]) -> nb::Result<(), Self::Error>;
-    fn peek(&mut self, n: usize) -> nb::Result<u8, Self::Error>;
 }

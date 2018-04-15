@@ -7,7 +7,7 @@ pub enum Error<E> {
 }
 
 pub struct EventHeader {
-    op_code: u16,
+    op_code: ::opcode::OpCode,
     param_len: u8,
 }
 
@@ -18,7 +18,7 @@ pub trait Hci<E>: super::Hci<E, EventHeader> {
 impl super::HciHeader for EventHeader {
     const HEADER_LENGTH: usize = 3;
 
-    fn new(op_code: u16, param_len: usize) -> EventHeader {
+    fn new(op_code: ::opcode::OpCode, param_len: usize) -> EventHeader {
         EventHeader {
             op_code: op_code,
             param_len: param_len as u8,
@@ -28,15 +28,15 @@ impl super::HciHeader for EventHeader {
     // TODO(#42863): Simplify into_bytes into this form:
     // fn into_bytes(&self) -> [u8; HEADER_LENGTH] {
     //     [
-    //         super::lsb_of(self.op_code),
-    //         super::msb_of(self.op_code),
+    //         super::lsb_of(self.op_code.0),
+    //         super::msb_of(self.op_code.0),
     //         self.param_len,
     //     ]
     // }
 
     fn into_bytes(&self, buffer: &mut [u8]) {
-        buffer[0] = super::lsb_of(self.op_code);
-        buffer[1] = super::msb_of(self.op_code);
+        buffer[0] = super::lsb_of(self.op_code.0);
+        buffer[1] = super::msb_of(self.op_code.0);
         buffer[2] = self.param_len;
     }
 }

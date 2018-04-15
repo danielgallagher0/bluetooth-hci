@@ -9,9 +9,7 @@ pub struct LocalVersionInfo {
     pub lmp_subversion: u16,
 }
 
-fn as_u16(lsb: u8, msb: u8) -> u16 {
-    ((msb as u16) << 8) | (lsb as u16)
-}
+use super::as_u16;
 
 impl LocalVersionInfo {
     fn new(bytes: &[u8]) -> Result<LocalVersionInfo, ::event::Error> {
@@ -47,7 +45,7 @@ impl CommandComplete {
             return Err(::event::Error::BadLength(bytes.len(), 3));
         }
 
-        let params = match as_u16(bytes[1], bytes[2]) {
+        let params = match ::opcode::OpCode(as_u16(bytes[1], bytes[2])) {
             ::opcode::LOCAL_VERSION_INFO => {
                 ReturnParameters::ReadLocalVersion(LocalVersionInfo::new(&bytes)?)
             }

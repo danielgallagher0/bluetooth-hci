@@ -1,14 +1,14 @@
 extern crate nb;
 
 pub struct Header {
-    op_code: u16,
+    op_code: ::opcode::OpCode,
     param_len: u8,
 }
 
 impl super::HciHeader for Header {
     const HEADER_LENGTH: usize = 3;
 
-    fn new(op_code: u16, param_len: usize) -> Header {
+    fn new(op_code: ::opcode::OpCode, param_len: usize) -> Header {
         Header {
             op_code: op_code,
             param_len: param_len as u8,
@@ -25,8 +25,8 @@ impl super::HciHeader for Header {
     // }
 
     fn into_bytes(&self, buffer: &mut [u8]) {
-        buffer[0] = super::lsb_of(self.op_code);
-        buffer[1] = super::msb_of(self.op_code);
+        buffer[0] = super::lsb_of(self.op_code.0);
+        buffer[1] = super::msb_of(self.op_code.0);
         buffer[2] = self.param_len;
     }
 }

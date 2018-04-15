@@ -13,7 +13,7 @@ pub enum Packet {
 }
 
 pub struct CommandHeader {
-    op_code: u16,
+    op_code: ::opcode::OpCode,
     param_len: u8,
 }
 
@@ -24,7 +24,7 @@ pub trait Hci<E>: super::Hci<E, CommandHeader> {
 impl super::HciHeader for CommandHeader {
     const HEADER_LENGTH: usize = 4;
 
-    fn new(op_code: u16, param_len: usize) -> CommandHeader {
+    fn new(op_code: ::opcode::OpCode, param_len: usize) -> CommandHeader {
         CommandHeader {
             op_code: op_code,
             param_len: param_len as u8,
@@ -35,16 +35,16 @@ impl super::HciHeader for CommandHeader {
     // fn into_bytes(&self) -> [u8; COMMAND_PACKET_HEADER_LENGTH] {
     //     [
     //         super::PACKET_TYPE_HCI_COMMAND,
-    //         super::lsb_of(self.op_code),
-    //         super::msb_of(self.op_code),
+    //         super::lsb_of(self.op_code.0),
+    //         super::msb_of(self.op_code.0),
     //         self.param_len,
     //     ]
     // }
 
     fn into_bytes(&self, buffer: &mut [u8]) {
         buffer[0] = super::PACKET_TYPE_HCI_COMMAND;
-        buffer[1] = super::lsb_of(self.op_code);
-        buffer[2] = super::msb_of(self.op_code);
+        buffer[1] = super::lsb_of(self.op_code.0);
+        buffer[2] = super::msb_of(self.op_code.0);
         buffer[3] = self.param_len;
     }
 }

@@ -20,7 +20,7 @@ const MAX_HEADER_LENGTH: usize = 5;
 pub trait HciHeader {
     const HEADER_LENGTH: usize;
 
-    fn new(op_code: u16, param_len: usize) -> Self;
+    fn new(op_code: ::opcode::OpCode, param_len: usize) -> Self;
 
     // TODO(#42863): Simplify into_bytes into this form:
     // fn into_bytes(&self) -> [u8; HEADER_LENGTH];

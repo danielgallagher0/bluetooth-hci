@@ -15,6 +15,10 @@ pub enum Event {
     CommandComplete(command::CommandComplete),
 }
 
+fn as_u16(lsb: u8, msb: u8) -> u16 {
+    ((msb as u16) << 8) | (lsb as u16)
+}
+
 pub fn parse_event(packet: Packet) -> Result<Event, Error> {
     if packet.0.len() < PACKET_HEADER_LENGTH
         || packet.0.len() < PACKET_HEADER_LENGTH + packet.0[1] as usize
