@@ -1,4 +1,4 @@
-extern crate nb;
+use byteorder::{ByteOrder, LittleEndian};
 
 pub struct Header {
     op_code: ::opcode::OpCode,
@@ -15,18 +15,8 @@ impl super::HciHeader for Header {
         }
     }
 
-    // TODO(#42863): Simplify into_bytes into this form:
-    // fn into_bytes(&self) -> [u8; HEADER_LENGTH] {
-    //     [
-    //         super::lsb_of(self.op_code),
-    //         super::msb_of(self.op_code),
-    //         self.param_len,
-    //     ]
-    // }
-
     fn into_bytes(&self, buffer: &mut [u8]) {
-        buffer[0] = super::lsb_of(self.op_code.0);
-        buffer[1] = super::msb_of(self.op_code.0);
+        LittleEndian::write_u16(buffer, self.op_code.0);
         buffer[2] = self.param_len;
     }
 }

@@ -1,6 +1,7 @@
 #![no_std]
 #![feature(const_fn)]
 
+extern crate byteorder;
 extern crate nb;
 
 pub mod event;

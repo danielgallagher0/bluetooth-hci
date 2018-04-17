@@ -1,5 +1,7 @@
 extern crate nb;
 
+use byteorder::{ByteOrder, LittleEndian};
+
 #[derive(Copy, Clone, Debug)]
 pub enum Error<E, VE> {
     BadPacketType(u8),
@@ -33,20 +35,9 @@ impl super::HciHeader for CommandHeader {
         }
     }
 
-    // TODO(#42863): Simplify into_bytes into this form:
-    // fn into_bytes(&self) -> [u8; COMMAND_PACKET_HEADER_LENGTH] {
-    //     [
-    //         super::PACKET_TYPE_HCI_COMMAND,
-    //         super::lsb_of(self.op_code.0),
-    //         super::msb_of(self.op_code.0),
-    //         self.param_len,
-    //     ]
-    // }
-
     fn into_bytes(&self, buffer: &mut [u8]) {
         buffer[0] = super::PACKET_TYPE_HCI_COMMAND;
-        buffer[1] = super::lsb_of(self.op_code.0);
-        buffer[2] = super::msb_of(self.op_code.0);
+        LittleEndian::write_u16(&mut buffer[1..2], self.op_code.0);
         buffer[3] = self.param_len;
     }
 }

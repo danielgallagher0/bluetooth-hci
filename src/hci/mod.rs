@@ -7,14 +7,6 @@ pub mod uart;
 const PACKET_TYPE_HCI_COMMAND: u8 = 0x01;
 const PACKET_TYPE_HCI_EVENT: u8 = 0x04;
 
-fn lsb_of(s: u16) -> u8 {
-    (s & 0xFF) as u8
-}
-
-fn msb_of(s: u16) -> u8 {
-    (s >> 8) as u8
-}
-
 const MAX_HEADER_LENGTH: usize = 5;
 
 pub trait HciHeader {

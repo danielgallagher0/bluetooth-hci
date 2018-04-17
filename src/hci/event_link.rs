@@ -1,5 +1,7 @@
 extern crate nb;
 
+use byteorder::{ByteOrder, LittleEndian};
+
 #[derive(Copy, Clone, Debug)]
 pub enum Error<E, VError> {
     BLE(::event::Error<VError>),
@@ -27,18 +29,8 @@ impl super::HciHeader for EventHeader {
         }
     }
 
-    // TODO(#42863): Simplify into_bytes into this form:
-    // fn into_bytes(&self) -> [u8; HEADER_LENGTH] {
-    //     [
-    //         super::lsb_of(self.op_code.0),
-    //         super::msb_of(self.op_code.0),
-    //         self.param_len,
-    //     ]
-    // }
-
     fn into_bytes(&self, buffer: &mut [u8]) {
-        buffer[0] = super::lsb_of(self.op_code.0);
-        buffer[1] = super::msb_of(self.op_code.0);
+        LittleEndian::write_u16(buffer, self.op_code.0);
         buffer[2] = self.param_len;
     }
 }

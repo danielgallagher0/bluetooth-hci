@@ -1,5 +1,6 @@
 pub mod command;
 
+use byteorder::{ByteOrder, LittleEndian};
 use core::convert::TryInto;
 use core::marker::Sized;
 
@@ -36,7 +37,7 @@ impl CommandStatus {
                 Error::UnknownStatus(v)
             })?,
             num_hci_command_packets: buffer[1],
-            op_code: ::opcode::OpCode(as_u16(buffer[2], buffer[3])),
+            op_code: ::opcode::OpCode(LittleEndian::read_u16(&buffer[2..])),
         })
     }
 }
@@ -54,10 +55,6 @@ pub enum Event<Vendor> {
     CommandComplete(command::CommandComplete),
     CommandStatus(CommandStatus),
     Vendor(Vendor),
-}
-
-fn as_u16(lsb: u8, msb: u8) -> u16 {
-    ((msb as u16) << 8) | (lsb as u16)
 }
 
 mod etype {

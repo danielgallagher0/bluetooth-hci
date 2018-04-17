@@ -11,3 +11,7 @@ readme = "README.md"
 
 [dependencies]
 nb = "0.1.1"
+
+[dependencies.byteorder]
+version = "1"
+default-features = false
