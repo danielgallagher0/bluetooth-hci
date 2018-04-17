@@ -5,7 +5,7 @@ extern crate byteorder;
 extern crate nb;
 
 pub mod event;
-pub mod hci;
+pub mod host;
 mod opcode;
 
 pub use event::Event;
