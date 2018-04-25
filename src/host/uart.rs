@@ -1,25 +1,70 @@
+//! Implementation of the HCI that includes the packet ID byte in the header.
+
 extern crate nb;
 
 use byteorder::{ByteOrder, LittleEndian};
 
+const PACKET_TYPE_HCI_COMMAND: u8 = 0x01;
+// const PACKET_TYPE_ACL_DATA: u8 = 0x02;
+// const PACKET_TYPE_SYNC_DATA: u8 = 0x03;
+const PACKET_TYPE_HCI_EVENT: u8 = 0x04;
+
+/// Potential errors from reading or writing packets to the controller.
+///
+/// Must be specialized both for communication errors (`E`) and vendor-specific errors (`VE`).
 #[derive(Copy, Clone, Debug)]
 pub enum Error<E, VE> {
+    /// The host expected the controller to begin a packet, but the next byte is not a valid packet
+    /// type byte. Contains the value of the byte.
     BadPacketType(u8),
+    /// There was an error deserializing an event. Contains the underlying error.
     BLE(::event::Error<VE>),
+    /// There was a communication error. Contains the underlying error.
     Comm(E),
 }
 
+/// Packet types that may be read from the controller.
 #[derive(Clone, Debug)]
 pub enum Packet<Vendor> {
+    // AclData(AclData),
+    // SyncData(SyncData),
+    /// The HCI Event Packet is used by the Controller to notify the Host when events
+    /// occur. The event is specialized to support vendor-specific events.
     Event(::Event<Vendor>),
 }
 
+/// Header for HCI Commands.
 pub struct CommandHeader {
     op_code: ::opcode::OpCode,
     param_len: u8,
 }
 
+/// Trait for reading packets from the controller.
+///
+/// Implementors must also implement `::host::Hci`, which provides all of the functions to write
+/// commands to the controller. This trait adds the ability to read packets back from the
+/// controller.
+///
+/// Must be specialized for communication errors (`E`), vendor-specific events (`Vendor`), and
+/// vendor-specific errors (`VE`).
 pub trait Hci<E, Vendor, VE>: super::Hci<E, CommandHeader> {
+    /// Reads and returns a packet from the controller. Consumes exactly enough bytes to read the
+    /// next packet including its header.
+    ///
+    /// # Errors
+    ///
+    /// - Returns `nb::Error::WouldBlock` if the controller does not have enough bytes available to
+    ///   read the full packet right now.
+    ///
+    /// - Returns `nb::Error::Other(Error::BadPacketType(b))` if the next byte is not a valid packet
+    ///   type.
+    ///
+    /// - Returns `nb::Error::Other(Error::BLE(e))` if there is an error deserializing the packet
+    ///   (such as a mismatch between the packet length and the expected length of the event). See
+    ///   [`::event::Error`] for possible values of `e`.
+    ///
+    /// - Returns `nb::Error::Other(Error::Comm(e))` if there is an error reading from the
+    ///   controller.
     fn read(&mut self) -> nb::Result<Packet<Vendor>, Error<E, VE>>
     where
         Vendor: ::event::VendorEvent<Error = VE>;
@@ -36,8 +81,8 @@ impl super::HciHeader for CommandHeader {
     }
 
     fn into_bytes(&self, buffer: &mut [u8]) {
-        buffer[0] = super::PACKET_TYPE_HCI_COMMAND;
-        LittleEndian::write_u16(&mut buffer[1..2], self.op_code.0);
+        buffer[0] = PACKET_TYPE_HCI_COMMAND;
+        LittleEndian::write_u16(&mut buffer[1..=2], self.op_code.0);
         buffer[3] = self.param_len;
     }
 }
@@ -80,7 +125,7 @@ where
         Vendor: ::event::VendorEvent<Error = VE>,
     {
         match self.peek(0).map_err(rewrap_error)? {
-            super::PACKET_TYPE_HCI_EVENT => Ok(Packet::Event(read_event(self)?)),
+            PACKET_TYPE_HCI_EVENT => Ok(Packet::Event(read_event(self)?)),
             x => Err(nb::Error::Other(Error::BadPacketType(x))),
         }
     }

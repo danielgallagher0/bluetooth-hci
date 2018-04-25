@@ -1,38 +1,76 @@
+//! Implementation of the HCI that only supports reading events from the controller.
+//!
+//! This was originally written just based on wording from the Bluetooth spec (version 5.0, Vol 4,
+//! Part A, section 2), emphasis added:
+//!
+//! > Therefore, *if* the HCI packets are sent via a common physical interface, a HCI
+//! > packet indicator has to be added according to Table 2.1 below.
+//!
+//! However, there don't seem to be any implementations where the HCI packets are _not_ sent "via a
+//! common physical interface", so this module may be unnecessary.
+
 extern crate nb;
 
-use byteorder::{ByteOrder, LittleEndian};
-
+/// Potential errors from reading events from the controller.
 #[derive(Copy, Clone, Debug)]
 pub enum Error<E, VError> {
+    /// There was an error deserializing an event. Contains the underlying error.
     BLE(::event::Error<VError>),
+    /// There was a communication error. Contains the underlying error.
     Comm(E),
 }
 
-pub struct EventHeader {
-    op_code: ::opcode::OpCode,
-    param_len: u8,
-}
+/// Dummy struct used to specialize [`super::Hci`]. Since the [`Hci`] does not support sending
+/// commands, we do not need a real header struct.
+pub struct NoCommands;
 
-pub trait Hci<E, Vendor, VE>: super::Hci<E, EventHeader> {
+/// Trait for reading events from the controller. Since this trait should only be used when events
+/// are sent by a different physical link than commands, it does not need to implement
+/// [`::host::Hci`].
+///
+/// Must be specialized for communication errors (`E`), vendor-specific events (`Vendor`), and
+/// vendor-specific errors (`VE`).
+///
+/// Peeks ahead 2 bytes into the stream to read the length of the parameters for the next event.
+///
+/// # Errors
+///
+/// - Returns `nb::Error::WouldBlock` if the controller does not have enough bytes to read an
+///   event.
+///
+/// - Returns `nb::Error::Other(Error::BLE(e))` if there is an error deserializing the packet (such
+///   as a mismatch between the packet length and the expected length of the event). See
+///   [`::event::Error`] for possible values of `e`.
+///
+/// - Returns `nb::Error::Other(Error::Comm(e))` if there is an error reading from the controller.
+pub trait Hci<E, Vendor, VE> {
+    /// Reads and returns an event from the controller. Consumes exactly enough bytes to read the
+    /// next event including its header.
+    ///
+    /// # Errors
+    ///
+    /// - Returns `nb::Error::WouldBlock` if the controller does not have enough bytes available to
+    ///   read the full event right now.
+    ///
+    /// - Returns `nb::Error::Other(Error::BLE(e))` if there is an error deserializing the packet
+    ///   (such as a mismatch between the packet length and the expected length of the event). See
+    ///   [`::event::Error`] for possible values of `e`.
+    ///
+    /// - Returns `nb::Error::Other(Error::Comm(e))` if there is an error reading from the
+    ///   controller.
     fn read(&mut self) -> nb::Result<::Event<Vendor>, Error<E, VE>>
     where
         Vendor: ::event::VendorEvent<Error = VE>;
 }
 
-impl super::HciHeader for EventHeader {
+impl super::HciHeader for NoCommands {
     const HEADER_LENGTH: usize = 3;
 
-    fn new(op_code: ::opcode::OpCode, param_len: usize) -> EventHeader {
-        EventHeader {
-            op_code: op_code,
-            param_len: param_len as u8,
-        }
+    fn new(_op_code: ::opcode::OpCode, _param_len: usize) -> NoCommands {
+        NoCommands
     }
 
-    fn into_bytes(&self, buffer: &mut [u8]) {
-        LittleEndian::write_u16(buffer, self.op_code.0);
-        buffer[2] = self.param_len;
-    }
+    fn into_bytes(&self, _buffer: &mut [u8]) {}
 }
 
 fn rewrap_error<E, VE>(e: nb::Error<E>) -> nb::Error<Error<E, VE>> {
