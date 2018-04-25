@@ -3,15 +3,14 @@
 This crate currently for illustrative purposes only, it is NOT
 intended to implement the Bluetooth specification or provide a Rust
 interface to generic BLE chips.  It is, however, intended to show how
-one such implementation could be organized.
+one such implementation could be organized.  Comments and critiques
+are welcome!
 
 ## Implementation
 
 This crate defines a trait (`Controller`) that should be implemented
-for a specific BLE chip.  Once that trait is implemented, the
-functions from the `hci` module can be used to write to the chip.  The
-implementation of `read` should use `event::parse_event` to convert
-data into BLE events.
+for a specific BLE chip.  Any implementor can then be used as a
+`host::uart::Hci` to read and write to the chip.
 
 ## Supported Events
 
