@@ -40,7 +40,7 @@
 //!
 //! - Add traits to facilitate writing Bluetooth controllers. These controllers would have a host on
 //!   one side and a link layer on the other. Separate crate? If so, move common definitions (Status
-//!   codes, opcodes, etc.) to a ble-core crate.
+//!   codes, opcodes, etc.) to a bluetooth-core crate.
 //!
 //! - Add a helper function for vendor-specific commands. This should take care of creating the
 //!   header and writing the data to the [`Controller`]. Vendor code should only be responsible for

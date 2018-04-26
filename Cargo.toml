@@ -1,12 +1,12 @@
 [package]
-name = "ble"
+name = "bluetooth-hci"
 version = "0.0.1"
 authors = ["Daniel Gallagher <pdanielgallagher@gmail.com>"]
 categories = ["embedded", "hardware-support", "no-std"]
-description = "Implementation of the BLE spec"
-keywords = ["ble"]
+description = "Implementation of the Bluetooth HCI"
+keywords = ["ble", "bluetooth"]
 license = "MIT/Apache-2.0"
-repository = "https://github.com/danielgallagher0/ble-rs"
+repository = "https://github.com/danielgallagher0/bluetooth-hci"
 readme = "README.md"
 
 [dependencies]
