@@ -1,10 +1,22 @@
-# BLE
+# Bluetooth HCI
 
-This crate currently for illustrative purposes only, it is NOT
-intended to implement the Bluetooth specification or provide a Rust
-interface to generic BLE chips.  It is, however, intended to show how
-one such implementation could be organized.  Comments and critiques
-are welcome!
+This crate is currently for illustrative purposes only, though it may
+grow into a nice implementation of the Bluetooth HCI for use by
+Bluetooth hosts. Comments and critiques are welcome!
+
+## Version
+
+This crate can support versions 4.1, 4.2, and 5.0 of the Bluetooth
+specification. By default, it supports version 4.1. To enable the
+other version, add the following to your `Cargo.toml`:
+
+    [dependencies.bluetooth-hci]
+    features = "version-4-2"
+
+or
+
+    [dependencies.bluetooth-hci]
+    features = "version-5-0"
 
 ## Implementation
 

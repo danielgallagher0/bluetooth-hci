@@ -3,16 +3,15 @@
 //! This module defines the return parameters that can be returned in a Command Complete event for
 //! every HCI command.
 //!
-//! For the Command Complete event, see the Bluetooth specification, version 5.0, Vol 2, Part E,
-//! Section 7.7.14.
+//! For the Command Complete event, see the Bluetooth specification, Vol 2, Part E, Section 7.7.14.
 //!
 //! For the return parameters of the commands, see the description of each command in sections 7.1 -
 //! 7.6 of the same part of the spec.
 
 use byteorder::{ByteOrder, LittleEndian};
 
-/// Values returned by local version information query. Bluetooth Specification 5.0, Vol 2 Part E,
-/// 7.4.1: Read Local Version Information Command
+/// Values returned by local version information query. Bluetooth Specification Vol 2, Part E,
+/// Section 7.4.1: Read Local Version Information Command
 #[derive(Clone, Debug)]
 pub struct LocalVersionInfo {
     /// HCI Version. See Bluetooth [Assigned
@@ -72,7 +71,7 @@ pub enum ReturnParameters {
 /// The Command Complete event. This event is generated to indicate that a command has been
 /// completed.
 ///
-/// Defined in Vol 2, Part E, Section 7.7.14 of the spec, version 5.0.
+/// Defined in Vol 2, Part E, Section 7.7.14 of the spec
 #[derive(Clone, Debug)]
 pub struct CommandComplete {
     /// Number of HCI Command packets that can be sent to the controller from the host.
@@ -83,7 +82,7 @@ pub struct CommandComplete {
 }
 
 impl CommandComplete {
-    /// Deserializes a buffer into a CommandComplete event.
+    /// Deserializes a buffer into a CommandComplete event...
     ///
     /// # Errors
     ///

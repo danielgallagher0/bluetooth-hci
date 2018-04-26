@@ -42,7 +42,7 @@ pub enum Error<V> {
 /// The Command Status event. This event is generated to indicate that an asynchronous operation has
 /// begun (or could not begin).
 ///
-/// Defined in Vol 2, Part E, Section 7.7.15 of the spec, version 5.0.
+/// Defined in Vol 2, Part E, Section 7.7.15 of the spec.
 #[derive(Copy, Clone, Debug)]
 pub struct CommandStatus {
     /// Status of the command that has started.

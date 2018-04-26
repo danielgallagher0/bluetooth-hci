@@ -18,10 +18,9 @@ const MAX_HEADER_LENGTH: usize = 5;
 
 /// Trait to define a command packet header.
 ///
-/// See the Bluetooth Specification, Version 5.0, Vol 2, Part E, section 5.4.1. The command packet
-/// header contains an opcode (comprising a 6-bit OGF and 10-bit OCF) and a 1-byte parameter
-/// length. The packet itself then contains various parameters as defined by the Bluetooth
-/// specification.
+/// See the Bluetooth Specification Vol 2, Part E, section 5.4.1. The command packet header contains
+/// an opcode (comprising a 6-bit OGF and 10-bit OCF) and a 1-byte parameter length. The packet
+/// itself then contains various parameters as defined by the Bluetooth specification.
 ///
 /// Before this command header, many (all?) Bluetooth implementations include a 1-byte packet type
 /// preceding the command header. This version of the HciHeader is implemented by [`uart::HciHeader`],
@@ -52,8 +51,8 @@ pub trait HciHeader {
 
 /// Trait defining the interface from the host to the controller.
 ///
-/// Defines one function for each command in the Bluetooth Specification version 5.0, Vol 2, Part E,
-/// Sections 7.1 - 7.6.
+/// Defines one function for each command in the Bluetooth Specification Vol 2, Part E, Sections 7.1
+/// - 7.6.
 ///
 /// Specializations must define the error type `E`, used for communication errors, and the header
 /// type `Header`, which should be either uart::CommandHeader`, `cmd_link::CommandHeader`, or
@@ -63,7 +62,7 @@ pub trait HciHeader {
 pub trait Hci<E, Header> {
     /// Writes the Read Local Version Information command to the controller.
     ///
-    /// Defined in Bluetooth Specification version 5.0, Vol 2, Part E, Section 7.4.1.
+    /// Defined in Bluetooth Specification Vol 2, Part E, Section 7.4.1.
     ///
     /// # Generated events
     ///

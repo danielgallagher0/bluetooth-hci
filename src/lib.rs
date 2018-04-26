@@ -4,6 +4,10 @@
 //! [`Bluetooth`] specification. It is still woefully incomplete, and will undoubtedly be redesigned
 //! completely, and potentially split into multiple crates before being stabilized.
 //!
+//! When the documentation refers to a specific section of "the" Bluetooth specification, the same
+//! section applies for all supported versions of the specification. If the versions differ, the
+//! specific version will also be included in the reference.
+//!
 //! # Design
 //!
 //! Like other core embedded crates (e.g, [`embedded-hal`]), this crate uses traits to be agnostic
@@ -163,7 +167,7 @@ pub trait Controller {
     fn peek(&mut self, n: usize) -> nb::Result<u8, Self::Error>;
 }
 
-/// List of possible error codes, Bluetooth Spec 5.0, Vol 2, Part D, Section 2
+/// List of possible error codes, Bluetooth Spec, Vol 2, Part D, Section 2.
 #[repr(u8)]
 #[derive(Copy, Clone, Debug)]
 pub enum Status {
@@ -297,13 +301,25 @@ pub enum Status {
     MacConnectionFailed = 0x3F,
     /// Coarse Clock Adjustment Rejected but Will Try to Adjust Using Clock Dragging
     CoarseClockAdjustmentRejectedDraggingAttempted = 0x40,
+    #[cfg(feature = "version-5-0")]
     /// Type0 Submap Not Defined
+    ///
+    /// First introduced in version 5.0
     Type0SubmapNotDefined = 0x41,
+    #[cfg(feature = "version-5-0")]
     /// Unknown Advertising Identifier
+    ///
+    /// First introduced in version 5.0
     UnknownAdvertisingId = 0x42,
+    #[cfg(feature = "version-5-0")]
     /// Limit Reached
+    ///
+    /// First introduced in version 5.0
     LimitReached = 0x43,
+    #[cfg(feature = "version-5-0")]
     /// Operation Cancelled by Host
+    ///
+    /// First introduced in version 5.0
     OperationCancelledByHost = 0x44,
 }
 
@@ -383,10 +399,46 @@ impl core::convert::TryFrom<u8> for Status {
             0x3E => Ok(Status::ConnectionFailedToEstablish),
             0x3F => Ok(Status::MacConnectionFailed),
             0x40 => Ok(Status::CoarseClockAdjustmentRejectedDraggingAttempted),
-            0x41 => Ok(Status::Type0SubmapNotDefined),
-            0x42 => Ok(Status::UnknownAdvertisingId),
-            0x43 => Ok(Status::LimitReached),
-            0x44 => Ok(Status::OperationCancelledByHost),
+            0x41 => {
+                #[cfg(feature = "version-5-0")]
+                {
+                    Ok(Status::Type0SubmapNotDefined)
+                }
+                #[cfg(not(feature = "version-5-0"))]
+                {
+                    Err(StatusFromU8Error::BadValue(value))
+                }
+            }
+            0x42 => {
+                #[cfg(feature = "version-5-0")]
+                {
+                    Ok(Status::UnknownAdvertisingId)
+                }
+                #[cfg(not(feature = "version-5-0"))]
+                {
+                    Err(StatusFromU8Error::BadValue(value))
+                }
+            }
+            0x43 => {
+                #[cfg(feature = "version-5-0")]
+                {
+                    Ok(Status::LimitReached)
+                }
+                #[cfg(not(feature = "version-5-0"))]
+                {
+                    Err(StatusFromU8Error::BadValue(value))
+                }
+            }
+            0x44 => {
+                #[cfg(feature = "version-5-0")]
+                {
+                    Ok(Status::OperationCancelledByHost)
+                }
+                #[cfg(not(feature = "version-5-0"))]
+                {
+                    Err(StatusFromU8Error::BadValue(value))
+                }
+            }
             _ => Err(StatusFromU8Error::BadValue(value)),
         }
     }

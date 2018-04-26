@@ -15,3 +15,9 @@ nb = "0.1.1"
 [dependencies.byteorder]
 version = "1"
 default-features = false
+
+[features]
+default-features = ["version-4-1"]
+version-4-1 = []
+version-4-2 = []
+version-5-0 = []
