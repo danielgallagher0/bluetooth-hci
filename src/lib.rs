@@ -76,6 +76,7 @@
 
 #![no_std]
 #![feature(const_fn)]
+#![feature(try_from)]
 #![deny(missing_docs)]
 #![deny(warnings)]
 
