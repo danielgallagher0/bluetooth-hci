@@ -1,5 +1,8 @@
 # Bluetooth HCI
 
+[![Build
+Status](https://travis-ci.org/danielgallagher0/bluetooth-hci.svg?branch=master)](https://travis-ci.org/danielgallagher0/bluetooth-hci)
+
 This crate is currently for illustrative purposes only, though it may
 grow into a nice implementation of the Bluetooth HCI for use by
 Bluetooth hosts. Comments and critiques are welcome!

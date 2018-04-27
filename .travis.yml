@@ -1,0 +1,7 @@
+language: rust
+rust:
+  - nightly
+install: rustup target add thumbv7em-none-eabihf
+script:
+  - cargo build --verbose --all --target=thumbv7em-none-eabihf
+  - cargo build --verbose --all
