@@ -77,6 +77,7 @@
 #![no_std]
 #![feature(const_fn)]
 #![feature(try_from)]
+#![feature(never_type)]
 #![deny(missing_docs)]
 #![deny(warnings)]
 
@@ -127,7 +128,26 @@ pub trait Controller {
     ///
     /// // host calls:
     ///
-    /// let mut buffer: [0; 4];
+    /// # extern crate nb;
+    /// # extern crate bluetooth_hci;
+    /// # use bluetooth_hci::Controller as HciController;
+    /// # struct Controller;
+    /// # struct Error;
+    /// # impl HciController for Controller {
+    /// #     type Error = Error;
+    /// #     fn write(&mut self, _header: &[u8], _payload: &[u8]) -> nb::Result<(), Self::Error> {
+    /// #         Ok(())
+    /// #     }
+    /// #     fn read_into(&mut self, _buffer: &mut [u8]) -> nb::Result<(), Self::Error> {
+    /// #         Ok(())
+    /// #     }
+    /// #     fn peek(&mut self, _n: usize) -> nb::Result<u8, Self::Error> {
+    /// #         Ok(0)
+    /// #     }
+    /// # }
+    /// # fn main() {
+    /// # let mut controller = Controller;
+    /// let mut buffer = [0; 4];
     /// controller.read_into(&mut buffer[1..]);  // read 3 bytes into buffer[1..]
     ///
     /// // buffer contains:
@@ -142,6 +162,7 @@ pub trait Controller {
     /// // +------+------+------+------+
     /// // | 0x78 | 0x9a | 0xbc | 0xde |
     /// // +------+------+------+------+
+    /// # }
     /// ```
     /// If the next call to `read_into` requests more than 1 byte, the controller may return
     /// `nb::Error::WouldBlock`, or may attempt to read more data from the controller. If not enough
@@ -156,21 +177,48 @@ pub trait Controller {
     /// read. For example, the code to read an HCI event looks like this:
     ///
     /// ```
+    /// # extern crate nb;
+    /// # extern crate bluetooth_hci;
+    /// # use bluetooth_hci::Controller as HciController;
+    /// # struct Controller;
+    /// # struct Error;
+    /// # impl HciController for Controller {
+    /// #     type Error = Error;
+    /// #     fn write(&mut self, _header: &[u8], _payload: &[u8]) -> nb::Result<(), Self::Error> {
+    /// #         Ok(())
+    /// #     }
+    /// #     fn read_into(&mut self, _buffer: &mut [u8]) -> nb::Result<(), Self::Error> {
+    /// #         Ok(())
+    /// #     }
+    /// #     fn peek(&mut self, _n: usize) -> nb::Result<u8, Self::Error> {
+    /// #         Ok(0)
+    /// #     }
+    /// # }
+    /// # fn main() {
+    /// # do_stuff();
+    /// # }
+    /// # fn do_stuff() -> nb::Result<(), Error> {
+    /// # const PACKET_TYPE_HCI_EVENT: u8 = 4;
+    /// # let mut controller = Controller;
+    /// const MAX_EVENT_LENGTH: usize = 255;
+    /// const HEADER_LENGTH: usize = 2;
     /// let mut buffer = [0; MAX_EVENT_LENGTH + HEADER_LENGTH];
-    /// let packet_type = controller.peek(0);
-    /// if packet_type == HCI_EVENT_TYPE {
-    ///     let param_len = controller.peek(3);  // Byte 3 has the parameter length in HCI events
+    /// let packet_type = controller.peek(0)?;
+    /// if packet_type == PACKET_TYPE_HCI_EVENT {
+    ///     let param_len = controller.peek(3)? as usize;  // Byte 3 has the parameter length in HCI events
     ///
     ///     // We want to consume the full HCI Event packet, and we now know the length.
     ///     controller.read_into(&mut buffer[..HEADER_LENGTH + param_len])?;
     /// }
+    /// # Ok(())
+    /// # }
     /// ```
     fn peek(&mut self, n: usize) -> nb::Result<u8, Self::Error>;
 }
 
 /// List of possible error codes, Bluetooth Spec, Vol 2, Part D, Section 2.
 #[repr(u8)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Status {
     /// Success
     Success = 0x00,
@@ -325,13 +373,13 @@ pub enum Status {
 }
 
 /// Wrapper enum for errors converting a u8 into a [`Status`].
-pub enum StatusFromU8Error {
+pub enum BadStatusError {
     /// The value does not map to a [`Status`].
     BadValue(u8),
 }
 
 impl core::convert::TryFrom<u8> for Status {
-    type Error = StatusFromU8Error;
+    type Error = BadStatusError;
 
     fn try_from(value: u8) -> Result<Status, Self::Error> {
         match value {
@@ -407,7 +455,7 @@ impl core::convert::TryFrom<u8> for Status {
                 }
                 #[cfg(not(feature = "version-5-0"))]
                 {
-                    Err(StatusFromU8Error::BadValue(value))
+                    Err(BadStatusError::BadValue(value))
                 }
             }
             0x42 => {
@@ -417,7 +465,7 @@ impl core::convert::TryFrom<u8> for Status {
                 }
                 #[cfg(not(feature = "version-5-0"))]
                 {
-                    Err(StatusFromU8Error::BadValue(value))
+                    Err(BadStatusError::BadValue(value))
                 }
             }
             0x43 => {
@@ -427,7 +475,7 @@ impl core::convert::TryFrom<u8> for Status {
                 }
                 #[cfg(not(feature = "version-5-0"))]
                 {
-                    Err(StatusFromU8Error::BadValue(value))
+                    Err(BadStatusError::BadValue(value))
                 }
             }
             0x44 => {
@@ -437,10 +485,18 @@ impl core::convert::TryFrom<u8> for Status {
                 }
                 #[cfg(not(feature = "version-5-0"))]
                 {
-                    Err(StatusFromU8Error::BadValue(value))
+                    Err(BadStatusError::BadValue(value))
                 }
             }
-            _ => Err(StatusFromU8Error::BadValue(value)),
+            _ => Err(BadStatusError::BadValue(value)),
         }
     }
 }
+
+/// Newtype for a connection handle.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ConnectionHandle(pub u16);
+
+/// Newtype for BDADDR.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct BdAddr(pub [u8; 6]);

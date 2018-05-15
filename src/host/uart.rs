@@ -111,7 +111,7 @@ where
         .read_into(&mut buf[..EVENT_PACKET_HEADER_LENGTH + param_len])
         .map_err(rewrap_error)?;
 
-    ::event::parse_event(::event::Packet(
+    ::event::Event::new(::event::Packet(
         &buf[PACKET_HEADER_LENGTH..EVENT_PACKET_HEADER_LENGTH + param_len],
     )).map_err(|e| nb::Error::Other(Error::BLE(e)))
 }

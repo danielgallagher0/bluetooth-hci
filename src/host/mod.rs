@@ -39,13 +39,6 @@ pub trait HciHeader {
     /// # Panics
     ///
     /// Panics if `buf.len() < Self::HEADER_LENGTH`
-    ///
-    /// TODO([#42863]): Simplify into_bytes into this form:
-    /// ```
-    /// fn into_bytes(&self) -> [u8; HEADER_LENGTH];
-    /// ```
-    ///
-    /// [#42863]: https://github.com/rust-lang/rust/issues/42863
     fn into_bytes(&self, buf: &mut [u8]);
 }
 
