@@ -1,7 +1,11 @@
 language: rust
 rust:
+  - beta
   - nightly
 install: rustup target add thumbv7em-none-eabihf
 script:
   - cargo build --verbose --all --target=thumbv7em-none-eabihf
-  - cargo build --verbose --all
+  - cargo test --verbose --all
+  - cargo test --verbose --all --features="version-4-1"
+  - cargo test --verbose --all --features="version-4-2"
+  - cargo test --verbose --all --features="version-5-0"
