@@ -29,6 +29,9 @@ pub enum Event<V> {
     /// Vol 2, Part E, Section 7.7.5
     DisconnectionComplete(DisconnectionComplete),
 
+    /// Vol 2, Part E, Section 7.7.8
+    EncryptionChange(EncryptionChange),
+
     /// Vol 2, Part E, Section 7.7.14
     CommandComplete(command::CommandComplete),
 
@@ -85,6 +88,10 @@ pub enum Error<V> {
     /// the unrecognized byte.
     BadReason(u8),
 
+    /// For the EncryptionChange event: The encryption type was not recognized.  Includes the
+    /// unrecognized byte.
+    BadEncryptionType(u8),
+
     /// A vendor-specific error was detected when deserializing a vendor-specific event.
     Vendor(V),
 }
@@ -124,6 +131,20 @@ macro_rules! require_len_at_least {
     };
 }
 
+/// Converts a specific generic enum value between specializations.  This is used below to convert
+/// from Error<!> to Error<VendorError> in various places where only one error value is possible
+/// (such as from try_into).
+macro_rules! self_convert {
+    ($val:path) => {
+        |e| {
+            if let $val(value) = e {
+                return $val(value);
+            }
+            unreachable!();
+        }
+    };
+}
+
 const PACKET_HEADER_LENGTH: usize = 2;
 const EVENT_TYPE_BYTE: usize = 0;
 const PARAM_LEN_BYTE: usize = 1;
@@ -157,6 +178,7 @@ where
             0x05 => Ok(Event::DisconnectionComplete(to_disconnection_complete(
                 payload,
             )?)),
+            0x08 => Ok(Event::EncryptionChange(to_encryption_change(payload)?)),
             0x0E => Ok(Event::CommandComplete(command::CommandComplete::new(
                 payload,
             )?)),
@@ -216,19 +238,15 @@ fn to_connection_complete<VE>(payload: &[u8]) -> Result<ConnectionComplete, Erro
         status: payload[0].try_into().map_err(rewrap_bad_status)?,
         conn_handle: ::ConnectionHandle(LittleEndian::read_u16(&payload[1..])),
         bdaddr: bdaddr,
-        link_type: payload[9].try_into().map_err(|e| {
-            // Convert Error<!> to Error<VE>. We could only get one possible error from the
-            // conversion.
-            if let Error::BadLinkType(value) = e {
-                return Error::BadLinkType(value);
-            }
-            unreachable!();
-        })?,
-        encryption_enabled: try_into_encryption_enabled(payload[10])?,
+        link_type: payload[9]
+            .try_into()
+            .map_err(self_convert!(Error::BadLinkType))?,
+        encryption_enabled: try_into_encryption_enabled(payload[10])
+            .map_err(self_convert!(Error::BadEncryptionEnabledValue))?,
     })
 }
 
-fn try_into_encryption_enabled<VE>(value: u8) -> Result<bool, Error<VE>> {
+fn try_into_encryption_enabled(value: u8) -> Result<bool, Error<!>> {
     match value {
         0 => Ok(false),
         1 => Ok(true),
@@ -265,6 +283,69 @@ fn to_disconnection_complete<VE>(payload: &[u8]) -> Result<DisconnectionComplete
         status: payload[0].try_into().map_err(rewrap_bad_status)?,
         conn_handle: ::ConnectionHandle(LittleEndian::read_u16(&payload[1..])),
         reason: payload[3].try_into().map_err(rewrap_bad_reason)?,
+    })
+}
+
+/// The Encryption Change event is used to indicate that the change of the encryption mode has been
+/// completed.
+///
+/// This event will occur on both devices to notify the Hosts when Encryption has changed for the
+/// specified connection handle between two devices. Note: This event shall not be generated if
+/// encryption is paused or resumed; during a role switch, for example.
+#[derive(Copy, Clone, Debug)]
+pub struct EncryptionChange {
+    /// Indicates if the encryption change was successful or not.
+    pub status: ::Status,
+
+    /// Connection handle for which the link layer encryption has been enabled/disabled for all
+    /// connection handles with the same BR/EDR Controller endpoint as the specified
+    /// connection handle.
+    ///
+    /// The connection handle will be a connection handle for an ACL connection.
+    pub conn_handle: ::ConnectionHandle,
+
+    /// Specifies the new encryption type parameter for conn_handle.
+    pub encryption: Encryption,
+}
+
+/// The meaning of the encryption type depends on whether the Host has indicated support for Secure
+/// Connections in the secure connections host support parameter. When secure connections host
+/// support is 'disabled' or the connection handle refers to an LE link, the Controller shall only
+/// use values 0x00 (OFF) and 0x01 (ON). When secure connections host support is 'enabled' and the
+/// connection handle refers to a BR/EDR link, the Controller shall set the encryption type to 0x00
+/// when encryption is off, to 0x01 when encryption is on and using E0 and to 0x02 when encryption
+/// is on and using AES-CCM.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum Encryption {
+    /// Encryption is disabled.
+    Off,
+    /// - On a BR/EDR link, encryption is enabled using E0
+    /// - On an LE link, encryption is enabled using AES-CCM
+    On,
+    /// On a BR/EDR link, encryption is enabled using AES-CCM. Unused for LE links.
+    OnAesCcmForBrEdr,
+}
+
+impl TryFrom<u8> for Encryption {
+    type Error = Error<!>;
+    fn try_from(value: u8) -> Result<Encryption, Self::Error> {
+        match value {
+            0x00 => Ok(Encryption::Off),
+            0x01 => Ok(Encryption::On),
+            0x02 => Ok(Encryption::OnAesCcmForBrEdr),
+            _ => Err(Error::BadEncryptionType(value)),
+        }
+    }
+}
+
+fn to_encryption_change<VE>(payload: &[u8]) -> Result<EncryptionChange, Error<VE>> {
+    require_len!(payload, 4);
+    Ok(EncryptionChange {
+        status: payload[0].try_into().map_err(rewrap_bad_status)?,
+        conn_handle: ::ConnectionHandle(LittleEndian::read_u16(&payload[1..])),
+        encryption: payload[3]
+            .try_into()
+            .map_err(self_convert!(Error::BadEncryptionType))?,
     })
 }
 

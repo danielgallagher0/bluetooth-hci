@@ -102,3 +102,34 @@ fn disconnection_complete_failed_bad_reason() {
         other => panic!("Did not get bad reason: {:?}", other),
     }
 }
+
+#[test]
+fn encryption_change() {
+    let buffer = [0x08, 4, 0x00, 0x01, 0x02, 0x00];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::EncryptionChange(event)) => {
+            assert_eq!(event.status, hci::Status::Success);
+            assert_eq!(event.conn_handle, hci::ConnectionHandle(0x0201));
+            assert_eq!(event.encryption, Encryption::Off);
+        }
+        other => panic!("Did not get encryption change event: {:?}", other),
+    }
+}
+
+#[test]
+fn encryption_change_failed_bad_status() {
+    let buffer = [0x08, 4, 0x80, 0x01, 0x02, 0x00];
+    match TestEvent::new(Packet(&buffer)) {
+        Err(Error::BadStatus(0x80)) => (),
+        other => panic!("Did not get bad status: {:?}", other),
+    }
+}
+
+#[test]
+fn encryption_change_failed_bad_encryption() {
+    let buffer = [0x08, 4, 0x00, 0x01, 0x02, 0x03];
+    match TestEvent::new(Packet(&buffer)) {
+        Err(Error::BadEncryptionType(0x03)) => (),
+        other => panic!("Did not get bad encryption type: {:?}", other),
+    }
+}
