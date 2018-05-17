@@ -1,6 +1,5 @@
 language: rust
 rust:
-  - beta
   - nightly
 install: rustup target add thumbv7em-none-eabihf
 script:
