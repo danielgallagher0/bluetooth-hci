@@ -40,6 +40,17 @@ fn connection_complete() {
 }
 
 #[test]
+fn connection_complete_failed_bad_status() {
+    let buffer = [
+        0x03, 11, 0x80, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x00, 0x00,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Err(Error::BadStatus(0x80)) => (),
+        other => panic!("Did not get bad status: {:?}", other),
+    }
+}
+
+#[test]
 fn connection_complete_failed_bad_link_type() {
     let buffer = [
         0x03, 11, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x02, 0x00,
@@ -58,5 +69,36 @@ fn connection_complete_failed_encryption_enabled() {
     match TestEvent::new(Packet(&buffer)) {
         Err(Error::BadEncryptionEnabledValue(0x02)) => (),
         other => panic!("Did not get bad connection link type: {:?}", other),
+    }
+}
+
+#[test]
+fn disconnection_complete() {
+    let buffer = [0x05, 4, 0, 0x01, 0x02, 0];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::DisconnectionComplete(event)) => {
+            assert_eq!(event.status, hci::Status::Success);
+            assert_eq!(event.conn_handle, hci::ConnectionHandle(0x0201));
+            assert_eq!(event.reason, hci::Status::Success);
+        }
+        other => panic!("Did not get disconnection complete event: {:?}", other),
+    }
+}
+
+#[test]
+fn disconnection_complete_failed_bad_status() {
+    let buffer = [0x05, 4, 0x80, 0x01, 0x02, 0];
+    match TestEvent::new(Packet(&buffer)) {
+        Err(Error::BadStatus(0x80)) => (),
+        other => panic!("Did not get bad status: {:?}", other),
+    }
+}
+
+#[test]
+fn disconnection_complete_failed_bad_reason() {
+    let buffer = [0x05, 4, 0, 0x01, 0x02, 0x80];
+    match TestEvent::new(Packet(&buffer)) {
+        Err(Error::BadReason(0x80)) => (),
+        other => panic!("Did not get bad reason: {:?}", other),
     }
 }
