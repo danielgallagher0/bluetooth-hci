@@ -11,6 +11,38 @@
 //! module unwieldly, so this may need to be split up into submodules for different events, similar
 //! to the way CommandComplete is split into its own submodule.
 
+#![macro_use]
+
+macro_rules! require_len {
+    ($left:expr, $right:expr) => {
+        if $left.len() != $right {
+            return Err(::event::Error::BadLength($left.len(), $right));
+        }
+    };
+}
+
+macro_rules! require_len_at_least {
+    ($left:expr, $right:expr) => {
+        if $left.len() < $right {
+            return Err(::event::Error::BadLength($left.len(), $right));
+        }
+    };
+}
+
+/// Converts a specific generic enum value between specializations.  This is used below to convert
+/// from Error<!> to Error<VendorError> in various places where only one error value is possible
+/// (such as from try_into).
+macro_rules! self_convert {
+    ($val:path) => {
+        |e| {
+            if let $val(value) = e {
+                return $val(value);
+            }
+            unreachable!();
+        }
+    };
+}
+
 pub mod command;
 
 use byteorder::{ByteOrder, LittleEndian};
@@ -95,6 +127,10 @@ pub enum Error<V> {
     /// unrecognized byte.
     BadEncryptionType(u8),
 
+    /// For the Command Complete event: The event indicated a command completed whose opcode was not
+    /// recognized. Includes the unrecognized opcode.
+    UnknownOpCode(::opcode::OpCode),
+
     /// A vendor-specific error was detected when deserializing a vendor-specific event.
     Vendor(V),
 }
@@ -116,36 +152,6 @@ impl<'a> Packet<'a> {
     fn full_length(&self) -> usize {
         PACKET_HEADER_LENGTH + self.0[PARAM_LEN_BYTE] as usize
     }
-}
-
-macro_rules! require_len {
-    ($left:expr, $right:expr) => {
-        if $left.len() != $right {
-            return Err(Error::BadLength($left.len(), $right));
-        }
-    };
-}
-
-macro_rules! require_len_at_least {
-    ($left:expr, $right:expr) => {
-        if $left.len() < $right {
-            return Err(Error::BadLength($left.len(), $right));
-        }
-    };
-}
-
-/// Converts a specific generic enum value between specializations.  This is used below to convert
-/// from Error<!> to Error<VendorError> in various places where only one error value is possible
-/// (such as from try_into).
-macro_rules! self_convert {
-    ($val:path) => {
-        |e| {
-            if let $val(value) = e {
-                return $val(value);
-            }
-            unreachable!();
-        }
-    };
 }
 
 const PACKET_HEADER_LENGTH: usize = 2;

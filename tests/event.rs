@@ -1,7 +1,5 @@
 extern crate bluetooth_hci as hci;
-//extern crate byteorder;
 
-//use byteorder::{ByteOrder, LittleEndian};
 use hci::event::*;
 
 #[derive(Debug)]
