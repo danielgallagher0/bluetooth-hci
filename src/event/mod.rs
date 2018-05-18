@@ -32,6 +32,9 @@ pub enum Event<V> {
     /// Vol 2, Part E, Section 7.7.8
     EncryptionChange(EncryptionChange),
 
+    /// Vol 2, Part E, Section 7.7.12
+    ReadRemoteVersionInformationComplete(RemoteVersionInformation),
+
     /// Vol 2, Part E, Section 7.7.14
     CommandComplete(command::CommandComplete),
 
@@ -179,6 +182,9 @@ where
                 payload,
             )?)),
             0x08 => Ok(Event::EncryptionChange(to_encryption_change(payload)?)),
+            0x0C => Ok(Event::ReadRemoteVersionInformationComplete(
+                to_remote_version_info(payload)?,
+            )),
             0x0E => Ok(Event::CommandComplete(command::CommandComplete::new(
                 payload,
             )?)),
@@ -346,6 +352,58 @@ fn to_encryption_change<VE>(payload: &[u8]) -> Result<EncryptionChange, Error<VE
         encryption: payload[3]
             .try_into()
             .map_err(self_convert!(Error::BadEncryptionType))?,
+    })
+}
+
+/// The Read Remote Version Information Complete event is used to indicate the completion of the
+/// process obtaining the version information of the remote Controller specified by the
+/// conn_handle event parameter.
+#[derive(Copy, Clone, Debug)]
+pub struct RemoteVersionInformation {
+    /// Status of the read event.
+    pub status: ::Status,
+
+    /// Connection Handle which is used for the Read_Remote_Version_Information command.  The
+    /// connection handle shall be for an ACL connection.
+    pub conn_handle: ::ConnectionHandle,
+
+    /// Version of the Current LMP in the remote Controller. See [LMP] version and [Link Layer]
+    /// version in the Bluetooth Assigned Numbers.
+    ///
+    /// - When the connection handle is associated with a BR/EDR ACL-U logical link, the Version
+    ///   event parameter shall be LMP version parameter
+    ///
+    /// - When the connection handle is associated with an LE-U logical link, the Version event
+    ///   parameter shall be Link Layer version parameter
+    ///
+    /// [LMP]: https://www.bluetooth.com/specifications/assigned-numbers/link-manager
+    /// [Link Layer]: https://www.bluetooth.com/specifications/assigned-numbers/link-layer
+    pub version: u8,
+
+    /// Manufacturer Name of the remote Controller. See [CompId] in the Bluetooth Assigned Numbers.
+    ///
+    /// [CompId]: https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers
+    pub mfgr_name: u16,
+
+    /// Subversion of the LMP in the remote Controller. See the Bluetooth Spec, v4.1, Vol 2, Part C,
+    /// Table 5.2 and Vol 6, Part B, Section 2.4.2.13(SubVersNr).  The sections are the same in v4.2
+    /// and v5.0 of the spec.
+    ///
+    /// SubVersNr field shall contain a unique value for each implementation or revision of an
+    /// implementation of the Bluetooth Controller.
+    ///
+    /// The meaning of the subversion is implementation-defined.
+    pub subversion: u16,
+}
+
+fn to_remote_version_info<VE>(payload: &[u8]) -> Result<RemoteVersionInformation, Error<VE>> {
+    require_len!(payload, 8);
+    Ok(RemoteVersionInformation {
+        status: payload[0].try_into().map_err(rewrap_bad_status)?,
+        conn_handle: ::ConnectionHandle(LittleEndian::read_u16(&payload[1..])),
+        version: payload[3],
+        mfgr_name: LittleEndian::read_u16(&payload[4..]),
+        subversion: LittleEndian::read_u16(&payload[6..]),
     })
 }
 

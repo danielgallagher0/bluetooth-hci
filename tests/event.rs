@@ -133,3 +133,27 @@ fn encryption_change_failed_bad_encryption() {
         other => panic!("Did not get bad encryption type: {:?}", other),
     }
 }
+
+#[test]
+fn read_remote_version_complete() {
+    let buffer = [0x0C, 8, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::ReadRemoteVersionInformationComplete(event)) => {
+            assert_eq!(event.status, hci::Status::Success);
+            assert_eq!(event.conn_handle, hci::ConnectionHandle(0x0201));
+            assert_eq!(event.version, 0x03);
+            assert_eq!(event.mfgr_name, 0x0504);
+            assert_eq!(event.subversion, 0x0706);
+        }
+        other => panic!("Did not get read remote version info event: {:?}", other),
+    }
+}
+
+#[test]
+fn read_remote_version_complete_failed_bad_status() {
+    let buffer = [0x0C, 8, 0x80, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07];
+    match TestEvent::new(Packet(&buffer)) {
+        Err(Error::BadStatus(0x80)) => (),
+        other => panic!("Did not get bad status: {:?}", other),
+    }
+}
