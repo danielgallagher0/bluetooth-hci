@@ -170,3 +170,14 @@ fn command_status() {
         other => panic!("Did not get command status: {:?}", other),
     }
 }
+
+#[test]
+fn hardware_error() {
+    let buffer = [0x10, 1, 0x12];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::HardwareError(event)) => {
+            assert_eq!(event.code, 0x12);
+        }
+        other => panic!("Did not get hardware error: {:?}", other),
+    }
+}

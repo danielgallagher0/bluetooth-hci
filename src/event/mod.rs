@@ -73,6 +73,9 @@ pub enum Event<V> {
     /// Vol 2, Part E, Section 7.7.15
     CommandStatus(CommandStatus),
 
+    /// Vol 2, Part E, Section 7.7.16
+    HardwareError(HardwareError),
+
     /// Vendor-specific events (opcode 0xFF)
     Vendor(V),
 }
@@ -195,6 +198,7 @@ where
                 payload,
             )?)),
             0x0F => Ok(Event::CommandStatus(to_command_status(payload)?)),
+            0x10 => Ok(Event::HardwareError(to_hardware_error(payload)?)),
             0xFF => Ok(Event::Vendor(VEvent::new(payload)?)),
             _ => Err(Error::UnknownEvent(event_type)),
         }
@@ -443,4 +447,20 @@ fn to_command_status<VE>(buffer: &[u8]) -> Result<CommandStatus, Error<VE>> {
         num_hci_command_packets: buffer[1],
         opcode: ::opcode::Opcode(LittleEndian::read_u16(&buffer[2..])),
     })
+}
+
+/// The Hardware Error event is used to notify the Host that a hardware failure has occurred in the
+/// Controller.
+///
+/// Defined in Vol 2, Part E, Section 7.7.16 of the spec.
+#[derive(Copy, Clone, Debug)]
+pub struct HardwareError {
+    /// These hardware codes will be implementation-specific, and can be assigned to indicate
+    /// various hardware problems.
+    pub code: u8,
+}
+
+fn to_hardware_error<VE>(payload: &[u8]) -> Result<HardwareError, Error<VE>> {
+    require_len!(payload, 1);
+    Ok(HardwareError { code: payload[0] })
 }
