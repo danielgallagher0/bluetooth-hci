@@ -194,7 +194,7 @@ where
             0x0E => Ok(Event::CommandComplete(command::CommandComplete::new(
                 payload,
             )?)),
-            0x0F => Ok(Event::CommandStatus(CommandStatus::new(payload)?)),
+            0x0F => Ok(Event::CommandStatus(to_command_status(payload)?)),
             0xFF => Ok(Event::Vendor(VEvent::new(payload)?)),
             _ => Err(Error::UnknownEvent(event_type)),
         }
@@ -304,6 +304,8 @@ fn to_disconnection_complete<VE>(payload: &[u8]) -> Result<DisconnectionComplete
 /// This event will occur on both devices to notify the Hosts when Encryption has changed for the
 /// specified connection handle between two devices. Note: This event shall not be generated if
 /// encryption is paused or resumed; during a role switch, for example.
+///
+/// See the Bluetooth v4.1 spec, Vol 2, Part E, Section 7.7.8.
 #[derive(Copy, Clone, Debug)]
 pub struct EncryptionChange {
     /// Indicates if the encryption change was successful or not.
@@ -364,6 +366,8 @@ fn to_encryption_change<VE>(payload: &[u8]) -> Result<EncryptionChange, Error<VE
 /// The Read Remote Version Information Complete event is used to indicate the completion of the
 /// process obtaining the version information of the remote Controller specified by the
 /// conn_handle event parameter.
+///
+/// See the Bluetooth v4.1 spec, Vol 2, Part E, Section 7.7.12.
 #[derive(Copy, Clone, Debug)]
 pub struct RemoteVersionInformation {
     /// Status of the read event.
@@ -413,8 +417,9 @@ fn to_remote_version_info<VE>(payload: &[u8]) -> Result<RemoteVersionInformation
     })
 }
 
-/// The Command Status event. This event is generated to indicate that an asynchronous operation has
-/// begun (or could not begin).
+/// The Command Status event is used to indicate that the command described by the Command_Opcode
+/// parameter has been received, and that the Controller is currently performing the task for this
+/// command.
 ///
 /// Defined in Vol 2, Part E, Section 7.7.15 of the spec.
 #[derive(Copy, Clone, Debug)]
@@ -430,18 +435,12 @@ pub struct CommandStatus {
     pub opcode: ::opcode::Opcode,
 }
 
-impl CommandStatus {
-    const LENGTH: usize = 4;
+fn to_command_status<VE>(buffer: &[u8]) -> Result<CommandStatus, Error<VE>> {
+    require_len!(buffer, 4);
 
-    fn new<VE>(buffer: &[u8]) -> Result<CommandStatus, Error<VE>> {
-        if buffer.len() != Self::LENGTH {
-            return Err(Error::BadLength(buffer.len(), Self::LENGTH));
-        }
-
-        Ok(CommandStatus {
-            status: buffer[0].try_into().map_err(rewrap_bad_status)?,
-            num_hci_command_packets: buffer[1],
-            opcode: ::opcode::Opcode(LittleEndian::read_u16(&buffer[2..])),
-        })
-    }
+    Ok(CommandStatus {
+        status: buffer[0].try_into().map_err(rewrap_bad_status)?,
+        num_hci_command_packets: buffer[1],
+        opcode: ::opcode::Opcode(LittleEndian::read_u16(&buffer[2..])),
+    })
 }

@@ -155,3 +155,18 @@ fn read_remote_version_complete_failed_bad_status() {
         other => panic!("Did not get bad status: {:?}", other),
     }
 }
+
+// The Command Complete event has its own set of tests in command_complete.rs
+
+#[test]
+fn command_status() {
+    let buffer = [0x0F, 4, 0, 8, 0x01, 0x02];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::CommandStatus(event)) => {
+            assert_eq!(event.num_hci_command_packets, 8);
+            assert_eq!(event.status, hci::Status::Success);
+            assert_eq!(event.opcode, hci::Opcode(0x0201));
+        }
+        other => panic!("Did not get command status: {:?}", other),
+    }
+}
