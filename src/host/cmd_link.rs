@@ -13,22 +13,22 @@ use byteorder::{ByteOrder, LittleEndian};
 
 /// Header for HCI Commands.
 pub struct Header {
-    op_code: ::opcode::OpCode,
+    opcode: ::opcode::Opcode,
     param_len: u8,
 }
 
 impl super::HciHeader for Header {
     const HEADER_LENGTH: usize = 3;
 
-    fn new(op_code: ::opcode::OpCode, param_len: usize) -> Header {
+    fn new(opcode: ::opcode::Opcode, param_len: usize) -> Header {
         Header {
-            op_code: op_code,
+            opcode: opcode,
             param_len: param_len as u8,
         }
     }
 
     fn into_bytes(&self, buffer: &mut [u8]) {
-        LittleEndian::write_u16(buffer, self.op_code.0);
+        LittleEndian::write_u16(buffer, self.opcode.0);
         buffer[2] = self.param_len;
     }
 }

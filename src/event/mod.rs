@@ -129,7 +129,7 @@ pub enum Error<V> {
 
     /// For the Command Complete event: The event indicated a command completed whose opcode was not
     /// recognized. Includes the unrecognized opcode.
-    UnknownOpCode(::opcode::OpCode),
+    UnknownOpcode(::opcode::Opcode),
 
     /// A vendor-specific error was detected when deserializing a vendor-specific event.
     Vendor(V),
@@ -427,7 +427,7 @@ pub struct CommandStatus {
 
     /// Opcode of the command that generated this CommandStatus event. The controller can generate a
     /// spontaneous CommandStatus with opcode 0 if the number of allowed HCI commands has changed.
-    pub op_code: ::opcode::OpCode,
+    pub opcode: ::opcode::Opcode,
 }
 
 impl CommandStatus {
@@ -441,7 +441,7 @@ impl CommandStatus {
         Ok(CommandStatus {
             status: buffer[0].try_into().map_err(rewrap_bad_status)?,
             num_hci_command_packets: buffer[1],
-            op_code: ::opcode::OpCode(LittleEndian::read_u16(&buffer[2..])),
+            opcode: ::opcode::Opcode(LittleEndian::read_u16(&buffer[2..])),
         })
     }
 }

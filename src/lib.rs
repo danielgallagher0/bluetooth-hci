@@ -89,6 +89,7 @@ pub mod host;
 mod opcode;
 
 pub use event::Event;
+pub use opcode::Opcode;
 
 /// Interface to the Bluetooth controller from the host's perspective.
 ///

@@ -35,7 +35,7 @@ pub enum Packet<Vendor> {
 
 /// Header for HCI Commands.
 pub struct CommandHeader {
-    op_code: ::opcode::OpCode,
+    opcode: ::opcode::Opcode,
     param_len: u8,
 }
 
@@ -73,16 +73,16 @@ pub trait Hci<E, Vendor, VE>: super::Hci<E, CommandHeader> {
 impl super::HciHeader for CommandHeader {
     const HEADER_LENGTH: usize = 4;
 
-    fn new(op_code: ::opcode::OpCode, param_len: usize) -> CommandHeader {
+    fn new(opcode: ::opcode::Opcode, param_len: usize) -> CommandHeader {
         CommandHeader {
-            op_code: op_code,
+            opcode: opcode,
             param_len: param_len as u8,
         }
     }
 
     fn into_bytes(&self, buffer: &mut [u8]) {
         buffer[0] = PACKET_TYPE_HCI_COMMAND;
-        LittleEndian::write_u16(&mut buffer[1..=2], self.op_code.0);
+        LittleEndian::write_u16(&mut buffer[1..=2], self.opcode.0);
         buffer[3] = self.param_len;
     }
 }

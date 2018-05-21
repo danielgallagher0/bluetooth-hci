@@ -32,7 +32,7 @@ pub trait HciHeader {
     const HEADER_LENGTH: usize;
 
     /// Returns a new header with the given opcode and parameter length.
-    fn new(op_code: ::opcode::OpCode, param_len: usize) -> Self;
+    fn new(opcode: ::opcode::Opcode, param_len: usize) -> Self;
 
     /// Serialize the header into the given buffer, in Bluetooth byte order (little-endian).
     ///

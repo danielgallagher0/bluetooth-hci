@@ -22,7 +22,7 @@ type TestEvent = Event<VendorEvent>;
 fn command_complete_failed() {
     let buffer = [0x0E, 3, 1, 0x67, 0x43];
     match TestEvent::new(Packet(&buffer)) {
-        Err(Error::UnknownOpCode(opcode)) => assert_eq!(opcode.0, 0x4367),
+        Err(Error::UnknownOpcode(opcode)) => assert_eq!(opcode.0, 0x4367),
         other => panic!("Did not get unknown opcode: {:?}", other),
     }
 }

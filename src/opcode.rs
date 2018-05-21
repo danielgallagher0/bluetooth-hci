@@ -6,21 +6,27 @@ mod ocf {
     pub const LOCAL_VERSION_INFO: u16 = 0x0001;
 }
 
+/// Newtype wrapper for a Bluetooth Opcode. Opcodes are used to indicate which command to send to
+/// the Controller as well as which command results are returned by the Command Complete and Command
+/// Status events.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct OpCode(pub u16);
+pub struct Opcode(pub u16);
 
-impl OpCode {
-    pub const fn new(ogf: u16, ocf: u16) -> OpCode {
-        OpCode((ogf << 10) | (ocf & 0x03ff))
+impl Opcode {
+    /// Create an opcode from the OGF (Opcode group field) and OCF (Opcode command field).
+    pub const fn new(ogf: u16, ocf: u16) -> Opcode {
+        Opcode((ogf << 10) | (ocf & 0x03ff))
     }
 
+    /// Return the OGF (Opcode group field) of the opcode.
     pub fn ogf(&self) -> u16 {
         self.0 >> 10
     }
 
+    /// Return the OCF (Opcode command field) of the opcode.
     pub fn ocf(&self) -> u16 {
         self.0 & 0x03ff
     }
 }
 
-pub const LOCAL_VERSION_INFO: OpCode = OpCode::new(ogf::INFO_PARAM, ocf::LOCAL_VERSION_INFO);
+pub const LOCAL_VERSION_INFO: Opcode = Opcode::new(ogf::INFO_PARAM, ocf::LOCAL_VERSION_INFO);

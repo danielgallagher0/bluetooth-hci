@@ -48,12 +48,12 @@ impl CommandComplete {
     pub fn new<VE>(bytes: &[u8]) -> Result<CommandComplete, ::event::Error<VE>> {
         require_len_at_least!(bytes, 3);
 
-        let params = match ::opcode::OpCode(LittleEndian::read_u16(&bytes[1..])) {
-            ::opcode::OpCode(0x0000) => ReturnParameters::Spontaneous,
+        let params = match ::opcode::Opcode(LittleEndian::read_u16(&bytes[1..])) {
+            ::opcode::Opcode(0x0000) => ReturnParameters::Spontaneous,
             ::opcode::LOCAL_VERSION_INFO => {
                 ReturnParameters::ReadLocalVersionInformation(LocalVersionInfo::new(&bytes[3..])?)
             }
-            other => return Err(::event::Error::UnknownOpCode(other)),
+            other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
             num_hci_command_packets: bytes[0],

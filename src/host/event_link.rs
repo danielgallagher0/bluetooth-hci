@@ -66,7 +66,7 @@ pub trait Hci<E, Vendor, VE> {
 impl super::HciHeader for NoCommands {
     const HEADER_LENGTH: usize = 3;
 
-    fn new(_op_code: ::opcode::OpCode, _param_len: usize) -> NoCommands {
+    fn new(_opcode: ::opcode::Opcode, _param_len: usize) -> NoCommands {
         NoCommands
     }
 
