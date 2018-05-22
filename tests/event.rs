@@ -181,3 +181,24 @@ fn hardware_error() {
         other => panic!("Did not get hardware error: {:?}", other),
     }
 }
+
+#[test]
+fn number_of_completed_packets() {
+    let buffer = [0x13, 9, 2, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::NumberOfCompletedPackets(event)) => {
+            let expected_conn_handles =
+                [hci::ConnectionHandle(0x0201), hci::ConnectionHandle(0x0605)];
+            let expected_num_packets = [0x0403, 0x0807];
+            for (actual, (conn_handle, num_packets)) in event.iter().zip(
+                expected_conn_handles
+                    .iter()
+                    .zip(expected_num_packets.iter()),
+            ) {
+                assert_eq!(actual.conn_handle, *conn_handle);
+                assert_eq!(actual.num_completed_packets, *num_packets);
+            }
+        }
+        other => panic!("Did not get number of completed packets: {:?}", other),
+    }
+}
