@@ -83,6 +83,9 @@ pub enum Event<V> {
     /// Vol 2, Part E, Section 7.7.26
     DataBufferOverflow(DataBufferOverflow),
 
+    /// Vol 2, Part E, Section 7.7.39
+    EncryptionKeyRefreshComplete(EncryptionKeyRefreshComplete),
+
     /// Vendor-specific events (opcode 0xFF)
     Vendor(V),
 }
@@ -210,6 +213,9 @@ where
                 to_number_of_completed_packets(payload)?,
             )),
             0x1A => Ok(Event::DataBufferOverflow(to_data_buffer_overflow(payload)?)),
+            0x30 => Ok(Event::EncryptionKeyRefreshComplete(
+                to_encryption_key_refresh_complete(payload)?,
+            )),
             0xFF => Ok(Event::Vendor(VEvent::new(payload)?)),
             _ => Err(Error::UnknownEvent(event_type)),
         }
@@ -570,6 +576,8 @@ fn to_number_of_completed_packets<VE>(
 
 /// Indicates that the Controller’s data buffers have been overflowed.  This can occur if the Host
 /// has sent more packets than allowed.
+///
+/// Defined in Vol 2, Part E, Section 7.7.26 of the spec.
 #[derive(Copy, Clone, Debug)]
 pub struct DataBufferOverflow {
     /// Indicates that the overflow was caused by ACL or synchronous data.
@@ -582,5 +590,36 @@ fn to_data_buffer_overflow<VE>(payload: &[u8]) -> Result<DataBufferOverflow, Err
         link_type: payload[0]
             .try_into()
             .map_err(self_convert!(Error::BadLinkType))?,
+    })
+}
+
+/// Indicates to the Host that the encryption key was refreshed on the given Connection_Handle any
+/// time encryption is paused and then resumed. The BR/EDR Controller shall send this event when the
+/// encryption key has been refreshed due to encryption being started or resumed.
+///
+/// If the Encryption Key Refresh Complete event was generated due to an encryption pause and resume
+/// operation embedded within a change connection link key procedure, the Encryption Key Refresh
+/// Complete event shall be sent prior to the Change Connection Link Key Complete event.
+///
+/// If the Encryption Key Refresh Complete event was generated due to an encryption pause and resume
+/// operation embedded within a role switch procedure, the Encryption Key Refresh Complete event
+/// shall be sent prior to the Role Change event.
+///
+/// Defined in Vol 2, Part E, Section 7.7.39 of the spec.
+#[derive(Copy, Clone, Debug)]
+pub struct EncryptionKeyRefreshComplete {
+    /// Did the encryption key refresh fail, and if so, how?
+    pub status: ::Status,
+    /// Connection Handle for the ACL connection to have the encryption key refreshed on.
+    pub conn_handle: ::ConnectionHandle,
+}
+
+fn to_encryption_key_refresh_complete<VE>(
+    payload: &[u8],
+) -> Result<EncryptionKeyRefreshComplete, Error<VE>> {
+    require_len!(payload, 3);
+    Ok(EncryptionKeyRefreshComplete {
+        status: payload[0].try_into().map_err(rewrap_bad_status)?,
+        conn_handle: ::ConnectionHandle(LittleEndian::read_u16(&payload[1..])),
     })
 }

@@ -222,3 +222,15 @@ fn data_buffer_overflow_failed_bad_link_type() {
         other => panic!("Did not get bad link type: {:?}", other),
     }
 }
+
+#[test]
+fn encryption_key_refresh_complete() {
+    let buffer = [0x30, 3, 0, 0x01, 0x02];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::EncryptionKeyRefreshComplete(event)) => {
+            assert_eq!(event.status, hci::Status::Success);
+            assert_eq!(event.conn_handle, hci::ConnectionHandle(0x0201));
+        }
+        other => panic!("Did not get encryption key refresh complete: {:?}", other),
+    }
+}
