@@ -80,6 +80,9 @@ pub enum Event<V> {
     /// Vol 2, Part E, Section 7.7.19
     NumberOfCompletedPackets(NumberOfCompletedPackets),
 
+    /// Vol 2, Part E, Section 7.7.26
+    DataBufferOverflow(DataBufferOverflow),
+
     /// Vendor-specific events (opcode 0xFF)
     Vendor(V),
 }
@@ -118,8 +121,8 @@ pub enum Error<V> {
     /// unrecognized byte.
     BadStatus(u8),
 
-    /// For the ConnectionComplete event: the link type was not recognized (reserved for future
-    /// use). Includes the unrecognized byte.
+    /// For the ConnectionComplete or Data Buffer Overflow events: the link type was not recognized
+    /// (reserved for future use). Includes the unrecognized byte.
     BadLinkType(u8),
 
     /// For the ConnectionComplete event: the encryption enabled value was not recognized (reserved
@@ -206,6 +209,7 @@ where
             0x13 => Ok(Event::NumberOfCompletedPackets(
                 to_number_of_completed_packets(payload)?,
             )),
+            0x1A => Ok(Event::DataBufferOverflow(to_data_buffer_overflow(payload)?)),
             0xFF => Ok(Event::Vendor(VEvent::new(payload)?)),
             _ => Err(Error::UnknownEvent(event_type)),
         }
@@ -537,7 +541,7 @@ impl<'a> Iterator for NumberOfCompletedPacketsIterator<'a> {
     }
 }
 
-/// The  NumberOfCompletedPackets event includes a series of connection handle-number of completed
+/// The NumberOfCompletedPackets event includes a series of connection handle-number of completed
 /// packets pairs.
 #[derive(Copy, Clone, Debug)]
 pub struct NumberOfCompletedPacketsPair {
@@ -561,5 +565,22 @@ fn to_number_of_completed_packets<VE>(
     Ok(NumberOfCompletedPackets {
         num_handles: num_pairs,
         data_buf: data_buf,
+    })
+}
+
+/// Indicates that the Controller’s data buffers have been overflowed.  This can occur if the Host
+/// has sent more packets than allowed.
+#[derive(Copy, Clone, Debug)]
+pub struct DataBufferOverflow {
+    /// Indicates that the overflow was caused by ACL or synchronous data.
+    pub link_type: LinkType,
+}
+
+fn to_data_buffer_overflow<VE>(payload: &[u8]) -> Result<DataBufferOverflow, Error<VE>> {
+    require_len!(payload, 1);
+    Ok(DataBufferOverflow {
+        link_type: payload[0]
+            .try_into()
+            .map_err(self_convert!(Error::BadLinkType))?,
     })
 }

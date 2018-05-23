@@ -202,3 +202,23 @@ fn number_of_completed_packets() {
         other => panic!("Did not get number of completed packets: {:?}", other),
     }
 }
+
+#[test]
+fn data_buffer_overflow() {
+    let buffer = [0x1A, 1, 0x00];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::DataBufferOverflow(event)) => {
+            assert_eq!(event.link_type, LinkType::Sco);
+        }
+        other => panic!("Did not get data buffer overflow: {:?}", other),
+    }
+}
+
+#[test]
+fn data_buffer_overflow_failed_bad_link_type() {
+    let buffer = [0x1A, 1, 0x02];
+    match TestEvent::new(Packet(&buffer)) {
+        Err(Error::BadLinkType(link_type)) => assert_eq!(link_type, 0x02),
+        other => panic!("Did not get bad link type: {:?}", other),
+    }
+}
