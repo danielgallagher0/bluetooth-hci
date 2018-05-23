@@ -501,3 +501,24 @@ pub struct ConnectionHandle(pub u16);
 /// Newtype for BDADDR.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct BdAddr(pub [u8; 6]);
+
+/// Potential values for BDADDR
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum BdAddrType {
+    /// Public address.
+    Public(BdAddr),
+
+    /// Random address.
+    Random(BdAddr),
+}
+
+/// The BD Address type is not recognized.  Includes the unrecognized byte.
+pub struct BdAddrTypeError(pub u8);
+
+fn to_bdaddr_type(bd_addr_type: u8, addr: BdAddr) -> Result<BdAddrType, BdAddrTypeError> {
+    match bd_addr_type {
+        0 => Ok(BdAddrType::Public(addr)),
+        1 => Ok(BdAddrType::Random(addr)),
+        _ => Err(BdAddrTypeError(bd_addr_type)),
+    }
+}
