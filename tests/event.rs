@@ -302,3 +302,68 @@ fn le_connection_complete_failed_bad_central_clock_accuracy() {
         other => panic!("Did not get bad LE central clock accuracy: {:?}", other),
     }
 }
+
+#[test]
+fn le_advertising_report() {
+    let buffer = [
+        0x3E, 27, 0x02, 2, 0, 0, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 2, 0x07, 0x08, 0x09, 1, 1,
+        0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 3, 0x10, 0x11, 0x12, 0x13,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::LeAdvertisingReport(event)) => {
+            let mut iter = event.iter();
+            let report = iter.next().unwrap();
+            assert_eq!(report.event_type, AdvertisementEvent::Advertisement);
+            assert_eq!(
+                report.address,
+                hci::BdAddrType::Public(hci::BdAddr([0x01, 0x02, 0x03, 0x04, 0x05, 0x06]))
+            );
+            assert_eq!(report.data, [0x07, 0x08]);
+            assert_eq!(report.rssi, Some(0x09));
+
+            let report = iter.next().unwrap();
+            assert_eq!(report.event_type, AdvertisementEvent::DirectAdvertisement);
+            assert_eq!(
+                report.address,
+                hci::BdAddrType::Random(hci::BdAddr([0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F]))
+            );
+            assert_eq!(report.data, [0x10, 0x11, 0x12]);
+            assert_eq!(report.rssi, Some(0x13));
+        }
+        other => panic!("Did not get advertising report: {:?}", other),
+    }
+}
+
+#[test]
+fn le_advertising_report_failed_incomplete() {
+    let buffer = [
+        0x3E, 27, 0x02, 2, 0, 0, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 2, 0x07, 0x08, 0x09, 1, 1,
+        0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 4, 0x10, 0x11, 0x12, 0x13,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Err(Error::LeAdvertisementReportIncomplete) => (),
+        other => panic!("Did not get incomplete advertising report: {:?}", other),
+    }
+}
+
+#[test]
+fn le_advertising_report_failed_bad_advertisement_type() {
+    let buffer = [
+        0x3E, 14, 0x02, 1, 5, 0, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 2, 0x07, 0x08, 0x09,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Err(Error::BadLeAdvertisementType(code)) => assert_eq!(code, 5),
+        other => panic!("Did not get bad advertisement type: {:?}", other),
+    }
+}
+
+#[test]
+fn le_advertising_report_failed_bad_addr_type() {
+    let buffer = [
+        0x3E, 14, 0x02, 1, 1, 4, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 2, 0x07, 0x08, 0x09,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Err(Error::BadLeAddressType(code)) => assert_eq!(code, 4),
+        other => panic!("Did not get bad LE Address type: {:?}", other),
+    }
+}
