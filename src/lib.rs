@@ -517,7 +517,13 @@ pub enum BdAddrType {
 /// The BD Address type is not recognized.  Includes the unrecognized byte.
 pub struct BdAddrTypeError(pub u8);
 
-fn to_bdaddr_type(bd_addr_type: u8, addr: BdAddr) -> Result<BdAddrType, BdAddrTypeError> {
+/// Wraps a [`BdAddr`] in a `BdAddrType`.
+///
+/// # Errors
+///
+/// - `bd_addr_type` does not denote an appropriate type. Returns the byte. The address is
+///   discarded.
+pub fn to_bdaddr_type(bd_addr_type: u8, addr: BdAddr) -> Result<BdAddrType, BdAddrTypeError> {
     match bd_addr_type {
         0 => Ok(BdAddrType::Public(addr)),
         1 => Ok(BdAddrType::Random(addr)),
