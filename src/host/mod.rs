@@ -10,6 +10,8 @@
 
 extern crate nb;
 
+use byteorder::{ByteOrder, LittleEndian};
+
 pub mod cmd_link;
 pub mod event_link;
 pub mod uart;
@@ -53,6 +55,40 @@ pub trait HciHeader {
 ///
 /// An implementation is defined or all types that implement `host::Controller`.
 pub trait Hci<E, Header> {
+    /// The Disconnection command is used to terminate an existing connection.  All synchronous
+    /// connections on a physical link should be disconnected before the ACL connection on the same
+    /// physical connection is disconnected.
+    ///
+    /// - `conn_handle` indicates which connection is to be disconnected.
+    /// - `reason` indicates the reason for ending the connection. The remote Controller will
+    ///   receive the Reason command parameter in the Disconnection Complete event.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.1.6.
+    ///
+    /// # Errors
+    ///
+    /// - `Error::BadDisconnectionReason` when the provided `reason` is not a valid disconnection
+    ///   reason.  The reason must be one of `Status::AuthFailure`,
+    ///   `Status::RemoteTerminationByUser`, `Status::RemoteTerminationLowResources`,
+    ///   `Status::RemoteTerminationPowerOff`, `Status::UnsupportedRemoteFeature`,
+    ///   `Status::PairingWithUnitKeyNotSupported`, or `Status::UnacceptableConnectionParameters`.
+    /// - Underlying communication errors.
+    ///
+    /// # Generated Events
+    ///
+    /// When the Controller receives the Disconnect command, it shall send the Command Status event
+    /// to the Host. The Disconnection Complete event will occur at each Host when the termination
+    /// of the connection has completed, and indicates that this command has been completed.
+    ///
+    /// Note: No Command Complete event will be sent by the Controller to indicate that this command
+    /// has been completed. Instead, the Disconnection Complete event will indicate that this
+    /// command has been completed.
+    fn disconnect(
+        &mut self,
+        conn_handle: ::ConnectionHandle,
+        reason: ::Status,
+    ) -> nb::Result<(), Error<E>>;
+
     /// Writes the Read Local Version Information command to the controller.
     ///
     /// Defined in Bluetooth Specification Vol 2, Part E, Section 7.4.1.
@@ -67,15 +103,60 @@ pub trait Hci<E, Header> {
     fn read_local_version_information(&mut self) -> nb::Result<(), E>;
 }
 
+/// Errors that may occur when sending commands to the controller.  Must be specialized on the types
+/// of communication errors.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum Error<E> {
+    /// For the Disconnect command: The provided reason is not a valid disconnection reason.
+    /// Includes the reported reason.
+    BadDisconnectionReason(::Status),
+
+    /// Underlying communication error.
+    Comm(E),
+}
+
+fn rewrap_as_comm<E>(err: nb::Error<E>) -> nb::Error<Error<E>> {
+    match err {
+        nb::Error::WouldBlock => nb::Error::WouldBlock,
+        nb::Error::Other(e) => nb::Error::Other(Error::Comm(e)),
+    }
+}
+
 impl<E, T, Header> Hci<E, Header> for T
 where
     T: ::Controller<Error = E>,
     Header: HciHeader,
 {
+    fn disconnect(
+        &mut self,
+        conn_handle: ::ConnectionHandle,
+        reason: ::Status,
+    ) -> nb::Result<(), Error<E>> {
+        match reason {
+            ::Status::AuthFailure
+            | ::Status::RemoteTerminationByUser
+            | ::Status::RemoteTerminationLowResources
+            | ::Status::RemoteTerminationPowerOff
+            | ::Status::UnsupportedRemoteFeature
+            | ::Status::PairingWithUnitKeyNotSupported
+            | ::Status::UnacceptableConnectionParameters => (),
+            _ => return Err(nb::Error::Other(Error::BadDisconnectionReason(reason))),
+        }
+
+        let mut params = [0; 3];
+        LittleEndian::write_u16(&mut params[0..], conn_handle.0);
+        params[2] = reason as u8;
+        let mut header = [0; MAX_HEADER_LENGTH];
+        Header::new(::opcode::DISCONNECT, params.len()).into_bytes(&mut header);
+
+        self.write(&header[..Header::HEADER_LENGTH], &params)
+            .map_err(rewrap_as_comm)
+    }
+
     fn read_local_version_information(&mut self) -> nb::Result<(), E> {
         let params = [];
         let mut header = [0; MAX_HEADER_LENGTH];
         Header::new(::opcode::LOCAL_VERSION_INFO, params.len()).into_bytes(&mut header);
-        self.write(&header, &params)
+        self.write(&header[..Header::HEADER_LENGTH], &params)
     }
 }
