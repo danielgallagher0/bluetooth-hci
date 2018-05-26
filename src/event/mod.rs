@@ -97,6 +97,9 @@ pub enum Event<V> {
     /// Vol 2, Part E, Section 7.7.65.3
     LeConnectionUpdateComplete(LeConnectionUpdateComplete),
 
+    /// Vol 2, Part E, Section 7.7.65.4
+    LeReadRemoteUsedFeaturesComplete(LeReadRemoteUsedFeaturesComplete),
+
     /// Vendor-specific events (opcode 0xFF)
     Vendor(V),
 }
@@ -173,6 +176,10 @@ pub enum Error<V> {
     /// For the LE Advertising Report event: The packet includes an invalid advertisement type.
     /// Includes the unrecognized byte.
     BadLeAdvertisementType(u8),
+
+    /// For the LED Read Remote Used Features Complete event: The response included an invalid bit
+    /// set for the remote features.  Includes the 8 bytes of flags.
+    BadRemoteUsedFeatureFlag(u64),
 
     /// A vendor-specific error was detected when deserializing a vendor-specific event.
     Vendor(V),
@@ -268,6 +275,9 @@ fn to_le_meta_event<VEvent, VError>(payload: &[u8]) -> Result<Event<VEvent>, Err
         )?)),
         0x03 => Ok(Event::LeConnectionUpdateComplete(
             to_le_connection_update_complete(payload)?,
+        )),
+        0x04 => Ok(Event::LeReadRemoteUsedFeaturesComplete(
+            to_le_read_remote_used_features_complete(payload)?,
         )),
         _ => Err(Error::UnknownEvent(payload[0])),
     }
@@ -1031,5 +1041,36 @@ fn to_le_connection_update_complete<VE>(
         supervision_timeout: Duration::from_millis(
             (10 * LittleEndian::read_u16(&payload[8..])) as u64,
         ),
+    })
+}
+
+/// Indicates the completion of the process of the Controller obtaining the features used on the
+/// connection and the features supported by the remote Bluetooth device specified by the
+/// Connection_Handle event parameter.
+///
+/// Note (v5.0): If the features are requested more than once while a connection exists between the
+/// two devices, the second and subsequent requests may report a cached copy of the features rather
+/// than fetching the feature mask again.
+#[derive(Copy, Clone, Debug)]
+pub struct LeReadRemoteUsedFeaturesComplete {
+    /// Did the read fail, and if so, how?
+    pub status: ::Status,
+    /// Connection_Handle to be used to identify a connection between two Bluetooth devices.
+    pub conn_handle: ::ConnectionHandle,
+    /// Bit Mask List of used LE features.
+    pub features: ::LinkLayerFeature,
+}
+
+fn to_le_read_remote_used_features_complete<VE>(
+    payload: &[u8],
+) -> Result<LeReadRemoteUsedFeaturesComplete, Error<VE>> {
+    require_len!(payload, 12);
+
+    let feature_flags = LittleEndian::read_u64(&payload[4..]);
+    Ok(LeReadRemoteUsedFeaturesComplete {
+        status: payload[1].try_into().map_err(rewrap_bad_status)?,
+        conn_handle: ::ConnectionHandle(LittleEndian::read_u16(&payload[2..])),
+        features: ::LinkLayerFeature::from_bits(feature_flags)
+            .ok_or(Error::BadRemoteUsedFeatureFlag(feature_flags))?,
     })
 }

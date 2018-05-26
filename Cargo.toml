@@ -11,6 +11,7 @@ readme = "README.md"
 
 [dependencies]
 nb = "0.1.1"
+bitflags = "1.0"
 
 [dependencies.byteorder]
 version = "1"

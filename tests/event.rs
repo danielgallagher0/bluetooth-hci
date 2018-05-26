@@ -390,3 +390,113 @@ fn le_connection_update_complete() {
         ),
     }
 }
+
+#[cfg(feature = "version-4-1")]
+#[test]
+fn le_read_remote_used_features_complete() {
+    let buffer = [
+        0x3E, 12, 0x04, 0x00, 0x01, 0x02, 0b00010101, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::LeReadRemoteUsedFeaturesComplete(event)) => {
+            assert_eq!(event.status, ::hci::Status::Success);
+            assert_eq!(event.conn_handle, ::hci::ConnectionHandle(0x0201));
+            assert_eq!(
+                event.features,
+                ::hci::LinkLayerFeature::LE_ENCRYPTION
+                    | ::hci::LinkLayerFeature::EXTENDED_REJECT_INDICATION
+                    | ::hci::LinkLayerFeature::LE_PING
+            );
+        }
+        other => panic!(
+            "Did not get LE Read Remote Used Features Complete: {:?}",
+            other
+        ),
+    }
+}
+
+#[cfg(feature = "version-4-1")]
+#[test]
+fn le_read_remote_used_features_complete_failed_bad_flag() {
+    let buffer = [
+        0x3E, 12, 0x04, 0x00, 0x01, 0x02, 0b00100000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Err(Error::BadRemoteUsedFeatureFlag(flags)) => assert_eq!(flags, 0x0000_0000_0000_0020),
+        other => panic!(
+            "Did not get LE Read Remote Used Features Complete: {:?}",
+            other
+        ),
+    }
+}
+
+#[cfg(feature = "version-4-2")]
+#[test]
+fn le_read_remote_used_features_complete() {
+    let buffer = [
+        0x3E, 12, 0x04, 0x00, 0x01, 0x02, 0b00100000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::LeReadRemoteUsedFeaturesComplete(event)) => {
+            assert_eq!(event.status, ::hci::Status::Success);
+            assert_eq!(event.conn_handle, ::hci::ConnectionHandle(0x0201));
+            assert_eq!(
+                event.features,
+                ::hci::LinkLayerFeature::LE_DATA_PACKET_LENGTH_EXTENSION
+            );
+        }
+        other => panic!(
+            "Did not get LE Read Remote Used Features Complete: {:?}",
+            other
+        ),
+    }
+}
+
+#[cfg(feature = "version-4-2")]
+#[test]
+fn le_read_remote_used_features_complete_failed_bad_flag() {
+    let buffer = [
+        0x3E, 12, 0x04, 0x00, 0x01, 0x02, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Err(Error::BadRemoteUsedFeatureFlag(flags)) => assert_eq!(flags, 0x0000_0000_0000_0100),
+        other => panic!(
+            "Did not get LE Read Remote Used Features Complete: {:?}",
+            other
+        ),
+    }
+}
+
+#[cfg(feature = "version-5-0")]
+#[test]
+fn le_read_remote_used_features_complete() {
+    let buffer = [
+        0x3E, 12, 0x04, 0x00, 0x01, 0x02, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::LeReadRemoteUsedFeaturesComplete(event)) => {
+            assert_eq!(event.status, ::hci::Status::Success);
+            assert_eq!(event.conn_handle, ::hci::ConnectionHandle(0x0201));
+            assert_eq!(event.features, ::hci::LinkLayerFeature::LE_2M_PHY);
+        }
+        other => panic!(
+            "Did not get LE Read Remote Used Features Complete: {:?}",
+            other
+        ),
+    }
+}
+
+#[cfg(feature = "version-5-0")]
+#[test]
+fn le_read_remote_used_features_complete_failed_bad_flag() {
+    let buffer = [
+        0x3E, 12, 0x04, 0x00, 0x01, 0x02, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Err(Error::BadRemoteUsedFeatureFlag(flags)) => assert_eq!(flags, 0x0000_0000_0002_0000),
+        other => panic!(
+            "Did not get LE Read Remote Used Features Complete: {:?}",
+            other
+        ),
+    }
+}

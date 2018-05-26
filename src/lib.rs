@@ -81,6 +81,8 @@
 #![deny(missing_docs)]
 #![deny(warnings)]
 
+#[macro_use]
+extern crate bitflags;
 extern crate byteorder;
 extern crate nb;
 
@@ -520,5 +522,61 @@ fn to_bdaddr_type(bd_addr_type: u8, addr: BdAddr) -> Result<BdAddrType, BdAddrTy
         0 => Ok(BdAddrType::Public(addr)),
         1 => Ok(BdAddrType::Random(addr)),
         _ => Err(BdAddrTypeError(bd_addr_type)),
+    }
+}
+
+bitflags! {
+    /// Bitfield for LE Remote Features.
+    ///
+    /// Fields are defined in Vol 6, Part B, Section 4.6 of the spec.  See Table 4.3 (version 4.1)
+    /// or Table 4.4 (version 4.2 and 5.0).
+    #[derive(Default)]
+    pub struct LinkLayerFeature : u64 {
+        /// See section 4.6.1
+        const LE_ENCRYPTION = 1 << 0;
+        /// See section 4.6.2
+        const CONNECTION_PARAMETERS_REQUEST_PROCEDURE = 1 << 1;
+        /// See section 4.6.3
+        const EXTENDED_REJECT_INDICATION = 1 << 2;
+        /// See section 4.6.4
+        const PERIPHERAL_INITIATED_FEATURES_EXCHANGE = 1 << 3;
+        /// See section 4.6.5
+        const LE_PING = 1 << 4;
+        /// See section 4.6.6
+        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
+        const LE_DATA_PACKET_LENGTH_EXTENSION = 1 << 5;
+        /// See section 4.6.7
+        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
+        const LL_PRIVACY = 1 << 6;
+        /// See section 4.6.8
+        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
+        const EXTENDED_SCANNER_FILTER_POLICIES = 1 << 7;
+        /// See section 4.6.9
+        #[cfg(feature = "version-5-0")]
+        const LE_2M_PHY = 1 << 8;
+        /// See section 4.6.10
+        #[cfg(feature = "version-5-0")]
+        const STABLE_MODULATION_INDEX_TX = 1 << 9;
+        /// See section 4.6.11
+        #[cfg(feature = "version-5-0")]
+        const STABLE_MODULATION_INDEX_RX = 1 << 10;
+        /// Not in section 4.6
+        #[cfg(feature = "version-5-0")]
+        const LE_CODED_PHY = 1 << 11;
+        /// See section 4.6.12
+        #[cfg(feature = "version-5-0")]
+        const LE_EXTENDED_ADVERTISING = 1 << 12;
+        /// See section 4.6.13
+        #[cfg(feature = "version-5-0")]
+        const LE_PERIODIC_ADVERTISING = 1 << 13;
+        /// See section 4.6.14
+        #[cfg(feature = "version-5-0")]
+        const CHANNEL_SELECTION_ALGORITHM_2 = 1 << 14;
+        /// Not in section 4.6
+        #[cfg(feature = "version-5-0")]
+        const LE_POWER_CLASS_1 = 1 << 15;
+        /// See section 4.6.15
+        #[cfg(feature = "version-5-0")]
+        const MINIMUM_NUMBER_OF_USED_CHANNELS_PROCEDURE = 1 << 16;
     }
 }
