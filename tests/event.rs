@@ -367,3 +367,26 @@ fn le_advertising_report_failed_bad_addr_type() {
         other => panic!("Did not get bad LE Address type: {:?}", other),
     }
 }
+
+#[test]
+fn le_connection_update_complete() {
+    let buffer = [
+        0x3E, 10, 0x03, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::LeConnectionUpdateComplete(event)) => {
+            assert_eq!(event.status, hci::Status::Success);
+            assert_eq!(event.conn_handle, hci::ConnectionHandle(0x0201));
+            assert_eq!(event.conn_interval, Duration::from_millis(5 * 0x0403 / 4));
+            assert_eq!(event.conn_latency, 0x0605);
+            assert_eq!(
+                event.supervision_timeout,
+                Duration::from_millis(10 * 0x0807)
+            );
+        }
+        other => panic!(
+            "Did not get LE connection update complete event: {:?}",
+            other
+        ),
+    }
+}

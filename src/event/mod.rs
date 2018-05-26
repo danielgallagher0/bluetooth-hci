@@ -94,6 +94,9 @@ pub enum Event<V> {
     /// Vol 2, Part E, Section 7.7.65.2
     LeAdvertisingReport(LeAdvertisingReport),
 
+    /// Vol 2, Part E, Section 7.7.65.3
+    LeConnectionUpdateComplete(LeConnectionUpdateComplete),
+
     /// Vendor-specific events (opcode 0xFF)
     Vendor(V),
 }
@@ -263,6 +266,9 @@ fn to_le_meta_event<VEvent, VError>(payload: &[u8]) -> Result<Event<VEvent>, Err
         0x02 => Ok(Event::LeAdvertisingReport(to_le_advertising_report(
             payload,
         )?)),
+        0x03 => Ok(Event::LeConnectionUpdateComplete(
+            to_le_connection_update_complete(payload)?,
+        )),
         _ => Err(Error::UnknownEvent(payload[0])),
     }
 }
@@ -966,5 +972,64 @@ fn to_le_advertising_report<VE>(payload: &[u8]) -> Result<LeAdvertisingReport, E
     Ok(LeAdvertisingReport {
         data_len: data_len,
         data_buf: data_buf,
+    })
+}
+
+/// Indicates that the Controller process to update the connection has completed.
+///
+/// On a peripheral, if no connection parameters are updated, then this event shall not
+/// be issued.
+///
+/// On a centraldevice, this event shall be issued if the Connection_Update command
+/// was sent.
+///
+/// Note: This event can be issued autonomously by the Master’s Controller if it decides to change
+/// the connection interval based on the range of allowable connection intervals for that
+/// connection.
+///
+/// Note: The parameter values returned in this event may be different from the parameter values
+/// provided by the Host through the LE Connection Update command (Section 7.8.18) or the LE Remote
+/// Connection Parameter Request Reply command (Section 7.8.31).
+///
+/// Defined in Vol 2, Part E, Section 7.7.65.3 of the spec.
+#[derive(Copy, Clone, Debug)]
+pub struct LeConnectionUpdateComplete {
+    /// Did the LE Connection Update fail, and if so, how?
+    pub status: ::Status,
+
+    /// Connection handle to be used to identify a connection between two Bluetooth devices. The
+    /// connection handle is used as an identifier for transmitting and receiving data.
+    pub conn_handle: ::ConnectionHandle,
+
+    /// Connection interval used on this connection.
+    ///
+    /// Valid range is 7.5 msec to 4000 msec, though this is not enforced by this implementation.
+    pub conn_interval: Duration,
+
+    /// Latency for the connection in number of connection events.  The peripheral device is allowed
+    /// skip this number of events before responding to the central device when no new data is
+    /// available.
+    pub conn_latency: usize,
+
+    /// Connection supervision timeout.
+    ///
+    /// Valid range is 100 msec to 32 seconds, though this is not enforced by this implementation.
+    pub supervision_timeout: Duration,
+}
+
+fn to_le_connection_update_complete<VE>(
+    payload: &[u8],
+) -> Result<LeConnectionUpdateComplete, Error<VE>> {
+    require_len!(payload, 10);
+    Ok(LeConnectionUpdateComplete {
+        status: payload[1].try_into().map_err(rewrap_bad_status)?,
+        conn_handle: ::ConnectionHandle(LittleEndian::read_u16(&payload[2..])),
+        conn_interval: Duration::from_millis(
+            (5 * LittleEndian::read_u16(&payload[4..]) / 4) as u64,
+        ),
+        conn_latency: LittleEndian::read_u16(&payload[6..]) as usize,
+        supervision_timeout: Duration::from_millis(
+            (10 * LittleEndian::read_u16(&payload[8..])) as u64,
+        ),
     })
 }
