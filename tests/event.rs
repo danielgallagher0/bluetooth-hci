@@ -500,3 +500,18 @@ fn le_read_remote_used_features_complete_failed_bad_flag() {
         ),
     }
 }
+
+#[test]
+fn le_long_term_key_request() {
+    let buffer = [
+        0x3E, 13, 0x05, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::LeLongTermKeyRequest(event)) => {
+            assert_eq!(event.conn_handle, ::hci::ConnectionHandle(0x0201));
+            assert_eq!(event.random_value, 0x0A09080706050403);
+            assert_eq!(event.encrypted_diversifier, 0x0C0B);
+        }
+        other => panic!("Did not Get LE LTK Request: {:?}", other),
+    }
+}

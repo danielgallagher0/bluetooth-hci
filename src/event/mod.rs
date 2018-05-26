@@ -100,6 +100,9 @@ pub enum Event<V> {
     /// Vol 2, Part E, Section 7.7.65.4
     LeReadRemoteUsedFeaturesComplete(LeReadRemoteUsedFeaturesComplete),
 
+    /// Vol 2, Part E, Section 7.7.65.5
+    LeLongTermKeyRequest(LeLongTermKeyRequest),
+
     /// Vendor-specific events (opcode 0xFF)
     Vendor(V),
 }
@@ -279,6 +282,7 @@ fn to_le_meta_event<VEvent, VError>(payload: &[u8]) -> Result<Event<VEvent>, Err
         0x04 => Ok(Event::LeReadRemoteUsedFeaturesComplete(
             to_le_read_remote_used_features_complete(payload)?,
         )),
+        0x05 => Ok(Event::LeLongTermKeyRequest(to_le_ltk_request(payload)?)),
         _ => Err(Error::UnknownEvent(payload[0])),
     }
 }
@@ -1051,6 +1055,8 @@ fn to_le_connection_update_complete<VE>(
 /// Note (v5.0): If the features are requested more than once while a connection exists between the
 /// two devices, the second and subsequent requests may report a cached copy of the features rather
 /// than fetching the feature mask again.
+///
+/// Defined in Vol 2, Part E, Section 7.7.65.4 of the spec.
 #[derive(Copy, Clone, Debug)]
 pub struct LeReadRemoteUsedFeaturesComplete {
     /// Did the read fail, and if so, how?
@@ -1072,5 +1078,30 @@ fn to_le_read_remote_used_features_complete<VE>(
         conn_handle: ::ConnectionHandle(LittleEndian::read_u16(&payload[2..])),
         features: ::LinkLayerFeature::from_bits(feature_flags)
             .ok_or(Error::BadRemoteUsedFeatureFlag(feature_flags))?,
+    })
+}
+
+/// The LE Long Term Key Request event indicates that the master device is attempting to encrypt or
+/// re-encrypt the link and is requesting the Long Term Key from the Host. (See Vol 6, Part B,
+/// Section 5.1.3).
+///
+/// Defined in Vol 2, Part E, Section 7.7.65.5 of the spec.
+#[derive(Copy, Clone, Debug)]
+pub struct LeLongTermKeyRequest {
+    /// Connection handle to be used to identify a connection between two Bluetooth devices.
+    pub conn_handle: ::ConnectionHandle,
+    /// 64-bit random number.
+    pub random_value: u64,
+    /// 16-bit encrypted diversifier
+    pub encrypted_diversifier: u16,
+}
+
+fn to_le_ltk_request<VE>(payload: &[u8]) -> Result<LeLongTermKeyRequest, Error<VE>> {
+    require_len!(payload, 13);
+
+    Ok(LeLongTermKeyRequest {
+        conn_handle: ::ConnectionHandle(LittleEndian::read_u16(&payload[1..])),
+        random_value: LittleEndian::read_u64(&payload[3..]),
+        encrypted_diversifier: LittleEndian::read_u16(&payload[11..]),
     })
 }
