@@ -53,6 +53,7 @@ impl CommandComplete {
             ::opcode::LOCAL_VERSION_INFO => {
                 ReturnParameters::ReadLocalVersionInformation(LocalVersionInfo::new(&bytes[3..])?)
             }
+            ::opcode::SET_EVENT_MASK => ReturnParameters::SetEventMask(to_status(&bytes[3..])?),
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -117,6 +118,13 @@ pub enum ReturnParameters {
     /// HCI command packets the Host is allowed to send.
     Spontaneous,
 
+    /// Status returned by the Set Event Mask command.
+    SetEventMask(::Status),
+
     /// Local version info returned by the Read Local Version Information command.
     ReadLocalVersionInformation(LocalVersionInfo),
+}
+
+fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {
+    bytes[0].try_into().map_err(super::rewrap_bad_status)
 }

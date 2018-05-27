@@ -76,3 +76,15 @@ fn read_remote_version_information() {
         .unwrap();
     assert_eq!(sink.written_data, [1, 0x1D, 0x04, 2, 0x01, 0x02]);
 }
+
+#[test]
+fn set_event_mask() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller()
+        .set_event_mask(EventFlags::INQUIRY_COMPLETE | EventFlags::AUTHENTICATION_COMPLETE)
+        .unwrap();
+    assert_eq!(
+        sink.written_data,
+        [1, 0x01, 0x0C, 8, 0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    );
+}

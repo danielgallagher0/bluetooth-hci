@@ -1,5 +1,6 @@
 mod ogf {
     pub const LINK_CONTROL: u16 = 0x0001;
+    pub const CONTROLLER_OR_BASEBAND: u16 = 0x0003;
     pub const INFO_PARAM: u16 = 0x0004;
 }
 
@@ -7,6 +8,9 @@ mod ocf {
     // Link control commands
     pub const DISCONNECT: u16 = 0x0006;
     pub const READ_REMOTE_VERSION_INFO: u16 = 0x001D;
+
+    // Controller or Baseband commands
+    pub const SET_EVENT_MASK: u16 = 0x0001;
 
     // Info commands
     pub const LOCAL_VERSION_INFO: u16 = 0x0001;
@@ -38,5 +42,7 @@ impl Opcode {
 pub const DISCONNECT: Opcode = Opcode::new(ogf::LINK_CONTROL, ocf::DISCONNECT);
 pub const READ_REMOTE_VERSION_INFO: Opcode =
     Opcode::new(ogf::LINK_CONTROL, ocf::READ_REMOTE_VERSION_INFO);
+
+pub const SET_EVENT_MASK: Opcode = Opcode::new(ogf::CONTROLLER_OR_BASEBAND, ocf::SET_EVENT_MASK);
 
 pub const LOCAL_VERSION_INFO: Opcode = Opcode::new(ogf::INFO_PARAM, ocf::LOCAL_VERSION_INFO);
