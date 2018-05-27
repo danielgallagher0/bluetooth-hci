@@ -11,6 +11,7 @@ mod ocf {
 
     // Controller or Baseband commands
     pub const SET_EVENT_MASK: u16 = 0x0001;
+    pub const RESET: u16 = 0x0003;
 
     // Info commands
     pub const LOCAL_VERSION_INFO: u16 = 0x0001;
@@ -44,5 +45,6 @@ pub const READ_REMOTE_VERSION_INFO: Opcode =
     Opcode::new(ogf::LINK_CONTROL, ocf::READ_REMOTE_VERSION_INFO);
 
 pub const SET_EVENT_MASK: Opcode = Opcode::new(ogf::CONTROLLER_OR_BASEBAND, ocf::SET_EVENT_MASK);
+pub const RESET: Opcode = Opcode::new(ogf::CONTROLLER_OR_BASEBAND, ocf::RESET);
 
 pub const LOCAL_VERSION_INFO: Opcode = Opcode::new(ogf::INFO_PARAM, ocf::LOCAL_VERSION_INFO);

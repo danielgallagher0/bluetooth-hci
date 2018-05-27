@@ -54,6 +54,7 @@ impl CommandComplete {
                 ReturnParameters::ReadLocalVersionInformation(LocalVersionInfo::new(&bytes[3..])?)
             }
             ::opcode::SET_EVENT_MASK => ReturnParameters::SetEventMask(to_status(&bytes[3..])?),
+            ::opcode::RESET => ReturnParameters::Reset(to_status(&bytes[3..])?),
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -120,6 +121,9 @@ pub enum ReturnParameters {
 
     /// Status returned by the Set Event Mask command.
     SetEventMask(::Status),
+
+    /// Status returned by the Reset command.
+    Reset(::Status),
 
     /// Local version info returned by the Read Local Version Information command.
     ReadLocalVersionInformation(LocalVersionInfo),

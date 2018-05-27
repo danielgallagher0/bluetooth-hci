@@ -134,6 +134,35 @@ pub trait Hci<E, Header> {
     /// Returns a status in a Command Complete event.
     fn set_event_mask(&mut self, mask: EventFlags) -> nb::Result<(), E>;
 
+    /// The Reset command will reset the Controller and the Link Manager on the BR/EDR Controller,
+    /// the PAL on an AMP Controller, or the Link Layer on an LE Controller. If the Controller
+    /// supports both BR/EDR and LE then the Reset command shall reset the Link Manager, Baseband
+    /// and Link Layer. The Reset command shall not affect the used HCI transport layer since the
+    /// HCI transport layers may have reset mechanisms of their own. After the reset is completed,
+    /// the current operational state will be lost, the Controller will enter standby mode and the
+    /// Controller will automatically revert to the default values for the parameters for which
+    /// default values are defined in the specification.
+    ///
+    /// Note: The Reset command will not necessarily perform a hardware reset. This is
+    /// implementation defined. On an AMP Controller, the Reset command shall reset the service
+    /// provided at the logical HCI to its initial state, but beyond this the exact effect on the
+    /// Controller device is implementation defined and should not interrupt the service provided to
+    /// other protocol stacks.
+    ///
+    /// The Host shall not send additional HCI commands before the Command Complete event related to
+    /// the Reset command has been received.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.3.2.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported.
+    ///
+    /// # Generated Events
+    ///
+    /// Returns a status in a Command Complete event.
+    fn reset(&mut self) -> nb::Result<(), E>;
+
     /// Writes the Read Local Version Information command to the controller.
     ///
     /// Defined in Bluetooth Specification Vol 2, Part E, Section 7.4.1.
@@ -165,6 +194,17 @@ fn rewrap_as_comm<E>(err: nb::Error<E>) -> nb::Error<Error<E>> {
         nb::Error::WouldBlock => nb::Error::WouldBlock,
         nb::Error::Other(e) => nb::Error::Other(Error::Comm(e)),
     }
+}
+
+fn no_param_command<E, T, Header>(controller: &mut T, opcode: ::opcode::Opcode) -> nb::Result<(), E>
+where
+    T: ::Controller<Error = E>,
+    Header: HciHeader,
+{
+    let params = [];
+    let mut header = [0; MAX_HEADER_LENGTH];
+    Header::new(opcode, params.len()).into_bytes(&mut header);
+    controller.write(&header[..Header::HEADER_LENGTH], &params)
 }
 
 impl<E, T, Header> Hci<E, Header> for T
@@ -219,11 +259,12 @@ where
         self.write(&header[..Header::HEADER_LENGTH], &params)
     }
 
+    fn reset(&mut self) -> nb::Result<(), E> {
+        no_param_command::<E, T, Header>(self, ::opcode::RESET)
+    }
+
     fn read_local_version_information(&mut self) -> nb::Result<(), E> {
-        let params = [];
-        let mut header = [0; MAX_HEADER_LENGTH];
-        Header::new(::opcode::LOCAL_VERSION_INFO, params.len()).into_bytes(&mut header);
-        self.write(&header[..Header::HEADER_LENGTH], &params)
+        no_param_command::<E, T, Header>(self, ::opcode::LOCAL_VERSION_INFO)
     }
 }
 

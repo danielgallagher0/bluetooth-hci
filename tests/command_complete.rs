@@ -60,6 +60,23 @@ fn set_event_mask() {
 }
 
 #[test]
+fn reset() {
+    let buffer = [0x0E, 4, 8, 0x03, 0x0C, 0x00];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::CommandComplete(event)) => {
+            assert_eq!(event.num_hci_command_packets, 8);
+            match event.return_params {
+                ReturnParameters::Reset(status) => {
+                    assert_eq!(status, hci::Status::Success);
+                }
+                other => panic!("Got return parameters: {:?}", other),
+            }
+        }
+        other => panic!("Did not get command complete event: {:?}", other),
+    }
+}
+
+#[test]
 fn read_local_version_complete() {
     let buffer = [
         0x0E, 12, 0x01, 0x01, 0x10, 0x00, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,

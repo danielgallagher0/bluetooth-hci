@@ -88,3 +88,10 @@ fn set_event_mask() {
         [1, 0x01, 0x0C, 8, 0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
     );
 }
+
+#[test]
+fn reset() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller().reset().unwrap();
+    assert_eq!(sink.written_data, [1, 0x03, 0x0C, 0]);
+}
