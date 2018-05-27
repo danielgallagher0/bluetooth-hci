@@ -11,6 +11,7 @@
 
 use byteorder::{ByteOrder, LittleEndian};
 use core::convert::TryInto;
+use core::mem;
 
 /// The Command Complete event is used by the Controller for most commands to transmit return status
 /// of a command and the other event parameters that are specified for the issued HCI command.
@@ -55,6 +56,9 @@ impl CommandComplete {
             }
             ::opcode::SET_EVENT_MASK => ReturnParameters::SetEventMask(to_status(&bytes[3..])?),
             ::opcode::RESET => ReturnParameters::Reset(to_status(&bytes[3..])?),
+            ::opcode::READ_TX_POWER_LEVEL => {
+                ReturnParameters::ReadTxPowerLevel(to_tx_power_level(&bytes[3..])?)
+            }
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -62,6 +66,56 @@ impl CommandComplete {
             return_params: params,
         })
     }
+}
+
+/// Commands that may generate the Command Complete event.  If the commands have defined return
+/// parameters, they are included in this enum.
+#[derive(Copy, Clone, Debug)]
+pub enum ReturnParameters {
+    /// The controller sent an unsolicited command complete event in order to change the number of
+    /// HCI command packets the Host is allowed to send.
+    Spontaneous,
+
+    /// Status returned by the Set Event Mask command.
+    SetEventMask(::Status),
+
+    /// Status returned by the Reset command.
+    Reset(::Status),
+
+    /// Read Transmit Power Level return parameters.
+    ReadTxPowerLevel(TxPowerLevel),
+
+    /// Local version info returned by the Read Local Version Information command.
+    ReadLocalVersionInformation(LocalVersionInfo),
+}
+
+fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {
+    bytes[0].try_into().map_err(super::rewrap_bad_status)
+}
+
+/// Values returned by the Read Transmit Power Level command.  See the Bluetooth spec, Vol 2, Part
+/// E, Section 7.3.35.
+#[derive(Copy, Clone, Debug)]
+pub struct TxPowerLevel {
+    /// Did the command fail, and if so, how?
+    pub status: ::Status,
+
+    /// Specifies which connection handle’s Transmit Power Level setting is returned
+    pub conn_handle: ::ConnectionHandle,
+
+    /// Power level for the connection handle, in dBm.
+    ///
+    /// Valid range is -30 dBm to +20 dBm, but that is not enforced by this implementation.
+    pub tx_power_level_dbm: i8,
+}
+
+fn to_tx_power_level<VE>(bytes: &[u8]) -> Result<TxPowerLevel, ::event::Error<VE>> {
+    require_len!(bytes, 4);
+    Ok(TxPowerLevel {
+        status: to_status(bytes)?,
+        conn_handle: ::ConnectionHandle(LittleEndian::read_u16(&bytes[1..])),
+        tx_power_level_dbm: unsafe { mem::transmute::<u8, i8>(bytes[3]) },
+    })
 }
 
 /// Values returned by Read Local Version Information command.  See the Bluetooth Specification,
@@ -109,26 +163,4 @@ impl LocalVersionInfo {
             lmp_subversion: LittleEndian::read_u16(&bytes[7..]),
         })
     }
-}
-
-/// Commands that may generate the Command Complete event.  If the commands have defined return
-/// parameters, they are included in this enum.
-#[derive(Copy, Clone, Debug)]
-pub enum ReturnParameters {
-    /// The controller sent an unsolicited command complete event in order to change the number of
-    /// HCI command packets the Host is allowed to send.
-    Spontaneous,
-
-    /// Status returned by the Set Event Mask command.
-    SetEventMask(::Status),
-
-    /// Status returned by the Reset command.
-    Reset(::Status),
-
-    /// Local version info returned by the Read Local Version Information command.
-    ReadLocalVersionInformation(LocalVersionInfo),
-}
-
-fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {
-    bytes[0].try_into().map_err(super::rewrap_bad_status)
 }

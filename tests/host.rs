@@ -95,3 +95,12 @@ fn reset() {
     sink.as_controller().reset().unwrap();
     assert_eq!(sink.written_data, [1, 0x03, 0x0C, 0]);
 }
+
+#[test]
+fn read_tx_power_level() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller()
+        .read_tx_power_level(hci::ConnectionHandle(0x0201), TxPowerLevel::Current)
+        .unwrap();
+    assert_eq!(sink.written_data, [1, 0x2D, 0x0C, 3, 0x01, 0x02, 0x00])
+}

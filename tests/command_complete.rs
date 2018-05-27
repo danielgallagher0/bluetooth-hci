@@ -77,6 +77,25 @@ fn reset() {
 }
 
 #[test]
+fn read_tx_power_level() {
+    let buffer = [0x0E, 7, 6, 0x2D, 0x0C, 0x00, 0x01, 0x02, 0x03];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::CommandComplete(event)) => {
+            assert_eq!(event.num_hci_command_packets, 6);
+            match event.return_params {
+                ReturnParameters::ReadTxPowerLevel(params) => {
+                    assert_eq!(params.status, hci::Status::Success);
+                    assert_eq!(params.conn_handle, hci::ConnectionHandle(0x0201));
+                    assert_eq!(params.tx_power_level_dbm, 0x03);
+                }
+                other => panic!("Got return parameters: {:?}", other),
+            }
+        }
+        other => panic!("Did not get command complete event: {:?}", other),
+    }
+}
+
+#[test]
 fn read_local_version_complete() {
     let buffer = [
         0x0E, 12, 0x01, 0x01, 0x10, 0x00, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,

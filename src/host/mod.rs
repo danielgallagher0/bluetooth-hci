@@ -163,6 +163,24 @@ pub trait Hci<E, Header> {
     /// Returns a status in a Command Complete event.
     fn reset(&mut self) -> nb::Result<(), E>;
 
+    /// This command reads the values for the Transmit_Power_Level parameter for the specified
+    /// `conn_handle`. `conn_handle` shall be a connection handle for an ACL connection.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.3.35.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported
+    ///
+    /// # Generated Events
+    ///
+    /// Returns the transmit power level in a Command Complete event.
+    fn read_tx_power_level(
+        &mut self,
+        conn_handle: ::ConnectionHandle,
+        power_level_type: TxPowerLevel,
+    ) -> nb::Result<(), E>;
+
     /// Writes the Read Local Version Information command to the controller.
     ///
     /// Defined in Bluetooth Specification Vol 2, Part E, Section 7.4.1.
@@ -261,6 +279,20 @@ where
 
     fn reset(&mut self) -> nb::Result<(), E> {
         no_param_command::<E, T, Header>(self, ::opcode::RESET)
+    }
+
+    fn read_tx_power_level(
+        &mut self,
+        conn_handle: ::ConnectionHandle,
+        power_level_type: TxPowerLevel,
+    ) -> nb::Result<(), E> {
+        let mut params = [0; 3];
+        LittleEndian::write_u16(&mut params, conn_handle.0);
+        params[2] = power_level_type as u8;
+        let mut header = [0; MAX_HEADER_LENGTH];
+        Header::new(::opcode::READ_TX_POWER_LEVEL, params.len()).into_bytes(&mut header);
+
+        self.write(&header[..Header::HEADER_LENGTH], &params)
     }
 
     fn read_local_version_information(&mut self) -> nb::Result<(), E> {
@@ -372,4 +404,16 @@ bitflags! {
         /// LE meta-events
         const LE_META_EVENT = 0x2000000000000000;
     }
+}
+
+/// For the Read Tx Power Level command, the allowed values for the type of power level to read.
+///
+/// See the Bluetooth spec, Vol 2, Part E, Section 7.3.35.
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum TxPowerLevel {
+    /// Read Current Transmit Power Level.
+    Current = 0x00,
+    /// Read Maximum Transmit Power Level.
+    Maximum = 0x01,
 }
