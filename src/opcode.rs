@@ -6,6 +6,7 @@ mod ogf {
 mod ocf {
     // Link control commands
     pub const DISCONNECT: u16 = 0x0006;
+    pub const READ_REMOTE_VERSION_INFO: u16 = 0x001D;
 
     // Info commands
     pub const LOCAL_VERSION_INFO: u16 = 0x0001;
@@ -35,4 +36,7 @@ impl Opcode {
 }
 
 pub const DISCONNECT: Opcode = Opcode::new(ogf::LINK_CONTROL, ocf::DISCONNECT);
+pub const READ_REMOTE_VERSION_INFO: Opcode =
+    Opcode::new(ogf::LINK_CONTROL, ocf::READ_REMOTE_VERSION_INFO);
+
 pub const LOCAL_VERSION_INFO: Opcode = Opcode::new(ogf::INFO_PARAM, ocf::LOCAL_VERSION_INFO);

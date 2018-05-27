@@ -89,6 +89,33 @@ pub trait Hci<E, Header> {
         reason: ::Status,
     ) -> nb::Result<(), Error<E>>;
 
+    /// This command obtains the values for the version information for the remote device identified
+    /// by the `conn_handle` parameter, which must be a connection handle for an ACL or LE
+    /// connection.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.1.23.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported.
+    ///
+    /// # Generated Events
+    ///
+    /// When the Controller receives the Read Remote Version Information command, the Controller
+    /// shall send the Command Status event to the Host. When the Link Manager or Link Layer has
+    /// completed the sequence to determine the remote version information, the local Controller
+    /// shall send a Read Remote Version Information Complete event to the Host. The Read Remote
+    /// Version Information Complete event contains the status of this command, and parameters
+    /// describing the version and subversion of the LMP or Link Layer used by the remote device.
+    ///
+    /// Note: No Command Complete event will be sent by the Controller to indicate that this command
+    /// has been completed. Instead, the Read Remote Version Information Complete event will
+    /// indicate that this command has been completed.
+    fn read_remote_version_information(
+        &mut self,
+        conn_handle: ::ConnectionHandle,
+    ) -> nb::Result<(), E>;
+
     /// Writes the Read Local Version Information command to the controller.
     ///
     /// Defined in Bluetooth Specification Vol 2, Part E, Section 7.4.1.
@@ -151,6 +178,18 @@ where
 
         self.write(&header[..Header::HEADER_LENGTH], &params)
             .map_err(rewrap_as_comm)
+    }
+
+    fn read_remote_version_information(
+        &mut self,
+        conn_handle: ::ConnectionHandle,
+    ) -> nb::Result<(), E> {
+        let mut params = [0; 2];
+        LittleEndian::write_u16(&mut params, conn_handle.0);
+        let mut header = [0; MAX_HEADER_LENGTH];
+        Header::new(::opcode::READ_REMOTE_VERSION_INFO, params.len()).into_bytes(&mut header);
+
+        self.write(&header[..Header::HEADER_LENGTH], &params)
     }
 
     fn read_local_version_information(&mut self) -> nb::Result<(), E> {

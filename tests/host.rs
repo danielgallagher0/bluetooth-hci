@@ -65,4 +65,14 @@ fn disconnect_bad_reason() {
         err,
         nb::Error::Other(Error::BadDisconnectionReason(hci::Status::UnknownCommand))
     );
+    assert_eq!(sink.written_data, []);
+}
+
+#[test]
+fn read_remote_version_information() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller()
+        .read_remote_version_information(hci::ConnectionHandle(0x0201))
+        .unwrap();
+    assert_eq!(sink.written_data, [1, 0x1D, 0x04, 2, 0x01, 0x02]);
 }
