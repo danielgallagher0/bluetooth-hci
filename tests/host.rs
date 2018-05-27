@@ -104,3 +104,12 @@ fn read_tx_power_level() {
         .unwrap();
     assert_eq!(sink.written_data, [1, 0x2D, 0x0C, 3, 0x01, 0x02, 0x00])
 }
+
+#[test]
+fn read_local_version_information() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller()
+        .read_local_version_information()
+        .unwrap();
+    assert_eq!(sink.written_data, [1, 0x01, 0x10, 0])
+}

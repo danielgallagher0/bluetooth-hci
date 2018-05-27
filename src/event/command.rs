@@ -51,13 +51,13 @@ impl CommandComplete {
 
         let params = match ::opcode::Opcode(LittleEndian::read_u16(&bytes[1..])) {
             ::opcode::Opcode(0x0000) => ReturnParameters::Spontaneous,
-            ::opcode::LOCAL_VERSION_INFO => {
-                ReturnParameters::ReadLocalVersionInformation(LocalVersionInfo::new(&bytes[3..])?)
-            }
             ::opcode::SET_EVENT_MASK => ReturnParameters::SetEventMask(to_status(&bytes[3..])?),
             ::opcode::RESET => ReturnParameters::Reset(to_status(&bytes[3..])?),
             ::opcode::READ_TX_POWER_LEVEL => {
                 ReturnParameters::ReadTxPowerLevel(to_tx_power_level(&bytes[3..])?)
+            }
+            ::opcode::READ_LOCAL_VERSION_INFO => {
+                ReturnParameters::ReadLocalVersionInformation(to_local_version_info(&bytes[3..])?)
             }
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
@@ -150,17 +150,15 @@ pub struct LocalVersionInfo {
     pub lmp_subversion: u16,
 }
 
-impl LocalVersionInfo {
-    fn new<VE>(bytes: &[u8]) -> Result<LocalVersionInfo, ::event::Error<VE>> {
-        require_len!(bytes, 9);
+fn to_local_version_info<VE>(bytes: &[u8]) -> Result<LocalVersionInfo, ::event::Error<VE>> {
+    require_len!(bytes, 9);
 
-        Ok(LocalVersionInfo {
-            status: bytes[0].try_into().map_err(super::rewrap_bad_status)?,
-            hci_version: bytes[1],
-            hci_revision: LittleEndian::read_u16(&bytes[2..]),
-            lmp_version: bytes[4],
-            manufacturer_name: LittleEndian::read_u16(&bytes[5..]),
-            lmp_subversion: LittleEndian::read_u16(&bytes[7..]),
-        })
-    }
+    Ok(LocalVersionInfo {
+        status: bytes[0].try_into().map_err(super::rewrap_bad_status)?,
+        hci_version: bytes[1],
+        hci_revision: LittleEndian::read_u16(&bytes[2..]),
+        lmp_version: bytes[4],
+        manufacturer_name: LittleEndian::read_u16(&bytes[5..]),
+        lmp_subversion: LittleEndian::read_u16(&bytes[7..]),
+    })
 }

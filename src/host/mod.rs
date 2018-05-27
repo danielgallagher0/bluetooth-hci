@@ -181,17 +181,17 @@ pub trait Hci<E, Header> {
         power_level_type: TxPowerLevel,
     ) -> nb::Result<(), E>;
 
-    /// Writes the Read Local Version Information command to the controller.
+    /// This command reads the values for the version information for the local Controller.
     ///
     /// Defined in Bluetooth Specification Vol 2, Part E, Section 7.4.1.
     ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported
+    ///
     /// # Generated events
     ///
-    /// > When the Read_Local_Version_Information command has completed, a Command Complete event
-    /// > shall be generated.
-    ///
-    /// The [`::event::Event::CommandComplete`] event contains
-    /// [`::event::command::LocalVersionInfo`].
+    /// Returns the local version info in a Command complete event.
     fn read_local_version_information(&mut self) -> nb::Result<(), E>;
 }
 
@@ -288,7 +288,7 @@ where
     }
 
     fn read_local_version_information(&mut self) -> nb::Result<(), E> {
-        write_command::<Header, T, E>(self, ::opcode::LOCAL_VERSION_INFO, &[])
+        write_command::<Header, T, E>(self, ::opcode::READ_LOCAL_VERSION_INFO, &[])
     }
 }
 

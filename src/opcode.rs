@@ -15,7 +15,7 @@ mod ocf {
     pub const READ_TX_POWER_LEVEL: u16 = 0x002D;
 
     // Info commands
-    pub const LOCAL_VERSION_INFO: u16 = 0x0001;
+    pub const READ_LOCAL_VERSION_INFO: u16 = 0x0001;
 }
 
 /// Newtype wrapper for a Bluetooth Opcode. Opcodes are used to indicate which command to send to
@@ -50,4 +50,5 @@ pub const RESET: Opcode = Opcode::new(ogf::CONTROLLER_OR_BASEBAND, ocf::RESET);
 pub const READ_TX_POWER_LEVEL: Opcode =
     Opcode::new(ogf::CONTROLLER_OR_BASEBAND, ocf::READ_TX_POWER_LEVEL);
 
-pub const LOCAL_VERSION_INFO: Opcode = Opcode::new(ogf::INFO_PARAM, ocf::LOCAL_VERSION_INFO);
+pub const READ_LOCAL_VERSION_INFO: Opcode =
+    Opcode::new(ogf::INFO_PARAM, ocf::READ_LOCAL_VERSION_INFO);
