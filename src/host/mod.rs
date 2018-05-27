@@ -214,14 +214,18 @@ fn rewrap_as_comm<E>(err: nb::Error<E>) -> nb::Error<Error<E>> {
     }
 }
 
-fn no_param_command<E, T, Header>(controller: &mut T, opcode: ::opcode::Opcode) -> nb::Result<(), E>
+fn write_command<Header, T, E>(
+    controller: &mut T,
+    opcode: ::opcode::Opcode,
+    params: &[u8],
+) -> nb::Result<(), E>
 where
-    T: ::Controller<Error = E>,
     Header: HciHeader,
+    T: ::Controller<Error = E>,
 {
-    let params = [];
     let mut header = [0; MAX_HEADER_LENGTH];
     Header::new(opcode, params.len()).into_bytes(&mut header);
+
     controller.write(&header[..Header::HEADER_LENGTH], &params)
 }
 
@@ -249,11 +253,7 @@ where
         let mut params = [0; 3];
         LittleEndian::write_u16(&mut params[0..], conn_handle.0);
         params[2] = reason as u8;
-        let mut header = [0; MAX_HEADER_LENGTH];
-        Header::new(::opcode::DISCONNECT, params.len()).into_bytes(&mut header);
-
-        self.write(&header[..Header::HEADER_LENGTH], &params)
-            .map_err(rewrap_as_comm)
+        write_command::<Header, T, E>(self, ::opcode::DISCONNECT, &params).map_err(rewrap_as_comm)
     }
 
     fn read_remote_version_information(
@@ -262,23 +262,18 @@ where
     ) -> nb::Result<(), E> {
         let mut params = [0; 2];
         LittleEndian::write_u16(&mut params, conn_handle.0);
-        let mut header = [0; MAX_HEADER_LENGTH];
-        Header::new(::opcode::READ_REMOTE_VERSION_INFO, params.len()).into_bytes(&mut header);
-
-        self.write(&header[..Header::HEADER_LENGTH], &params)
+        write_command::<Header, T, E>(self, ::opcode::READ_REMOTE_VERSION_INFO, &params)
     }
 
     fn set_event_mask(&mut self, mask: EventFlags) -> nb::Result<(), E> {
         let mut params = [0; 8];
         LittleEndian::write_u64(&mut params, mask.bits());
-        let mut header = [0; MAX_HEADER_LENGTH];
-        Header::new(::opcode::SET_EVENT_MASK, params.len()).into_bytes(&mut header);
 
-        self.write(&header[..Header::HEADER_LENGTH], &params)
+        write_command::<Header, T, E>(self, ::opcode::SET_EVENT_MASK, &params)
     }
 
     fn reset(&mut self) -> nb::Result<(), E> {
-        no_param_command::<E, T, Header>(self, ::opcode::RESET)
+        write_command::<Header, T, E>(self, ::opcode::RESET, &[])
     }
 
     fn read_tx_power_level(
@@ -289,14 +284,11 @@ where
         let mut params = [0; 3];
         LittleEndian::write_u16(&mut params, conn_handle.0);
         params[2] = power_level_type as u8;
-        let mut header = [0; MAX_HEADER_LENGTH];
-        Header::new(::opcode::READ_TX_POWER_LEVEL, params.len()).into_bytes(&mut header);
-
-        self.write(&header[..Header::HEADER_LENGTH], &params)
+        write_command::<Header, T, E>(self, ::opcode::READ_TX_POWER_LEVEL, &params)
     }
 
     fn read_local_version_information(&mut self) -> nb::Result<(), E> {
-        no_param_command::<E, T, Header>(self, ::opcode::LOCAL_VERSION_INFO)
+        write_command::<Header, T, E>(self, ::opcode::LOCAL_VERSION_INFO, &[])
     }
 }
 
