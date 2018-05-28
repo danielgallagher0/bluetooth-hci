@@ -193,6 +193,24 @@ pub trait Hci<E, Header> {
     ///
     /// Returns the local version info in a Command complete event.
     fn read_local_version_information(&mut self) -> nb::Result<(), E>;
+
+    /// This command reads the list of HCI commands supported for the local Controller.
+    ///
+    /// This command shall return the Supported_Commands configuration parameter. It is implied that
+    /// if a command is listed as supported, the feature underlying that command is also supported.
+    ///
+    /// See the Bluetooth Spec, Vol 2, Part E, Section 6.27 for more information.
+    ///
+    /// See the Bluetoth spec, Vol 2, Part E, Section 7.4.2.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported
+    ///
+    /// # Generated events
+    ///
+    /// Generates a command complete event with the local supported commands.
+    fn read_local_supported_commands(&mut self) -> nb::Result<(), E>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -289,6 +307,10 @@ where
 
     fn read_local_version_information(&mut self) -> nb::Result<(), E> {
         write_command::<Header, T, E>(self, ::opcode::READ_LOCAL_VERSION_INFO, &[])
+    }
+
+    fn read_local_supported_commands(&mut self) -> nb::Result<(), E> {
+        write_command::<Header, T, E>(self, ::opcode::READ_LOCAL_SUPPORTED_COMMANDS, &[])
     }
 }
 

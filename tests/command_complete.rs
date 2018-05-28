@@ -1,6 +1,6 @@
 extern crate bluetooth_hci as hci;
 
-use hci::event::command::ReturnParameters;
+use hci::event::command::*;
 use hci::event::*;
 
 #[derive(Debug)]
@@ -96,7 +96,7 @@ fn read_tx_power_level() {
 }
 
 #[test]
-fn read_local_version_complete() {
+fn read_local_version_information() {
     let buffer = [
         0x0E, 12, 0x01, 0x01, 0x10, 0x00, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
     ];
@@ -119,5 +119,273 @@ fn read_local_version_complete() {
             }
         }
         other => panic!("Did not get command complete event: {:?}", other),
+    }
+}
+
+#[cfg(feature = "version-4-1")]
+#[test]
+fn read_local_supported_commands() {
+    let buffer = [
+        0x0E, 68, 1, 0x02, 0x10, 0x00, 0x01, 0x02, 0x04, 0x00, 0x10, 0x20, 0x40, 0x80, 0x01, 0x02,
+        0x04, 0x08, 0x10, 0x00, 0x40, 0x80, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x01,
+        0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x01, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::CommandComplete(event)) => {
+            assert_eq!(event.num_hci_command_packets, 1);
+            match event.return_params {
+                ReturnParameters::ReadLocalSupportedCommands(params) => {
+                    assert_eq!(params.status, ::hci::Status::Success);
+                    assert_eq!(
+                        params.supported_commands,
+                        CommandFlags::INQUIRY
+                            | CommandFlags::REJECT_CONNECTION_REQUEST
+                            | CommandFlags::MASTER_LINK_KEY
+                            | CommandFlags::PARK_STATE
+                            | CommandFlags::FLOW_SPECIFICATION
+                            | CommandFlags::WRITE_STORED_LINK_KEY
+                            | CommandFlags::WRITE_SCAN_ENABLE
+                            | CommandFlags::READ_PAGE_SCAN_ACTIVITY
+                            | CommandFlags::WRITE_CLASS_OF_DEVICE
+                            | CommandFlags::READ_TRANSMIT_POWER_LEVEL
+                            | CommandFlags::READ_CURRENT_IAC_LAP
+                            | CommandFlags::READ_INQUIRY_SCAN_TYPE
+                            | CommandFlags::READ_LOCAL_EXTENDED_FEATURES
+                            | CommandFlags::READ_CLOCK
+                            | CommandFlags::READ_LOOPBACK_MODE
+                            | CommandFlags::WRITE_EXTENDED_INQUIRY_RESPONSE
+                            | CommandFlags::READ_DEFAULT_ERRONEOUS_DATA_REPORTING
+                            | CommandFlags::USER_PASSKEY_REQUEST_NEGATIVE_REPLY
+                            | CommandFlags::READ_ENCRYPTION_KEY_SIZE
+                            | CommandFlags::DISCONNECT_LOGICAL_LINK
+                            | CommandFlags::READ_LOCAL_AMP_ASSOC
+                            | CommandFlags::AMP_TEST
+                            | CommandFlags::READ_ENHANCED_TRANSMIT_POWER_LEVEL
+                            | CommandFlags::LE_READ_BUFFER_SIZE
+                            | CommandFlags::LE_SET_SCAN_PARAMETERS
+                            | CommandFlags::LE_SET_HOST_CHANNEL_CLASSIFICATION
+                            | CommandFlags::LE_RECEIVER_TEST
+                            | CommandFlags::READ_LOCAL_SUPPORTED_CODECS
+                            | CommandFlags::TRUNCATED_PAGE
+                            | CommandFlags::READ_SYNCHRONIZATION_TRAIN_PARAMETERS
+                            | CommandFlags::WRITE_SYNCHRONIZATION_TRAIN_PARAMETERS
+                            | CommandFlags::WRITE_EXTENDED_PAGE_TIMEOUT
+                    );
+                    assert!(params.supported_commands.is_set(CommandFlags::INQUIRY));
+                    assert!(
+                        params.supported_commands.contains(
+                            CommandFlags::INQUIRY | CommandFlags::REJECT_CONNECTION_REQUEST
+                        )
+                    );
+                }
+                other => panic!(
+                    "Did not get Read Supported Commands return params: {:?}",
+                    other
+                ),
+            }
+        }
+        other => panic!("Did not get command complete event: {:?}", other),
+    }
+}
+
+#[cfg(feature = "version-4-1")]
+#[test]
+fn read_local_supported_commands_failed_bad_command_flag() {
+    let buffer = [
+        0x0E, 68, 1, 0x02, 0x10, 0x00, 0x01, 0x02, 0x04, 0x00, 0x10, 0x20, 0x40, 0x80, 0x01, 0x02,
+        0x04, 0x08, 0x10, 0x00, 0x40, 0x80, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x01,
+        0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x01, 0x42, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Err(Error::BadCommandFlag(octet, value)) => {
+            assert_eq!(octet, 33);
+            assert_eq!(value, 0x42);
+        }
+        other => panic!("Did not get Bad Command Flag: {:?}", other),
+    }
+}
+
+#[cfg(feature = "version-4-2")]
+#[test]
+fn read_local_supported_commands() {
+    let buffer = [
+        0x0E, 68, 1, 0x02, 0x10, 0x00, 0x01, 0x02, 0x04, 0x00, 0x10, 0x20, 0x40, 0x80, 0x01, 0x02,
+        0x04, 0x08, 0x10, 0x00, 0x40, 0x80, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x01,
+        0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x01, 0x02, 0x04, 0x08, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::CommandComplete(event)) => {
+            assert_eq!(event.num_hci_command_packets, 1);
+            match event.return_params {
+                ReturnParameters::ReadLocalSupportedCommands(params) => {
+                    assert_eq!(params.status, ::hci::Status::Success);
+                    assert_eq!(
+                        params.supported_commands,
+                        CommandFlags::INQUIRY
+                            | CommandFlags::REJECT_CONNECTION_REQUEST
+                            | CommandFlags::MASTER_LINK_KEY
+                            | CommandFlags::PARK_STATE
+                            | CommandFlags::FLOW_SPECIFICATION
+                            | CommandFlags::WRITE_STORED_LINK_KEY
+                            | CommandFlags::WRITE_SCAN_ENABLE
+                            | CommandFlags::READ_PAGE_SCAN_ACTIVITY
+                            | CommandFlags::WRITE_CLASS_OF_DEVICE
+                            | CommandFlags::READ_TRANSMIT_POWER_LEVEL
+                            | CommandFlags::READ_CURRENT_IAC_LAP
+                            | CommandFlags::READ_INQUIRY_SCAN_TYPE
+                            | CommandFlags::READ_LOCAL_EXTENDED_FEATURES
+                            | CommandFlags::READ_CLOCK
+                            | CommandFlags::READ_LOOPBACK_MODE
+                            | CommandFlags::WRITE_EXTENDED_INQUIRY_RESPONSE
+                            | CommandFlags::READ_DEFAULT_ERRONEOUS_DATA_REPORTING
+                            | CommandFlags::USER_PASSKEY_REQUEST_NEGATIVE_REPLY
+                            | CommandFlags::READ_ENCRYPTION_KEY_SIZE
+                            | CommandFlags::DISCONNECT_LOGICAL_LINK
+                            | CommandFlags::READ_LOCAL_AMP_ASSOC
+                            | CommandFlags::AMP_TEST
+                            | CommandFlags::READ_ENHANCED_TRANSMIT_POWER_LEVEL
+                            | CommandFlags::LE_READ_BUFFER_SIZE
+                            | CommandFlags::LE_SET_SCAN_PARAMETERS
+                            | CommandFlags::LE_SET_HOST_CHANNEL_CLASSIFICATION
+                            | CommandFlags::LE_RECEIVER_TEST
+                            | CommandFlags::READ_LOCAL_SUPPORTED_CODECS
+                            | CommandFlags::TRUNCATED_PAGE
+                            | CommandFlags::READ_SYNCHRONIZATION_TRAIN_PARAMETERS
+                            | CommandFlags::WRITE_SYNCHRONIZATION_TRAIN_PARAMETERS
+                            | CommandFlags::WRITE_EXTENDED_PAGE_TIMEOUT
+                            | CommandFlags::LE_GENERATE_DH_KEY
+                            | CommandFlags::LE_READ_MAXIMUM_DATA_LENGTH
+                    );
+                    assert!(params.supported_commands.is_set(CommandFlags::INQUIRY));
+                    assert!(
+                        params.supported_commands.contains(
+                            CommandFlags::INQUIRY | CommandFlags::REJECT_CONNECTION_REQUEST
+                        )
+                    );
+                }
+                other => panic!(
+                    "Did not get Read Supported Commands return params: {:?}",
+                    other
+                ),
+            }
+        }
+        other => panic!("Did not get command complete event: {:?}", other),
+    }
+}
+
+#[cfg(feature = "version-4-2")]
+#[test]
+fn read_local_supported_commands_failed_bad_command_flag() {
+    let buffer = [
+        0x0E, 68, 1, 0x02, 0x10, 0x00, 0x01, 0x02, 0x04, 0x00, 0x10, 0x20, 0x40, 0x80, 0x01, 0x02,
+        0x04, 0x08, 0x10, 0x00, 0x40, 0x80, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x01,
+        0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x01, 0x02, 0x04, 0x10, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Err(Error::BadCommandFlag(octet, value)) => {
+            assert_eq!(octet, 35);
+            assert_eq!(value, 0x10);
+        }
+        other => panic!("Did not get Bad Command Flag: {:?}", other),
+    }
+}
+
+#[cfg(feature = "version-5-0")]
+#[test]
+fn read_local_supported_commands() {
+    let buffer = [
+        0x0E, 68, 1, 0x02, 0x10, 0x00, 0x01, 0x02, 0x04, 0x00, 0x10, 0x20, 0x40, 0x80, 0x01, 0x02,
+        0x04, 0x08, 0x10, 0x00, 0x40, 0x80, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x01,
+        0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::CommandComplete(event)) => {
+            assert_eq!(event.num_hci_command_packets, 1);
+            match event.return_params {
+                ReturnParameters::ReadLocalSupportedCommands(params) => {
+                    assert_eq!(params.status, ::hci::Status::Success);
+                    assert_eq!(
+                        params.supported_commands,
+                        CommandFlags::INQUIRY
+                            | CommandFlags::REJECT_CONNECTION_REQUEST
+                            | CommandFlags::MASTER_LINK_KEY
+                            | CommandFlags::PARK_STATE
+                            | CommandFlags::FLOW_SPECIFICATION
+                            | CommandFlags::WRITE_STORED_LINK_KEY
+                            | CommandFlags::WRITE_SCAN_ENABLE
+                            | CommandFlags::READ_PAGE_SCAN_ACTIVITY
+                            | CommandFlags::WRITE_CLASS_OF_DEVICE
+                            | CommandFlags::READ_TRANSMIT_POWER_LEVEL
+                            | CommandFlags::READ_CURRENT_IAC_LAP
+                            | CommandFlags::READ_INQUIRY_SCAN_TYPE
+                            | CommandFlags::READ_LOCAL_EXTENDED_FEATURES
+                            | CommandFlags::READ_CLOCK
+                            | CommandFlags::READ_LOOPBACK_MODE
+                            | CommandFlags::WRITE_EXTENDED_INQUIRY_RESPONSE
+                            | CommandFlags::READ_DEFAULT_ERRONEOUS_DATA_REPORTING
+                            | CommandFlags::USER_PASSKEY_REQUEST_NEGATIVE_REPLY
+                            | CommandFlags::READ_ENCRYPTION_KEY_SIZE
+                            | CommandFlags::DISCONNECT_LOGICAL_LINK
+                            | CommandFlags::READ_LOCAL_AMP_ASSOC
+                            | CommandFlags::AMP_TEST
+                            | CommandFlags::READ_ENHANCED_TRANSMIT_POWER_LEVEL
+                            | CommandFlags::LE_READ_BUFFER_SIZE
+                            | CommandFlags::LE_SET_SCAN_PARAMETERS
+                            | CommandFlags::LE_SET_HOST_CHANNEL_CLASSIFICATION
+                            | CommandFlags::LE_RECEIVER_TEST
+                            | CommandFlags::READ_LOCAL_SUPPORTED_CODECS
+                            | CommandFlags::TRUNCATED_PAGE
+                            | CommandFlags::READ_SYNCHRONIZATION_TRAIN_PARAMETERS
+                            | CommandFlags::WRITE_SYNCHRONIZATION_TRAIN_PARAMETERS
+                            | CommandFlags::WRITE_EXTENDED_PAGE_TIMEOUT
+                            | CommandFlags::LE_GENERATE_DH_KEY
+                            | CommandFlags::LE_READ_MAXIMUM_DATA_LENGTH
+                            | CommandFlags::LE_SET_EXTENDED_SCAN_RESPONSE_DATA_COMMAND
+                            | CommandFlags::LE_SET_EXTENDED_SCAN_PARAMETERS_COMMAND
+                            | CommandFlags::LE_READ_PERIODIC_ADVERTISER_LIST_SIZE_COMMAND
+                    );
+                    assert!(params.supported_commands.is_set(CommandFlags::INQUIRY));
+                    assert!(
+                        params.supported_commands.contains(
+                            CommandFlags::INQUIRY | CommandFlags::REJECT_CONNECTION_REQUEST
+                        )
+                    );
+                }
+                other => panic!(
+                    "Did not get Read Supported Commands return params: {:?}",
+                    other
+                ),
+            }
+        }
+        other => panic!("Did not get command complete event: {:?}", other),
+    }
+}
+
+#[cfg(feature = "version-5-0")]
+#[test]
+fn read_local_supported_commands_failed_bad_command_flag() {
+    let buffer = [
+        0x0E, 68, 1, 0x02, 0x10, 0x00, 0x01, 0x02, 0x04, 0x00, 0x10, 0x20, 0x40, 0x80, 0x01, 0x02,
+        0x04, 0x08, 0x10, 0x00, 0x40, 0x80, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x01,
+        0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Err(Error::BadCommandFlag(octet, value)) => {
+            assert_eq!(octet, 39);
+            assert_eq!(value, 0x80);
+        }
+        other => panic!("Did not get Bad Command Flag: {:?}", other),
     }
 }

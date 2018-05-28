@@ -113,3 +113,12 @@ fn read_local_version_information() {
         .unwrap();
     assert_eq!(sink.written_data, [1, 0x01, 0x10, 0])
 }
+
+#[test]
+fn read_local_supported_commands() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller()
+        .read_local_supported_commands()
+        .unwrap();
+    assert_eq!(sink.written_data, [1, 0x02, 0x10, 0]);
+}
