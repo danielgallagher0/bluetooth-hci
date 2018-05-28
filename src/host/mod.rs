@@ -226,6 +226,25 @@ pub trait Hci<E, Header> {
     ///
     /// Generates a command complete event with the local supported features.
     fn read_local_supported_features(&mut self) -> nb::Result<(), E>;
+
+    /// On a BR/EDR Controller, this command reads the Bluetooth Controller address (BD_ADDR).
+    ///
+    /// On an LE Controller, this command shall read the Public Device Address as defined in the
+    /// Bluetooth spec, Vol 6, Part B, Section 1.3. If this Controller does not have a Public Device
+    /// Address, the value 0x000000000000 shall be returned.
+    ///
+    /// On a BR/EDR/LE Controller, the public address shall be the same as the BD_ADDR.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.4.6.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported.
+    ///
+    /// # Generated events
+    ///
+    /// Generates a command complete event with the BDADDR.
+    fn read_bd_addr(&mut self) -> nb::Result<(), E>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -330,6 +349,10 @@ where
 
     fn read_local_supported_features(&mut self) -> nb::Result<(), E> {
         write_command::<Header, T, E>(self, ::opcode::READ_LOCAL_SUPPORTED_FEATURES, &[])
+    }
+
+    fn read_bd_addr(&mut self) -> nb::Result<(), E> {
+        write_command::<Header, T, E>(self, ::opcode::READ_BD_ADDR, &[])
     }
 }
 

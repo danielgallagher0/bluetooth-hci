@@ -18,6 +18,7 @@ mod ocf {
     pub const READ_LOCAL_VERSION_INFO: u16 = 0x0001;
     pub const READ_LOCAL_SUPPORTED_COMMANDS: u16 = 0x0002;
     pub const READ_LOCAL_SUPPORTED_FEATURES: u16 = 0x0003;
+    pub const READ_BD_ADDR: u16 = 0x0009;
 }
 
 /// Newtype wrapper for a Bluetooth Opcode. Opcodes are used to indicate which command to send to
@@ -58,3 +59,4 @@ pub const READ_LOCAL_SUPPORTED_COMMANDS: Opcode =
     Opcode::new(ogf::INFO_PARAM, ocf::READ_LOCAL_SUPPORTED_COMMANDS);
 pub const READ_LOCAL_SUPPORTED_FEATURES: Opcode =
     Opcode::new(ogf::INFO_PARAM, ocf::READ_LOCAL_SUPPORTED_FEATURES);
+pub const READ_BD_ADDR: Opcode = Opcode::new(ogf::INFO_PARAM, ocf::READ_BD_ADDR);

@@ -67,6 +67,7 @@ impl CommandComplete {
             ::opcode::READ_LOCAL_SUPPORTED_FEATURES => {
                 ReturnParameters::ReadLocalSupportedFeatures(to_supported_features(&bytes[3..])?)
             }
+            ::opcode::READ_BD_ADDR => ReturnParameters::ReadBdAddr(to_bd_addr(&bytes[3..])?),
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -101,6 +102,9 @@ pub enum ReturnParameters {
 
     /// Supported features returned by the Read Local Supported Features command.
     ReadLocalSupportedFeatures(LocalSupportedFeatures),
+
+    /// BD ADDR returned by the Read BD ADDR command.
+    ReadBdAddr(ReadBdAddr),
 }
 
 fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {
@@ -1104,5 +1108,26 @@ fn to_supported_features<VE>(bytes: &[u8]) -> Result<LocalSupportedFeatures, ::e
     Ok(LocalSupportedFeatures {
         status: to_status(bytes)?,
         supported_features: LmpFeatures::from_bits_truncate(LittleEndian::read_u64(&bytes[1..])),
+    })
+}
+
+/// Values returned by the Read BD ADDR command.  See the Bluetooth Specifications,
+/// v 4.1 or later, Vol 2, Part E, Section 7.4.6.
+#[derive(Copy, Clone, Debug)]
+pub struct ReadBdAddr {
+    /// Did the command fail, and if so, how?
+    pub status: ::Status,
+
+    /// Flags for supported features.
+    pub bd_addr: ::BdAddr,
+}
+
+fn to_bd_addr<VE>(bytes: &[u8]) -> Result<ReadBdAddr, ::event::Error<VE>> {
+    require_len!(bytes, 7);
+    let mut bd_addr = ::BdAddr([0; 6]);
+    bd_addr.0.copy_from_slice(&bytes[1..]);
+    Ok(ReadBdAddr {
+        status: to_status(bytes)?,
+        bd_addr: bd_addr,
     })
 }

@@ -422,3 +422,26 @@ fn read_local_supported_features() {
         other => panic!("Did not get command complete event: {:?}", other),
     }
 }
+
+#[test]
+fn read_bd_addr() {
+    let buffer = [
+        0x0E, 10, 1, 0x09, 0x10, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::CommandComplete(event)) => {
+            assert_eq!(event.num_hci_command_packets, 1);
+            match event.return_params {
+                ReturnParameters::ReadBdAddr(params) => {
+                    assert_eq!(params.status, ::hci::Status::Success);
+                    assert_eq!(
+                        params.bd_addr,
+                        ::hci::BdAddr([0x01, 0x02, 0x03, 0x04, 0x05, 0x06])
+                    );
+                }
+                other => panic!("Did not get Read BDADDR return params: {:?}", other),
+            }
+        }
+        other => panic!("Did not get command complete event: {:?}", other),
+    }
+}

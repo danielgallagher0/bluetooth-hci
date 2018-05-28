@@ -131,3 +131,10 @@ fn read_local_supported_features() {
         .unwrap();
     assert_eq!(sink.written_data, [1, 0x03, 0x10, 0]);
 }
+
+#[test]
+fn read_bd_addr() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller().read_bd_addr().unwrap();
+    assert_eq!(sink.written_data, [1, 0x09, 0x10, 0]);
+}
