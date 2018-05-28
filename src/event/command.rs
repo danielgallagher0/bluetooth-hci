@@ -68,6 +68,7 @@ impl CommandComplete {
                 ReturnParameters::ReadLocalSupportedFeatures(to_supported_features(&bytes[3..])?)
             }
             ::opcode::READ_BD_ADDR => ReturnParameters::ReadBdAddr(to_bd_addr(&bytes[3..])?),
+            ::opcode::READ_RSSI => ReturnParameters::ReadRssi(to_read_rssi(&bytes[3..])?),
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -105,6 +106,9 @@ pub enum ReturnParameters {
 
     /// BD ADDR returned by the Read BD ADDR command.
     ReadBdAddr(ReadBdAddr),
+
+    /// RSSI returned by the Read RSSI command.
+    ReadRssi(ReadRssi),
 }
 
 fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {
@@ -1129,5 +1133,40 @@ fn to_bd_addr<VE>(bytes: &[u8]) -> Result<ReadBdAddr, ::event::Error<VE>> {
     Ok(ReadBdAddr {
         status: to_status(bytes)?,
         bd_addr: bd_addr,
+    })
+}
+
+/// Values returned by the Read RSSI command.  See the Bluetooth Specifications,
+/// v 4.1 or later, Vol 2, Part E, Section 7.5.4.
+#[derive(Copy, Clone, Debug)]
+pub struct ReadRssi {
+    /// Did the command fail, and if so, how?
+    pub status: ::Status,
+
+    /// The Handle for the connection for which the RSSI has been read.
+    ///
+    /// The Handle is a connection handle for a BR/EDR Controller and a physical link handle for an
+    /// AMP Controller.
+    pub conn_handle: ::ConnectionHandle,
+
+    /// - BR/EDR
+    ///   - No range restriction
+    ///   - Units: dB
+    /// - AMP:
+    ///   - Range: AMP type specific
+    ///   - Units: dBm
+    /// - LE:
+    ///   - Range: -127 to 20, range not checked by this implementation. 127 indicates RSSI not
+    ///     available.
+    ///   - Units: dBm
+    pub rssi: i8,
+}
+
+fn to_read_rssi<VE>(bytes: &[u8]) -> Result<ReadRssi, ::event::Error<VE>> {
+    require_len!(bytes, 4);
+    Ok(ReadRssi {
+        status: to_status(bytes)?,
+        conn_handle: ::ConnectionHandle(LittleEndian::read_u16(&bytes[1..])),
+        rssi: unsafe { mem::transmute::<u8, i8>(bytes[3]) },
     })
 }

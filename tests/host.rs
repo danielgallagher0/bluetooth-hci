@@ -138,3 +138,12 @@ fn read_bd_addr() {
     sink.as_controller().read_bd_addr().unwrap();
     assert_eq!(sink.written_data, [1, 0x09, 0x10, 0]);
 }
+
+#[test]
+fn read_rssi() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller()
+        .read_rssi(hci::ConnectionHandle(0x0201))
+        .unwrap();
+    assert_eq!(sink.written_data, [1, 0x05, 0x14, 2, 0x01, 0x02]);
+}

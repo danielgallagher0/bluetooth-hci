@@ -245,6 +245,45 @@ pub trait Hci<E, Header> {
     ///
     /// Generates a command complete event with the BDADDR.
     fn read_bd_addr(&mut self) -> nb::Result<(), E>;
+
+    /// This command reads the Received Signal Strength Indication (RSSI) value from a Controller.
+    ///
+    /// For a BR/EDR Controller, a connection handle is used as the Handle command parameter and
+    /// return parameter. The RSSI parameter returns the difference between the measured Received
+    /// Signal Strength Indication (RSSI) and the limits of the Golden Receive Power Range for a
+    /// connection handle to another BR/EDR Controller. The connection handle must be a
+    /// connection handle for an ACL connection. Any positive RSSI value returned by the Controller
+    /// indicates how many dB the RSSI is above the upper limit, any negative value indicates how
+    /// many dB the RSSI is below the lower limit. The value zero indicates that the RSSI is inside
+    /// the Golden Receive Power Range.
+    ///
+    /// Note: How accurate the dB values will be depends on the Bluetooth hardware. The only
+    /// requirements for the hardware are that the BR/EDR Controller is able to tell whether the
+    /// RSSI is inside, above or below the Golden Device Power Range.
+    ///
+    /// The RSSI measurement compares the received signal power with two threshold levels, which
+    /// define the Golden Receive Power Range. The lower threshold level corresponds to a received
+    /// power between -56 dBm and 6 dB above the actual sensitivity of the receiver. The upper
+    /// threshold level is 20 dB above the lower threshold level to an accuracy of +/- 6 dB.
+    ///
+    /// For an AMP Controller, a physical link handle is used for the Handle command parameter and
+    /// return parameter. The meaning of the RSSI metric is AMP type specific and defined in the AMP
+    /// PALs (see Volume 5, Core System Package [AMP Controller volume]).
+    ///
+    /// For an LE transport, a connection handle is used as the Handle command parameter and return
+    /// parameter. The meaning of the RSSI metric is an absolute receiver signal strength value in
+    /// dBm to ± 6 dB accuracy. If the RSSI cannot be read, the RSSI metric shall be set to 127.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.5.4.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported.
+    ///
+    /// # Generated events
+    ///
+    /// Generates a command complete event with the RSSI value.
+    fn read_rssi(&mut self, conn_handle: ::ConnectionHandle) -> nb::Result<(), E>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -353,6 +392,12 @@ where
 
     fn read_bd_addr(&mut self) -> nb::Result<(), E> {
         write_command::<Header, T, E>(self, ::opcode::READ_BD_ADDR, &[])
+    }
+
+    fn read_rssi(&mut self, conn_handle: ::ConnectionHandle) -> nb::Result<(), E> {
+        let mut params = [0; 2];
+        LittleEndian::write_u16(&mut params, conn_handle.0);
+        write_command::<Header, T, E>(self, ::opcode::READ_RSSI, &params)
     }
 }
 
