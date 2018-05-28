@@ -389,3 +389,36 @@ fn read_local_supported_commands_failed_bad_command_flag() {
         other => panic!("Did not get Bad Command Flag: {:?}", other),
     }
 }
+
+#[test]
+fn read_local_supported_features() {
+    let buffer = [
+        0x0E, 12, 1, 0x03, 0x10, 0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::CommandComplete(event)) => {
+            assert_eq!(event.num_hci_command_packets, 1);
+            match event.return_params {
+                ReturnParameters::ReadLocalSupportedFeatures(params) => {
+                    assert_eq!(params.status, ::hci::Status::Success);
+                    assert_eq!(
+                        params.supported_features,
+                        LmpFeatures::THREE_SLOT_PACKETS
+                            | LmpFeatures::POWER_CONTROL_REQUESTS
+                            | LmpFeatures::POWER_CONTROL
+                            | LmpFeatures::ENHANCED_INQUIRY_SCAN
+                            | LmpFeatures::AFH_CLASSIFICATION_PERIPHERAL
+                            | LmpFeatures::ENHANCED_DATA_RATE_ESCO_2_MB_PER_S_MODE
+                            | LmpFeatures::NON_FLUSHABLE_PACKET_BOUNDARY_FLAG
+                            | LmpFeatures::EXTENDED_FEATURES
+                    );
+                }
+                other => panic!(
+                    "Did not get Read Supported Features return params: {:?}",
+                    other
+                ),
+            }
+        }
+        other => panic!("Did not get command complete event: {:?}", other),
+    }
+}

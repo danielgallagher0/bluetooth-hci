@@ -201,7 +201,7 @@ pub trait Hci<E, Header> {
     ///
     /// See the Bluetooth Spec, Vol 2, Part E, Section 6.27 for more information.
     ///
-    /// See the Bluetoth spec, Vol 2, Part E, Section 7.4.2.
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.4.2.
     ///
     /// # Errors
     ///
@@ -211,6 +211,21 @@ pub trait Hci<E, Header> {
     ///
     /// Generates a command complete event with the local supported commands.
     fn read_local_supported_commands(&mut self) -> nb::Result<(), E>;
+
+    /// This command requests a list of the supported features for the local BR/EDR Controller.
+    ///
+    /// See the Bluetooth Spec, Vol 2, Part C, Section 3.3 for more information about the features.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.4.3.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported.
+    ///
+    /// # Generated events
+    ///
+    /// Generates a command complete event with the local supported features.
+    fn read_local_supported_features(&mut self) -> nb::Result<(), E>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -311,6 +326,10 @@ where
 
     fn read_local_supported_commands(&mut self) -> nb::Result<(), E> {
         write_command::<Header, T, E>(self, ::opcode::READ_LOCAL_SUPPORTED_COMMANDS, &[])
+    }
+
+    fn read_local_supported_features(&mut self) -> nb::Result<(), E> {
+        write_command::<Header, T, E>(self, ::opcode::READ_LOCAL_SUPPORTED_FEATURES, &[])
     }
 }
 

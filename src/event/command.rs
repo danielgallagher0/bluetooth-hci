@@ -64,6 +64,9 @@ impl CommandComplete {
             ::opcode::READ_LOCAL_SUPPORTED_COMMANDS => {
                 ReturnParameters::ReadLocalSupportedCommands(to_supported_commands(&bytes[3..])?)
             }
+            ::opcode::READ_LOCAL_SUPPORTED_FEATURES => {
+                ReturnParameters::ReadLocalSupportedFeatures(to_supported_features(&bytes[3..])?)
+            }
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -95,6 +98,9 @@ pub enum ReturnParameters {
 
     /// Supported commands returned by the Read Local Supported Commands command.
     ReadLocalSupportedCommands(LocalSupportedCommands),
+
+    /// Supported features returned by the Read Local Supported Features command.
+    ReadLocalSupportedFeatures(LocalSupportedFeatures),
 }
 
 fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {
@@ -687,16 +693,16 @@ impl CommandFlags {
         const TRUNCATED_PAGE = 30, 1 << 6;
         /// Truncated Page Cancel
         const TRUNCATED_PAGE_CANCEL = 30, 1 << 7;
-        /// Set Connectionless Slave Broadcast
-        const SET_CONNECTIONLESS_SLAVE_BROADCAST = 31, 1 << 0;
-        /// Set Connectionless Slave Broadcast Receive
-        const SET_CONNECTIONLESS_SLAVE_BROADCAST_RECEIVE = 31, 1 << 1;
+        /// Set Connectionless Peripheral Broadcast
+        const SET_CONNECTIONLESS_PERIPHERAL_BROADCAST = 31, 1 << 0;
+        /// Set Connectionless Peripheral Broadcast Receive
+        const SET_CONNECTIONLESS_PERIPHERAL_BROADCAST_RECEIVE = 31, 1 << 1;
         /// Start Synchronization Train
         const START_SYNCHRONIZATION_TRAIN = 31, 1 << 2;
         /// Receive Synchronization Train
         const RECEIVE_SYNCHRONIZATION_TRAIN = 31, 1 << 3;
-        /// Set Connectionless Slave Broadcast Data
-        const SET_CONNECTIONLESS_SLAVE_BROADCAST_DATA = 31, 1 << 6;
+        /// Set Connectionless Peripheral Broadcast Data
+        const SET_CONNECTIONLESS_PERIPHERAL_BROADCAST_DATA = 31, 1 << 6;
         /// Read Synchronization Train Parameters
         const READ_SYNCHRONIZATION_TRAIN_PARAMETERS = 31, 1 << 7;
         /// Write Synchronization Train Parameters
@@ -963,5 +969,140 @@ fn to_supported_commands<VE>(bytes: &[u8]) -> Result<LocalSupportedCommands, ::e
                 }
                 _ => unreachable!(),
             })?,
+    })
+}
+
+/// Values returned by the Read Local Supported Features command.  See the Bluetooth Specifications,
+/// v 4.1 or later, Vol 2, Part E, Section 7.4.3.
+#[derive(Copy, Clone, Debug)]
+pub struct LocalSupportedFeatures {
+    /// Did the command fail, and if so, how?
+    pub status: ::Status,
+
+    /// Flags for supported features.
+    pub supported_features: LmpFeatures,
+}
+
+bitflags! {
+    /// See the Bluetooth Specification, v4.1 or later, Vol 2, Part C, Section 3.3 (Table 3.2).
+    pub struct LmpFeatures : u64 {
+        /// 3-slot packets
+        const THREE_SLOT_PACKETS = 1 << 0;
+        /// 5-slot packets
+        const FIVE_SLOT_PACKETS = 1 << 1;
+        /// Encryption
+        const ENCRYPTION = 1 << 2;
+        /// Slot offset
+        const SLOT_OFFSET = 1 << 3;
+        /// Timing accuracy
+        const TIMING_ACCURACY = 1 << 4;
+        /// Role switch
+        const ROLE_SWITCH = 1 << 5;
+        /// Hold mode
+        const HOLD_MODE = 1 << 6;
+        /// Sniff mode
+        const SNIFF_MODE = 1 << 7;
+        /// Power control requests
+        const POWER_CONTROL_REQUESTS = 1 << 9;
+        /// Channel quality driven data rate (CQDDR)
+        const CHANNEL_QUALITY_DRIVEN_DATA_RATE_CQDDR = 1 << 10;
+        /// SCO link
+        const SCO_LINK = 1 << 11;
+        /// HV2 packets
+        const HV2_PACKETS = 1 << 12;
+        /// HV3 packets
+        const HV3_PACKETS = 1 << 13;
+        /// μ-law log synchronous data
+        const MU_LAW_LOG_SYNCHRONOUS_DATA = 1 << 14;
+        /// A-law log synchronous data
+        const A_LAW_LOG_SYNCHRONOUS_DATA = 1 << 15;
+        /// CVSD synchronous data
+        const CVSD_SYNCHRONOUS_DATA = 1 << 16;
+        /// Paging parameter negotiation
+        const PAGING_PARAMETER_NEGOTIATION = 1 << 17;
+        /// Power control
+        const POWER_CONTROL = 1 << 18;
+        /// Transparent synchronous data
+        const TRANSPARENT_SYNCHRONOUS_DATA = 1 << 19;
+        /// Flow control lag (least significant bit)
+        const FLOW_CONTROL_LAG_LSB = 1 << 20;
+        /// Flow control lag (middle bit)
+        const FLOW_CONTROL_LAG_MID = 1 << 21;
+        /// Flow control lag (most significant bit)
+        const FLOW_CONTROL_LAG_MSB = 1 << 22;
+        /// Broadcast Encryption
+        const BROADCAST_ENCRYPTION = 1 << 23;
+        /// Enhanced Data Rate ACL 2 Mb/s mode
+        const ENHANCED_DATA_RATE_ACL_2_MB_PER_S_MODE = 1 << 25;
+        /// Enhanced Data Rate ACL 3 Mb/s mode
+        const ENHANCED_DATA_RATE_ACL_3_MB_PER_S_MODE = 1 << 26;
+        /// Enhanced inquiry scan
+        const ENHANCED_INQUIRY_SCAN = 1 << 27;
+        /// Interlaced inquiry scan
+        const INTERLACED_INQUIRY_SCAN = 1 << 28;
+        /// Interlaced page scan
+        const INTERLACED_PAGE_SCAN = 1 << 29;
+        /// RSSI with inquiry results
+        const RSSI_WITH_INQUIRY_RESULTS = 1 << 30;
+        /// Extended SCO link (EV3 packets)
+        const EXTENDED_SCO_LINK_EV3_PACKETS = 1 << 31;
+        /// EV4 packets
+        const EV4_PACKETS = 1 << 32;
+        /// EV5 packets
+        const EV5_PACKETS = 1 << 33;
+        /// AFH capable peripheral
+        const AFH_CAPABLE_PERIPHERAL = 1 << 35;
+        /// AFH classification peripheral
+        const AFH_CLASSIFICATION_PERIPHERAL = 1 << 36;
+        /// BR/EDR Not Supported
+        const BR_EDR_NOT_SUPPORTED = 1 << 37;
+        /// LE Supported (Controller)
+        const LE_SUPPORTED_BY_CONTROLLER = 1 << 38;
+        /// 3-slot Enhanced Data Rate ACL packets
+        const THREE_SLOT_ENHANCED_DATA_RATE_ACL_PACKETS = 1 << 39;
+        /// 5-slot Enhanced Data Rate ACL packets
+        const FIVE_SLOT_ENHANCED_DATA_RATE_ACL_PACKETS = 1 << 40;
+        /// Sniff subrating
+        const SNIFF_SUBRATING = 1 << 41;
+        /// Pause encryption
+        const PAUSE_ENCRYPTION = 1 << 42;
+        /// AFH capable central device
+        const AFH_CAPABLE_CENTRAL_DEVICE = 1 << 43;
+        /// AFH classification central device
+        const AFH_CLASSIFICATION_CENTRAL_DEVICE = 1 << 44;
+        /// Enhanced Data Rate eSCO 2 Mb/s mode
+        const ENHANCED_DATA_RATE_ESCO_2_MB_PER_S_MODE = 1 << 45;
+        /// Enhanced Data Rate eSCO 3 Mb/s mode
+        const ENHANCED_DATA_RATE_ESCO_3_MB_PER_S_MODE = 1 << 46;
+        /// 3-slot Enhanced Data Rate eSCO packets
+        const THREE_SLOT_ENHANCED_DATA_RATE_ESCO_PACKETS = 1 << 47;
+        /// Extended Inquiry Response
+        const EXTENDED_INQUIRY_RESPONSE = 1 << 48;
+        /// Simultaneous LE and BR/EDR to Same Device Capable (Controller)
+        const SIMULTANEOUS_LE_AND_BR_EDR_TO_SAME_DEVICE_CAPABLE = 1 << 49;
+        /// Secure Simple Pairing
+        const SECURE_SIMPLE_PAIRING = 1 << 51;
+        /// Encapsulated PDU
+        const ENCAPSULATED_PDU = 1 << 52;
+        /// Erroneous Data Reporting
+        const ERRONEOUS_DATA_REPORTING = 1 << 53;
+        /// Non-flushable Packet Boundary Flag
+        const NON_FLUSHABLE_PACKET_BOUNDARY_FLAG = 1 << 54;
+        /// Link Supervision Timeout Changed Event
+        const LINK_SUPERVISION_TIMEOUT_CHANGED_EVENT = 1 << 56;
+        /// Inquiry TX Power Level
+        const INQUIRY_TX_POWER_LEVEL = 1 << 57;
+        /// Enhanced Power Control
+        const ENHANCED_POWER_CONTROL = 1 << 58;
+        /// Extended features
+        const EXTENDED_FEATURES = 1 << 63;
+    }
+}
+
+fn to_supported_features<VE>(bytes: &[u8]) -> Result<LocalSupportedFeatures, ::event::Error<VE>> {
+    require_len!(bytes, 9);
+    Ok(LocalSupportedFeatures {
+        status: to_status(bytes)?,
+        supported_features: LmpFeatures::from_bits_truncate(LittleEndian::read_u64(&bytes[1..])),
     })
 }
