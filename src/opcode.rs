@@ -3,6 +3,7 @@ mod ogf {
     pub const CONTROLLER_OR_BASEBAND: u16 = 0x0003;
     pub const INFO_PARAM: u16 = 0x0004;
     pub const STATUS_PARAM: u16 = 0x0005;
+    pub const LE: u16 = 0x0008;
 }
 
 mod ocf {
@@ -23,6 +24,9 @@ mod ocf {
 
     // Status commands
     pub const READ_RSSI: u16 = 0x0005;
+
+    // LE command
+    pub const LE_SET_EVENT_MASK: u16 = 0x0001;
 }
 
 /// Newtype wrapper for a Bluetooth Opcode. Opcodes are used to indicate which command to send to
@@ -66,3 +70,5 @@ pub const READ_LOCAL_SUPPORTED_FEATURES: Opcode =
 pub const READ_BD_ADDR: Opcode = Opcode::new(ogf::INFO_PARAM, ocf::READ_BD_ADDR);
 
 pub const READ_RSSI: Opcode = Opcode::new(ogf::STATUS_PARAM, ocf::READ_RSSI);
+
+pub const LE_SET_EVENT_MASK: Opcode = Opcode::new(ogf::LE, ocf::LE_SET_EVENT_MASK);

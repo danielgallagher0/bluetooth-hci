@@ -147,3 +147,17 @@ fn read_rssi() {
         .unwrap();
     assert_eq!(sink.written_data, [1, 0x05, 0x14, 2, 0x01, 0x02]);
 }
+
+#[test]
+fn le_set_event_mask() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller()
+        .le_set_event_mask(
+            LeEventFlags::CONNECTION_COMPLETE | LeEventFlags::REMOTE_CONNECTION_PARAMETER_REQUEST,
+        )
+        .unwrap();
+    assert_eq!(
+        sink.written_data,
+        [1, 0x01, 0x20, 8, 0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    );
+}

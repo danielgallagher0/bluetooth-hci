@@ -69,6 +69,9 @@ impl CommandComplete {
             }
             ::opcode::READ_BD_ADDR => ReturnParameters::ReadBdAddr(to_bd_addr(&bytes[3..])?),
             ::opcode::READ_RSSI => ReturnParameters::ReadRssi(to_read_rssi(&bytes[3..])?),
+            ::opcode::LE_SET_EVENT_MASK => {
+                ReturnParameters::LeSetEventMask(to_status(&bytes[3..])?)
+            }
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -109,6 +112,9 @@ pub enum ReturnParameters {
 
     /// RSSI returned by the Read RSSI command.
     ReadRssi(ReadRssi),
+
+    /// Status returned by the LE Set Event Mask command.
+    LeSetEventMask(::Status),
 }
 
 fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {

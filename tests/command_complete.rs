@@ -464,3 +464,20 @@ fn read_rssi() {
         other => panic!("Did not get command complete event: {:?}", other),
     }
 }
+
+#[test]
+fn le_set_event_mask() {
+    let buffer = [0x0E, 4, 2, 0x01, 0x20, 0x00];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::CommandComplete(event)) => {
+            assert_eq!(event.num_hci_command_packets, 2);
+            match event.return_params {
+                ReturnParameters::LeSetEventMask(status) => {
+                    assert_eq!(status, ::hci::Status::Success)
+                }
+                other => panic!("Did not get LE Set Event Mask return params: {:?}", other),
+            }
+        }
+        other => panic!("Did not get command complete event: {:?}", other),
+    }
+}
