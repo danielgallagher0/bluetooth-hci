@@ -168,3 +168,12 @@ fn le_read_buffer_size() {
     sink.as_controller().le_read_buffer_size().unwrap();
     assert_eq!(sink.written_data, [1, 0x02, 0x20, 0]);
 }
+
+#[test]
+fn le_read_local_supported_features() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller()
+        .le_read_local_supported_features()
+        .unwrap();
+    assert_eq!(sink.written_data, [1, 0x03, 0x20, 0]);
+}

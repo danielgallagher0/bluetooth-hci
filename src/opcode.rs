@@ -67,5 +67,6 @@ opcodes! {
     {
         pub const LE_SET_EVENT_MASK = 0x0001;
         pub const LE_READ_BUFFER_SIZE = 0x0002;
+        pub const LE_READ_LOCAL_SUPPORTED_FEATURES = 0x0003;
     }
 }

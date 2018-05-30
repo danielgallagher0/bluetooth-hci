@@ -331,6 +331,19 @@ pub trait Hci<E, Header> {
     ///
     /// Generates a command complete event with the buffer size and number of ACL data packets.
     fn le_read_buffer_size(&mut self) -> nb::Result<(), E>;
+
+    /// This command requests the list of the supported LE features for the Controller.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.3.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported.
+    ///
+    /// # Generated events
+    ///
+    /// Generates a command complete event with the buffer size and number of ACL data packets.
+    fn le_read_local_supported_features(&mut self) -> nb::Result<(), E>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -456,6 +469,10 @@ where
 
     fn le_read_buffer_size(&mut self) -> nb::Result<(), E> {
         write_command::<Header, T, E>(self, ::opcode::LE_READ_BUFFER_SIZE, &[])
+    }
+
+    fn le_read_local_supported_features(&mut self) -> nb::Result<(), E> {
+        write_command::<Header, T, E>(self, ::opcode::LE_READ_LOCAL_SUPPORTED_FEATURES, &[])
     }
 }
 

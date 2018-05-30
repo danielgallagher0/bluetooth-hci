@@ -500,3 +500,77 @@ fn le_read_buffer_size() {
         other => panic!("Did not get command complete event: {:?}", other),
     }
 }
+
+#[cfg(feature = "version-4-1")]
+#[test]
+fn le_read_local_supported_features() {
+    let buffer = [
+        0x0E, 12, 1, 0x03, 0x20, 0x00, 0x11, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::CommandComplete(event)) => {
+            assert_eq!(event.num_hci_command_packets, 1);
+            match event.return_params {
+                ReturnParameters::LeReadLocalSupportedFeatures(event) => {
+                    assert_eq!(event.status, ::hci::Status::Success);
+                    assert_eq!(
+                        event.supported_features,
+                        LeFeatures::ENCRYPTION | LeFeatures::PING
+                    );
+                }
+                other => panic!("Did not get LE Read Buffer Size return params: {:?}", other),
+            }
+        }
+        other => panic!("Did not get command complete event: {:?}", other),
+    }
+}
+
+#[cfg(feature = "version-4-2")]
+#[test]
+fn le_read_local_supported_features() {
+    let buffer = [
+        0x0E, 12, 1, 0x03, 0x20, 0x00, 0x81, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::CommandComplete(event)) => {
+            assert_eq!(event.num_hci_command_packets, 1);
+            match event.return_params {
+                ReturnParameters::LeReadLocalSupportedFeatures(event) => {
+                    assert_eq!(event.status, ::hci::Status::Success);
+                    assert_eq!(
+                        event.supported_features,
+                        LeFeatures::ENCRYPTION | LeFeatures::EXTENDED_SCANNER_FILTER_POLICIES
+                    );
+                }
+                other => panic!("Did not get LE Read Buffer Size return params: {:?}", other),
+            }
+        }
+        other => panic!("Did not get command complete event: {:?}", other),
+    }
+}
+
+#[cfg(feature = "version-5-0")]
+#[test]
+fn le_read_local_supported_features() {
+    let buffer = [
+        0x0E, 12, 1, 0x03, 0x20, 0x00, 0x04, 0x02, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::CommandComplete(event)) => {
+            assert_eq!(event.num_hci_command_packets, 1);
+            match event.return_params {
+                ReturnParameters::LeReadLocalSupportedFeatures(event) => {
+                    assert_eq!(event.status, ::hci::Status::Success);
+                    assert_eq!(
+                        event.supported_features,
+                        LeFeatures::EXTENDED_REJECT_INDICATION
+                            | LeFeatures::STABLE_MODULATION_INDEX_TX
+                            | LeFeatures::MINIMUM_NUMBER_OF_USED_CHANNELS_PROCEDURE
+                    );
+                }
+                other => panic!("Did not get LE Read Buffer Size return params: {:?}", other),
+            }
+        }
+        other => panic!("Did not get command complete event: {:?}", other),
+    }
+}

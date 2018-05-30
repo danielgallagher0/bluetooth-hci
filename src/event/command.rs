@@ -75,6 +75,11 @@ impl CommandComplete {
             ::opcode::LE_READ_BUFFER_SIZE => {
                 ReturnParameters::LeReadBufferSize(to_le_read_buffer_status(&bytes[3..])?)
             }
+            ::opcode::LE_READ_LOCAL_SUPPORTED_FEATURES => {
+                ReturnParameters::LeReadLocalSupportedFeatures(to_le_local_supported_features(
+                    &bytes[3..],
+                )?)
+            }
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -121,6 +126,9 @@ pub enum ReturnParameters {
 
     /// Parameters returned by the LE Read Buffer Size command.
     LeReadBufferSize(LeReadBufferSize),
+
+    /// Parameters returned by the LE Read Local Supported Features command.
+    LeReadLocalSupportedFeatures(LeSupportedFeatures),
 }
 
 fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {
@@ -1216,5 +1224,80 @@ fn to_le_read_buffer_status<VE>(bytes: &[u8]) -> Result<LeReadBufferSize, ::even
         status: to_status(bytes)?,
         data_packet_length: LittleEndian::read_u16(&bytes[1..]),
         data_packet_count: bytes[3],
+    })
+}
+
+/// Values returned by the LE Read Local Supported Features command.  See the Bluetooth
+/// specification, v4.1 or later, Vol 2, Part E, Section 7.8.3.
+#[derive(Copy, Clone, Debug)]
+pub struct LeSupportedFeatures {
+    /// Did the command fail, and if so, how?
+    pub status: ::Status,
+
+    /// Supported LE features.
+    pub supported_features: LeFeatures,
+}
+
+bitflags! {
+    /// Possible LE features for the LE Read Local Supported Features command.  See the Bluetooth
+    /// specification, Vol 6, Part B, Section 4.6.  See Table 4.3 (v4.1 of the spec), Table 4.4
+    /// (v4.2 and v5.0).
+    pub struct LeFeatures : u64 {
+        /// LE Encryption.  Valid from controller to controller.
+        const ENCRYPTION = 1 << 0;
+        /// Connection Parameters Request Procedure.  Valid from controller to controller.
+        const CONNECTION_PARAMETERS_REQUEST_PROCEDURE = 1 << 1;
+        /// Extended Reject Indication.  Valid from controller to controller.
+        const EXTENDED_REJECT_INDICATION = 1 << 2;
+        /// Peripheral-initiated Features Exchange.  Valid from controller to controller.
+        const PERIPHERALINITIATED_FEATURES_EXCHANGE = 1 << 3;
+        /// LE Ping.  Not valid from controller to controller.
+        const PING = 1 << 4;
+        /// LE Data Packet Length Extension.  Valid from controller to controller.
+        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
+        const DATA_PACKET_LENGTH_EXTENSION = 1 << 5;
+        /// LL Privacy.  Not valid from controller to controller.
+        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
+        const LL_PRIVACY = 1 << 6;
+        /// Extended Scanner Filter Policies.  Not valid from controller to controller.
+        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
+        const EXTENDED_SCANNER_FILTER_POLICIES = 1 << 7;
+        /// LE 2M PHY.  Valid from controller to controller.
+        #[cfg(feature = "version-5-0")]
+        const PHY_2M = 1 << 8;
+        /// Stable Modulation Index - Transmitter.  Valid from controller to controller.
+        #[cfg(feature = "version-5-0")]
+        const STABLE_MODULATION_INDEX_TX = 1 << 9;
+        /// Stable Modulation Index - Receiver.  Valid from controller to controller.
+        #[cfg(feature = "version-5-0")]
+        const STABLE_MODULATION_INDEX_RX = 1 << 10;
+        /// LE Coded PHY.  Valid from controller to controller.
+        #[cfg(feature = "version-5-0")]
+        const CODED_PHY = 1 << 11;
+        /// LE Extended Advertising.  Not valid from controller to controller.
+        #[cfg(feature = "version-5-0")]
+        const EXTENDED_ADVERTISING = 1 << 12;
+        /// LE Periodic Advertising.  Not valid from controller to controller.
+        #[cfg(feature = "version-5-0")]
+        const PERIODIC_ADVERTISING = 1 << 13;
+        /// Channel Selection Algorithm #2.  Valid from controller to controller.
+        #[cfg(feature = "version-5-0")]
+        const CHANNEL_SELECTION_ALGORITHM_2 = 1 << 14;
+        /// LE Power Class 1.  Valid from controller to controller.
+        #[cfg(feature = "version-5-0")]
+        const POWER_CLASS_1 = 1 << 15;
+        /// Minimum Number of Used Channels Procedure
+        #[cfg(feature = "version-5-0")]
+        const MINIMUM_NUMBER_OF_USED_CHANNELS_PROCEDURE = 1 << 16;
+    }
+}
+
+fn to_le_local_supported_features<VE>(
+    bytes: &[u8],
+) -> Result<LeSupportedFeatures, ::event::Error<VE>> {
+    require_len!(bytes, 9);
+    Ok(LeSupportedFeatures {
+        status: to_status(bytes)?,
+        supported_features: LeFeatures::from_bits_truncate(LittleEndian::read_u64(&bytes[1..])),
     })
 }
