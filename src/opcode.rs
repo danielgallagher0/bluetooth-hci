@@ -1,34 +1,3 @@
-mod ogf {
-    pub const LINK_CONTROL: u16 = 0x0001;
-    pub const CONTROLLER_OR_BASEBAND: u16 = 0x0003;
-    pub const INFO_PARAM: u16 = 0x0004;
-    pub const STATUS_PARAM: u16 = 0x0005;
-    pub const LE: u16 = 0x0008;
-}
-
-mod ocf {
-    // Link control commands
-    pub const DISCONNECT: u16 = 0x0006;
-    pub const READ_REMOTE_VERSION_INFO: u16 = 0x001D;
-
-    // Controller or Baseband commands
-    pub const SET_EVENT_MASK: u16 = 0x0001;
-    pub const RESET: u16 = 0x0003;
-    pub const READ_TX_POWER_LEVEL: u16 = 0x002D;
-
-    // Info commands
-    pub const READ_LOCAL_VERSION_INFO: u16 = 0x0001;
-    pub const READ_LOCAL_SUPPORTED_COMMANDS: u16 = 0x0002;
-    pub const READ_LOCAL_SUPPORTED_FEATURES: u16 = 0x0003;
-    pub const READ_BD_ADDR: u16 = 0x0009;
-
-    // Status commands
-    pub const READ_RSSI: u16 = 0x0005;
-
-    // LE command
-    pub const LE_SET_EVENT_MASK: u16 = 0x0001;
-}
-
 /// Newtype wrapper for a Bluetooth Opcode. Opcodes are used to indicate which command to send to
 /// the Controller as well as which command results are returned by the Command Complete and Command
 /// Status events.
@@ -52,23 +21,50 @@ impl Opcode {
     }
 }
 
-pub const DISCONNECT: Opcode = Opcode::new(ogf::LINK_CONTROL, ocf::DISCONNECT);
-pub const READ_REMOTE_VERSION_INFO: Opcode =
-    Opcode::new(ogf::LINK_CONTROL, ocf::READ_REMOTE_VERSION_INFO);
+macro_rules! opcodes {
+    (
+        $(
+            $_ogf_comment:ident = $ogf:expr;
+            {
+                $(pub const $var:ident = $ocf:expr;)+
+            }
+        )+
+    ) => {
+        $($(
+            pub const $var: Opcode = Opcode::new($ogf, $ocf);
+        )+)+
+    }
+}
 
-pub const SET_EVENT_MASK: Opcode = Opcode::new(ogf::CONTROLLER_OR_BASEBAND, ocf::SET_EVENT_MASK);
-pub const RESET: Opcode = Opcode::new(ogf::CONTROLLER_OR_BASEBAND, ocf::RESET);
-pub const READ_TX_POWER_LEVEL: Opcode =
-    Opcode::new(ogf::CONTROLLER_OR_BASEBAND, ocf::READ_TX_POWER_LEVEL);
+opcodes! {
+    LinkControl = 0x0001;
+    {
+        pub const DISCONNECT = 0x0006;
+        pub const READ_REMOTE_VERSION_INFO = 0x001D;
+    }
 
-pub const READ_LOCAL_VERSION_INFO: Opcode =
-    Opcode::new(ogf::INFO_PARAM, ocf::READ_LOCAL_VERSION_INFO);
-pub const READ_LOCAL_SUPPORTED_COMMANDS: Opcode =
-    Opcode::new(ogf::INFO_PARAM, ocf::READ_LOCAL_SUPPORTED_COMMANDS);
-pub const READ_LOCAL_SUPPORTED_FEATURES: Opcode =
-    Opcode::new(ogf::INFO_PARAM, ocf::READ_LOCAL_SUPPORTED_FEATURES);
-pub const READ_BD_ADDR: Opcode = Opcode::new(ogf::INFO_PARAM, ocf::READ_BD_ADDR);
+    ControllerOrBaseband = 0x0003;
+    {
+        pub const SET_EVENT_MASK = 0x0001;
+        pub const RESET = 0x0003;
+        pub const READ_TX_POWER_LEVEL = 0x002D;
+    }
 
-pub const READ_RSSI: Opcode = Opcode::new(ogf::STATUS_PARAM, ocf::READ_RSSI);
+    InfoParam = 0x0004;
+    {
+        pub const READ_LOCAL_VERSION_INFO = 0x0001;
+        pub const READ_LOCAL_SUPPORTED_COMMANDS = 0x0002;
+        pub const READ_LOCAL_SUPPORTED_FEATURES = 0x0003;
+        pub const READ_BD_ADDR = 0x0009;
+    }
 
-pub const LE_SET_EVENT_MASK: Opcode = Opcode::new(ogf::LE, ocf::LE_SET_EVENT_MASK);
+    StatusParam = 0x0005;
+    {
+        pub const READ_RSSI = 0x0005;
+    }
+
+    LeCommands = 0x0008;
+    {
+        pub const LE_SET_EVENT_MASK = 0x0001;
+    }
+}
