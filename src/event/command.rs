@@ -72,6 +72,9 @@ impl CommandComplete {
             ::opcode::LE_SET_EVENT_MASK => {
                 ReturnParameters::LeSetEventMask(to_status(&bytes[3..])?)
             }
+            ::opcode::LE_READ_BUFFER_SIZE => {
+                ReturnParameters::LeReadBufferSize(to_le_read_buffer_status(&bytes[3..])?)
+            }
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -115,6 +118,9 @@ pub enum ReturnParameters {
 
     /// Status returned by the LE Set Event Mask command.
     LeSetEventMask(::Status),
+
+    /// Parameters returned by the LE Read Buffer Size command.
+    LeReadBufferSize(LeReadBufferSize),
 }
 
 fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {
@@ -1174,5 +1180,41 @@ fn to_read_rssi<VE>(bytes: &[u8]) -> Result<ReadRssi, ::event::Error<VE>> {
         status: to_status(bytes)?,
         conn_handle: ::ConnectionHandle(LittleEndian::read_u16(&bytes[1..])),
         rssi: unsafe { mem::transmute::<u8, i8>(bytes[3]) },
+    })
+}
+
+/// Values returned by the LE Read Buffer Size command.  See the Bluetooth specification, v4.1 or
+/// later, Vol 2, Part E, Section 7.8.2.
+#[derive(Copy, Clone, Debug)]
+pub struct LeReadBufferSize {
+    /// Did the command fail, and if so, how?
+    pub status: ::Status,
+
+    /// The size of the L2CAP PDU segments contained in ACL Data Packets, which are transferred from
+    /// the Host to the Controller to be broken up into packets by the Link Layer. Both the Host and
+    /// the Controller shall support command and event packets, where the data portion (excluding
+    /// header) contained in the packets is 255 octets in size.
+    ///
+    /// Note: Does not include the length of the HCI Data Packet header.
+    ///
+    /// If `data_packet_length == 0`, then the controller has no dedicated LE read buffer, so the
+    /// caller should use the `read_buffer_size` command.
+    pub data_packet_length: u16,
+
+    /// Contains the total number of HCI ACL Data Packets that can be stored in the data buffers of
+    /// the Controller. The Host determines how the buffers are to be divided between different
+    /// Connection Handles.
+    ///
+    /// If `data_packet_count == 0`, then the controller has no dedicated LE read buffer, so the
+    /// caller should use the `read_buffer_size` command.
+    pub data_packet_count: u8,
+}
+
+fn to_le_read_buffer_status<VE>(bytes: &[u8]) -> Result<LeReadBufferSize, ::event::Error<VE>> {
+    require_len!(bytes, 4);
+    Ok(LeReadBufferSize {
+        status: to_status(bytes)?,
+        data_packet_length: LittleEndian::read_u16(&bytes[1..]),
+        data_packet_count: bytes[3],
     })
 }

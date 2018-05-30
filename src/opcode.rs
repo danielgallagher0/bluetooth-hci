@@ -66,5 +66,6 @@ opcodes! {
     LeCommands = 0x0008;
     {
         pub const LE_SET_EVENT_MASK = 0x0001;
+        pub const LE_READ_BUFFER_SIZE = 0x0002;
     }
 }

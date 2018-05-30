@@ -304,6 +304,33 @@ pub trait Hci<E, Header> {
     ///
     /// Generates a command complete event with the status.
     fn le_set_event_mask(&mut self, event_mask: LeEventFlags) -> nb::Result<(), E>;
+
+    /// The LE_Read_Buffer_Size command is used to read the maximum size of the data portion of HCI
+    /// LE ACL Data Packets sent from the Host to the Controller.  The Host will segment the data
+    /// transmitted to the Controller according to these values, so that the HCI Data Packets will
+    /// contain data with up to this size. The LE_Read_Buffer_Size command also returns the total
+    /// number of HCI LE ACL Data Packets that can be stored in the data buffers of the
+    /// Controller. The LE_Read_Buffer_Size command must be issued by the Host before it sends any
+    /// data to an LE Controller (see Section 4.1.1).
+    ///
+    /// If the Controller returns a length value of zero, the Host shall use the Read_Buffer_Size
+    /// command to determine the size of the data buffers (shared between BR/EDR and LE
+    /// transports).
+    ///
+    /// Note: Both the Read_Buffer_Size and LE_Read_Buffer_Size commands may return buffer length
+    /// and number of packets parameter values that are nonzero. This allows a Controller to offer
+    /// different buffers and number of buffers for BR/EDR data packets and LE data packets.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.2.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported.
+    ///
+    /// # Generated events
+    ///
+    /// Generates a command complete event with the buffer size and number of ACL data packets.
+    fn le_read_buffer_size(&mut self) -> nb::Result<(), E>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -425,6 +452,10 @@ where
         LittleEndian::write_u64(&mut params, event_mask.bits());
 
         write_command::<Header, T, E>(self, ::opcode::LE_SET_EVENT_MASK, &params)
+    }
+
+    fn le_read_buffer_size(&mut self) -> nb::Result<(), E> {
+        write_command::<Header, T, E>(self, ::opcode::LE_READ_BUFFER_SIZE, &[])
     }
 }
 

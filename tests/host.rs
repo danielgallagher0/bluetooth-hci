@@ -161,3 +161,10 @@ fn le_set_event_mask() {
         [1, 0x01, 0x20, 8, 0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
     );
 }
+
+#[test]
+fn le_read_buffer_size() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller().le_read_buffer_size().unwrap();
+    assert_eq!(sink.written_data, [1, 0x02, 0x20, 0]);
+}

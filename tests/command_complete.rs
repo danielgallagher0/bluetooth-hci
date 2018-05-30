@@ -481,3 +481,22 @@ fn le_set_event_mask() {
         other => panic!("Did not get command complete event: {:?}", other),
     }
 }
+
+#[test]
+fn le_read_buffer_size() {
+    let buffer = [0x0E, 7, 2, 0x02, 0x20, 0x00, 0x01, 0x02, 0x03];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::CommandComplete(event)) => {
+            assert_eq!(event.num_hci_command_packets, 2);
+            match event.return_params {
+                ReturnParameters::LeReadBufferSize(event) => {
+                    assert_eq!(event.status, ::hci::Status::Success);
+                    assert_eq!(event.data_packet_length, 0x0201);
+                    assert_eq!(event.data_packet_count, 0x03);
+                }
+                other => panic!("Did not get LE Read Buffer Size return params: {:?}", other),
+            }
+        }
+        other => panic!("Did not get command complete event: {:?}", other),
+    }
+}
