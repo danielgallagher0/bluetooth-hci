@@ -432,3 +432,12 @@ fn le_set_advertising_parameters_ignore_interval_for_high_duty_cycle() {
         ]
     );
 }
+
+#[test]
+fn le_read_advertising_channel_tx_power() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller()
+        .le_read_advertising_channel_tx_power()
+        .unwrap();
+    assert_eq!(sink.written_data, [1, 0x07, 0x20, 0]);
+}

@@ -86,6 +86,11 @@ impl CommandComplete {
             ::opcode::LE_SET_ADVERTISING_PARAMETERS => {
                 ReturnParameters::LeSetAdvertisingParameters(to_status(&bytes[3..])?)
             }
+            ::opcode::LE_READ_ADVERTISING_CHANNEL_TX_POWER => {
+                ReturnParameters::LeReadAdvertisingChannelTxPower(
+                    to_le_advertising_channel_tx_power(&bytes[3..])?,
+                )
+            }
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -141,6 +146,9 @@ pub enum ReturnParameters {
 
     /// Status returned by the LE Set Advertising Parameters command.
     LeSetAdvertisingParameters(::Status),
+
+    /// Parameters returned by the LE Read Advertising Channel TX Power command.
+    LeReadAdvertisingChannelTxPower(LeAdvertisingChannelTxPower),
 }
 
 fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {
@@ -1311,5 +1319,28 @@ fn to_le_local_supported_features<VE>(
     Ok(LeSupportedFeatures {
         status: to_status(bytes)?,
         supported_features: LeFeatures::from_bits_truncate(LittleEndian::read_u64(&bytes[1..])),
+    })
+}
+
+/// Values returned by the LE Read Advertising Channel TX Power command.  See the Bluetooth
+/// specification, v4.1 or later, Vol 2, Part E, Section 7.8.6.
+#[derive(Copy, Clone, Debug)]
+pub struct LeAdvertisingChannelTxPower {
+    /// Did the command fail, and if so, how?
+    pub status: ::Status,
+    /// The transmit power of the advertising channel.
+    ///   - Range: -20 ≤ N ≤ 10 (this is not enforced in this implementation)
+    ///   - Units: dBm
+    ///   - Accuracy: +/- 4 dB
+    pub power: i8,
+}
+
+fn to_le_advertising_channel_tx_power<VE>(
+    bytes: &[u8],
+) -> Result<LeAdvertisingChannelTxPower, ::event::Error<VE>> {
+    require_len!(bytes, 2);
+    Ok(LeAdvertisingChannelTxPower {
+        status: to_status(bytes)?,
+        power: unsafe { mem::transmute::<u8, i8>(bytes[1]) },
     })
 }

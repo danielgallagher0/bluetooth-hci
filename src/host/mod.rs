@@ -408,6 +408,19 @@ pub trait Hci<E, Header> {
         &mut self,
         params: &AdvertisingParameters,
     ) -> nb::Result<(), Error<E>>;
+
+    /// Reads the transmit power level used for LE advertising channel packets.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.6.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported.
+    ///
+    /// # Generated events
+    ///
+    /// A command complete event is generated.
+    fn le_read_advertising_channel_tx_power(&mut self) -> nb::Result<(), E>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -577,6 +590,10 @@ where
         params.into_bytes(&mut bytes).map_err(nb::Error::Other)?;
         write_command::<Header, T, E>(self, ::opcode::LE_SET_ADVERTISING_PARAMETERS, &bytes)
             .map_err(rewrap_as_comm)
+    }
+
+    fn le_read_advertising_channel_tx_power(&mut self) -> nb::Result<(), E> {
+        write_command::<Header, T, E>(self, ::opcode::LE_READ_ADVERTISING_CHANNEL_TX_POWER, &[])
     }
 }
 

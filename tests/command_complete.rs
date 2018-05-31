@@ -614,3 +614,24 @@ fn le_set_advertising_parameters() {
         other => panic!("Did not get command complete event: {:?}", other),
     }
 }
+
+#[test]
+fn le_read_advertising_channel_tx_power() {
+    let buffer = [0x0E, 5, 1, 0x07, 0x20, 0x00, 0x01];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::CommandComplete(event)) => {
+            assert_eq!(event.num_hci_command_packets, 1);
+            match event.return_params {
+                ReturnParameters::LeReadAdvertisingChannelTxPower(params) => {
+                    assert_eq!(params.status, ::hci::Status::Success);
+                    assert_eq!(params.power, 0x01);
+                }
+                other => panic!(
+                    "Did not get LE Read Advertising Channel TX Power return params: {:?}",
+                    other
+                ),
+            }
+        }
+        other => panic!("Did not get command complete event: {:?}", other),
+    }
+}
