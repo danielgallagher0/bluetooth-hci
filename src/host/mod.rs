@@ -11,6 +11,7 @@
 extern crate nb;
 
 use byteorder::{ByteOrder, LittleEndian};
+use core::time::Duration;
 
 pub mod cmd_link;
 pub mod event_link;
@@ -382,6 +383,31 @@ pub trait Hci<E, Header> {
     /// (v5.0) If the Host issues this command when scanning or legacy advertising is enabled, the
     /// Controller shall return the error code Command Disallowed (0x0C).
     fn le_set_random_address(&mut self, bd_addr: ::BdAddr) -> nb::Result<(), Error<E>>;
+
+    /// Sets the advertising parameters on the Controller.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.5.
+    ///
+    /// # Errors
+    ///
+    /// - `Error::BadAdvertisingInterval` if the minimum is greater than the maximum, or if the
+    ///   minimum is less than 20 ms, or the maximum is greater than 10240 ms.
+    /// - `Error::BadChannelMap` if no channels are enabled in the channel map.
+    /// - `Error::BadAdvertisingIntervalMin` if the advertising type is
+    ///   `ScannableUndirected` or `NonconnectableUndirected` and the advertising interval minimum
+    ///   is less than 100 ms.  This restriction is removed in version 5.0.
+    /// - Underlying communication errors
+    ///
+    /// # Generated events
+    ///
+    /// A command complete event is generated.
+    ///
+    /// The Host shall not issue this command when advertising is enabled in the Controller; if it
+    /// is the Command Disallowed error code shall be used.
+    fn le_set_advertising_parameters(
+        &mut self,
+        params: &AdvertisingParameters,
+    ) -> nb::Result<(), Error<E>>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -396,6 +422,25 @@ pub enum Error<E> {
     /// random addresses in the Bluetooth Spec, Vol 6, Part B, Section 1.3.  Includes the invalid
     /// address.
     BadRandomAddress(::BdAddr),
+
+    /// For the LE Set Advertising Parameters command: The advertising interval is invalid. This
+    /// means that either:
+    /// - The min is too low (less than 20 ms)
+    /// - The max is too high (higher than 10.24 s)
+    /// - The min is greater than the max.
+    ///
+    /// Includes the provided interval as a pair. The first value is the min, second is max.
+    BadAdvertisingInterval(Duration, Duration),
+
+    /// For the LE Set Advertising Parameters command: The channel map did not include any enabled
+    /// channels.  Includes the provided channel map.
+    BadChannelMap(Channels),
+
+    /// For the LE Set Advertising Parameters command: The advertising interval minimum was too low
+    /// for the advertising type.  Includes the provided minimum and advertising type.  This
+    /// restriction is removed in version 5.0 of the spec.
+    #[cfg(not(feature = "version-5-0"))]
+    BadAdvertisingIntervalMin(Duration, AdvertisingType),
 
     /// Underlying communication error.
     Comm(E),
@@ -521,6 +566,16 @@ where
     fn le_set_random_address(&mut self, bd_addr: ::BdAddr) -> nb::Result<(), Error<E>> {
         validate_random_address(&bd_addr).map_err(nb::Error::Other)?;
         write_command::<Header, T, E>(self, ::opcode::LE_SET_RANDOM_ADDRESS, &bd_addr.0)
+            .map_err(rewrap_as_comm)
+    }
+
+    fn le_set_advertising_parameters(
+        &mut self,
+        params: &AdvertisingParameters,
+    ) -> nb::Result<(), Error<E>> {
+        let mut bytes = [0; 15];
+        params.into_bytes(&mut bytes).map_err(nb::Error::Other)?;
+        write_command::<Header, T, E>(self, ::opcode::LE_SET_ADVERTISING_PARAMETERS, &bytes)
             .map_err(rewrap_as_comm)
     }
 }
@@ -730,4 +785,195 @@ fn pop_count_except_top_2_bits(bytes: &[u8]) -> u32 {
 
 fn pop_count_of(byte: u8) -> u32 {
     byte.count_ones()
+}
+
+/// Parameters for the `le_set_advertising_parameters` command.
+#[derive(Clone, Debug)]
+pub struct AdvertisingParameters {
+    /// The advertising interval min shall be less than or equal to the advertising interval
+    /// max. The advertising interval min and advertising interval max should not be the same value
+    /// to enable the Controller to determine the best advertising interval given other activities,
+    /// though this implementation allows them to be equal.
+    ///
+    /// For high duty cycle directed advertising,
+    /// i.e. `AdvertisingType::ConnectableDirectedHighDutyCycle`, the Advertising_Interval_Min and
+    /// advertising interval max parameters are not used and shall be ignored.  This implementation
+    /// sends 0 for both fields in that case.
+    ///
+    /// The advertising interval min and advertising interval max shall not be set to less than 100
+    /// ms if the advertising type is `AdvertisingType::ScannableUndirected` or
+    /// `AdvertisingType::NonconnectableUndirected`.  This restriction is removed in version 5.0 of
+    /// the spec.
+    ///
+    /// The first field is the min; the second is the max
+    pub advertising_interval: (Duration, Duration),
+
+    /// The advertising type is used to determine the packet type that is used for advertising when
+    /// advertising is enabled.
+    pub advertising_type: AdvertisingType,
+
+    /// Indicates the type of address being used in the advertising packets.
+    ///
+    /// If this is `PrivateFallbackPublic` or `PrivateFallbackRandom`, the `peer_address` parameter
+    /// contains the peer’s Identity Address and type. These parameters are used to locate the
+    /// corresponding local IRK in the resolving list; this IRK is used to generate the own address
+    /// used in the advertisement.
+    pub own_address_type: OwnAddressType,
+
+    /// If directed advertising is performed, i.e. when `advertising_type` is set to
+    /// `ConnectableDirectedHighDutyCycle` or `ConnectableDirectedLowDutyCycle`, then the
+    /// Peer_Address_Type and Peer_Address shall be valid.
+    ///
+    /// If `own_address_type` is `PrivateFallbackPublic` or `PrivateFallbackRandom`, the Controller
+    /// generates the peer’s Resolvable Private Address using the peer’s IRK corresponding to the
+    /// peer’s Identity Address contained in `peer_address`
+    pub peer_address: ::BdAddrType,
+
+    /// Bit field that indicates the advertising channels that shall be used when transmitting
+    /// advertising packets. At least one channel bit shall be set in the bitfield.
+    pub advertising_channel_map: Channels,
+
+    /// This parameter shall be ignored when directed advertising is enabled.
+    pub advertising_filter_policy: AdvertisingFilterPolicy,
+}
+
+impl AdvertisingParameters {
+    fn into_bytes<E>(&self, bytes: &mut [u8]) -> Result<(), Error<E>> {
+        assert_eq!(bytes.len(), 15);
+
+        if self.advertising_channel_map.is_empty() {
+            return Err(Error::BadChannelMap(self.advertising_channel_map));
+        }
+
+        if self.advertising_type == AdvertisingType::ConnectableDirectedHighDutyCycle {
+            LittleEndian::write_u16(&mut bytes[0..], 0);
+            LittleEndian::write_u16(&mut bytes[2..], 0);
+        } else {
+            const MIN_ADVERTISING_INTERVAL: Duration = Duration::from_millis(20);
+            const MAX_ADVERTISING_INTERVAL: Duration = Duration::from_millis(10240);
+            if self.advertising_interval.0 < MIN_ADVERTISING_INTERVAL
+                || self.advertising_interval.1 > MAX_ADVERTISING_INTERVAL
+                || self.advertising_interval.0 > self.advertising_interval.1
+            {
+                return Err(Error::BadAdvertisingInterval(
+                    self.advertising_interval.0,
+                    self.advertising_interval.1,
+                ));
+            }
+
+            #[cfg(not(feature = "version-5-0"))]
+            {
+                const MIN_UNDIRECTED_ADVERTISING_INTERVAL: Duration = Duration::from_millis(100);
+                if (self.advertising_type == AdvertisingType::ScannableUndirected
+                    || self.advertising_type == AdvertisingType::NonConnectableUndirected)
+                    && self.advertising_interval.0 < MIN_UNDIRECTED_ADVERTISING_INTERVAL
+                {
+                    return Err(Error::BadAdvertisingIntervalMin(
+                        self.advertising_interval.0,
+                        self.advertising_type,
+                    ));
+                }
+            }
+
+            LittleEndian::write_u16(
+                &mut bytes[0..],
+                to_interval_value(self.advertising_interval.0),
+            );
+            LittleEndian::write_u16(
+                &mut bytes[2..],
+                to_interval_value(self.advertising_interval.1),
+            );
+        }
+        bytes[4] = self.advertising_type as u8;
+        bytes[5] = self.own_address_type as u8;
+        match self.peer_address {
+            ::BdAddrType::Public(bd_addr) => {
+                bytes[6] = 0;
+                bytes[7..13].copy_from_slice(&bd_addr.0);
+            }
+            ::BdAddrType::Random(bd_addr) => {
+                bytes[6] = 1;
+                bytes[7..13].copy_from_slice(&bd_addr.0);
+            }
+        }
+        bytes[13] = self.advertising_channel_map.bits();
+        bytes[14] = self.advertising_filter_policy as u8;
+
+        Ok(())
+    }
+}
+
+fn to_interval_value(duration: Duration) -> u16 {
+    // 1600 = 1_000_000 / 625
+    (1600 * duration.as_secs() as u32 + (duration.subsec_micros() / 625)) as u16
+}
+
+/// The advertising type is used in the `AdvertisingParameters` to determine the packet type that is
+/// used for advertising when advertising is enabled.
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum AdvertisingType {
+    /// Connectable undirected advertising (ADV_IND) (default)
+    ConnectableUndirected = 0x00,
+    /// Connectable high duty cycle directed advertising (ADV_DIRECT_IND, high duty cycle)
+    ConnectableDirectedHighDutyCycle = 0x01,
+    /// Scannable undirected advertising (ADV_SCAN_IND)
+    ScannableUndirected = 0x02,
+    /// Non connectable undirected advertising (ADV_NONCONN_IND)
+    NonConnectableUndirected = 0x03,
+    /// Connectable low duty cycle directed advertising (ADV_DIRECT_IND, low duty cycle)
+    ConnectableDirectedLowDutyCycle = 0x04,
+}
+
+/// Indicates the type of address being used in the advertising packets.  Set in the
+/// `AdvertisingParameters`.
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum OwnAddressType {
+    /// Public Device Address (default)
+    Public = 0x00,
+    /// Random Device Address
+    Random = 0x01,
+    /// Controller generates Resolvable Private Address based on the local IRK from resolving
+    /// list. If resolving list contains no matching entry, use public address.
+    PrivateFallbackPublic = 0x02,
+    /// Controller generates Resolvable Private Address based on the local IRK from resolving
+    /// list. If resolving list contains no matching entry, use random address from
+    /// LE_Set_Random_Address.
+    PravetFallbackRandom = 0x03,
+}
+
+bitflags! {
+    /// The advertising channels that shall be used when transmitting advertising packets.
+    pub struct Channels : u8 {
+        /// Channel 37 shall be used
+        const CH_37 = 0b0000_0001;
+        /// Channel 38 shall be used
+        const CH_38 = 0b0000_0010;
+        /// Channel 39 shall be used
+        const CH_39 = 0b0000_0100;
+    }
+}
+
+impl Default for Channels {
+    fn default() -> Channels {
+        Channels::all()
+    }
+}
+
+/// Possible filter policies used for undirected advertising.
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum AdvertisingFilterPolicy {
+    /// Process scan and connection requests from all devices (i.e., the White List is not in use)
+    /// (default).
+    AllowConnectionAndScan = 0x00,
+    /// Process connection requests from all devices and only scan requests from devices that are in
+    /// the White List.
+    AllowConnectionWhiteListScan = 0x01,
+    /// Process scan requests from all devices and only connection requests from devices that are in
+    /// the White List.
+    WhiteListConnectionAllowScan = 0x02,
+    /// Process scan and connection requests only from devices in the White List.
+    WhiteListConnectionAndScan = 0x03,
 }

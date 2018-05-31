@@ -69,5 +69,6 @@ opcodes! {
         pub const LE_READ_BUFFER_SIZE = 0x0002;
         pub const LE_READ_LOCAL_SUPPORTED_FEATURES = 0x0003;
         pub const LE_SET_RANDOM_ADDRESS = 0x0005;
+        pub const LE_SET_ADVERTISING_PARAMETERS = 0x0006;
     }
 }

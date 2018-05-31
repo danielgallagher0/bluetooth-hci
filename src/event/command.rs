@@ -83,6 +83,9 @@ impl CommandComplete {
             ::opcode::LE_SET_RANDOM_ADDRESS => {
                 ReturnParameters::LeSetRandomAddress(to_status(&bytes[3..])?)
             }
+            ::opcode::LE_SET_ADVERTISING_PARAMETERS => {
+                ReturnParameters::LeSetAdvertisingParameters(to_status(&bytes[3..])?)
+            }
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -135,6 +138,9 @@ pub enum ReturnParameters {
 
     /// Status returned by the LE Set Random Address command.
     LeSetRandomAddress(::Status),
+
+    /// Status returned by the LE Set Advertising Parameters command.
+    LeSetAdvertisingParameters(::Status),
 }
 
 fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {
