@@ -80,6 +80,9 @@ impl CommandComplete {
                     &bytes[3..],
                 )?)
             }
+            ::opcode::LE_SET_RANDOM_ADDRESS => {
+                ReturnParameters::LeSetRandomAddress(to_status(&bytes[3..])?)
+            }
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -129,6 +132,9 @@ pub enum ReturnParameters {
 
     /// Parameters returned by the LE Read Local Supported Features command.
     LeReadLocalSupportedFeatures(LeSupportedFeatures),
+
+    /// Status returned by the LE Set Random Address command.
+    LeSetRandomAddress(::Status),
 }
 
 fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {

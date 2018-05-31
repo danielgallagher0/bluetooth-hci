@@ -344,6 +344,44 @@ pub trait Hci<E, Header> {
     ///
     /// Generates a command complete event with the buffer size and number of ACL data packets.
     fn le_read_local_supported_features(&mut self) -> nb::Result<(), E>;
+
+    /// The LE_Set_Random_Address command is used by the Host to set the LE Random Device Address in
+    /// the Controller (see [Vol 6] Part B, Section 1.3).
+    ///
+    /// Details added in v5.0:
+    ///
+    /// - If this command is used to change the address, the new random address shall take effect
+    ///   for advertising no later than the next successful LE Set Advertising Enable Command, for
+    ///   scanning no later than the next successful LE Set Scan Enable Command or LE Set Extended
+    ///   Scan Enable Command, and for initiating no later than the next successful LE Create
+    ///   Connection Command or LE Extended Create Connection Command.
+    ///
+    /// - Note: If Extended Advertising is in use, this command only affects the address used for
+    ///   scanning and initiating. The addresses used for advertising are set by the
+    ///   LE_Set_Advertising_Set_Random_Address command (see Section 7.8.52).
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.4.
+    ///
+    /// # Errors
+    ///
+    /// - If the given address does not meet the requirements from Vol 6, Part B, Section 1.3, a
+    ///   BadRandomAddress error is returned.
+    ///   - The 2 most significant bits of the (last byte of the) address must be 00 (non-resolvable
+    ///     private address), 10 (resolvable private address), or 11 (static address).
+    ///   - The random part of the address must contain at least one 0 and at least one 1.  For
+    ///     static and non-resolvable private addresses, the random part is the entire address
+    ///     (except the 2 most significant bits).  For resolvable private addresses, the 3 least
+    ///     significant bytes are a hash, and the random part is the 3 most significant bytes.  The
+    ///     hash part of resolvable private addresses is not checked.
+    /// - Underlying communication errors are reported.
+    ///
+    /// # Generated Events
+    ///
+    /// A command complete event is generated.
+    ///
+    /// (v5.0) If the Host issues this command when scanning or legacy advertising is enabled, the
+    /// Controller shall return the error code Command Disallowed (0x0C).
+    fn le_set_random_address(&mut self, bd_addr: ::BdAddr) -> nb::Result<(), Error<E>>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -353,6 +391,11 @@ pub enum Error<E> {
     /// For the Disconnect command: The provided reason is not a valid disconnection reason.
     /// Includes the reported reason.
     BadDisconnectionReason(::Status),
+
+    /// For the LE Set Random Address command: The provided address does not meet the rules for
+    /// random addresses in the Bluetooth Spec, Vol 6, Part B, Section 1.3.  Includes the invalid
+    /// address.
+    BadRandomAddress(::BdAddr),
 
     /// Underlying communication error.
     Comm(E),
@@ -473,6 +516,12 @@ where
 
     fn le_read_local_supported_features(&mut self) -> nb::Result<(), E> {
         write_command::<Header, T, E>(self, ::opcode::LE_READ_LOCAL_SUPPORTED_FEATURES, &[])
+    }
+
+    fn le_set_random_address(&mut self, bd_addr: ::BdAddr) -> nb::Result<(), Error<E>> {
+        validate_random_address(&bd_addr).map_err(nb::Error::Other)?;
+        write_command::<Header, T, E>(self, ::opcode::LE_SET_RANDOM_ADDRESS, &bd_addr.0)
+            .map_err(rewrap_as_comm)
     }
 }
 
@@ -653,4 +702,32 @@ bitflags! {
         #[cfg(feature = "version-5-0")]
         const CHANNEL_SELECTION_ALGORITHM = 1 << 19;
     }
+}
+
+fn validate_random_address<E>(bd_addr: &::BdAddr) -> Result<(), Error<E>> {
+    let (pop_count, bit_count) = match (bd_addr.0[5] & 0b1100_0000) >> 6 {
+        0b00 | 0b11 => (pop_count_except_top_2_bits(&bd_addr.0[0..]), 46),
+        0b10 => (pop_count_except_top_2_bits(&bd_addr.0[3..]), 22),
+        _ => return Err(Error::BadRandomAddress(*bd_addr)),
+    };
+
+    if pop_count == 0 || pop_count == bit_count {
+        return Err(Error::BadRandomAddress(*bd_addr));
+    }
+
+    Ok(())
+}
+
+fn pop_count_except_top_2_bits(bytes: &[u8]) -> u32 {
+    let mut pop_count = 0;
+    for byte in bytes[..bytes.len() - 1].iter() {
+        pop_count += pop_count_of(*byte);
+    }
+    pop_count += pop_count_of(bytes[bytes.len() - 1] & 0b0011_1111);
+
+    pop_count
+}
+
+fn pop_count_of(byte: u8) -> u32 {
+    byte.count_ones()
 }

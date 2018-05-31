@@ -177,3 +177,49 @@ fn le_read_local_supported_features() {
         .unwrap();
     assert_eq!(sink.written_data, [1, 0x03, 0x20, 0]);
 }
+
+#[test]
+fn le_set_random_address() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller()
+        .le_set_random_address(hci::BdAddr([0x01, 0x02, 0x04, 0x08, 0x10, 0x20]))
+        .unwrap();
+    assert_eq!(
+        sink.written_data,
+        [1, 0x05, 0x20, 6, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20]
+    );
+}
+
+#[test]
+fn le_set_random_address_invalid_addr_type() {
+    let mut sink = RecordingSink::new();
+    for bd_addr in [
+        // The most significant bits of the BD ADDR must be either 11 (static address) or 00
+        // (non-resolvable private address), or 10 (resolvable private address).  An MSB of 01 is
+        // not valid.
+        hci::BdAddr([0x01, 0x02, 0x04, 0x08, 0x10, 0b01000000]),
+        // The random part of a static address must contain at least one 0.
+        hci::BdAddr([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]),
+        // The random part of a static address must contain at least one 1.
+        hci::BdAddr([0x00, 0x00, 0x00, 0x00, 0x00, 0b11000000]),
+        // The random part of a non-resolvable private address must contain at least one 0.
+        hci::BdAddr([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0b00111111]),
+        // The random part of a non-resolvable private address must contain at least one 1.
+        hci::BdAddr([0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+        // The random part of a resolvable private address must contain at least one 0.  The first 3
+        // bytes are a hash, which can have any value.
+        hci::BdAddr([0x01, 0x02, 0x04, 0xFF, 0xFF, 0b10111111]),
+        // The random part of a resolvable private address must contain at least one 1.  The first 3
+        // bytes are a hash, which can have any value.
+        hci::BdAddr([0x01, 0x02, 0x04, 0x00, 0x00, 0b10000000]),
+    ].iter()
+    {
+        let err = sink
+            .as_controller()
+            .le_set_random_address(*bd_addr)
+            .err()
+            .unwrap();
+        assert_eq!(err, nb::Error::Other(Error::BadRandomAddress(*bd_addr)));
+    }
+    assert_eq!(sink.written_data, []);
+}
