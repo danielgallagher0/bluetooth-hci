@@ -91,6 +91,9 @@ impl CommandComplete {
                     to_le_advertising_channel_tx_power(&bytes[3..])?,
                 )
             }
+            ::opcode::LE_SET_ADVERTISING_DATA => {
+                ReturnParameters::LeSetAdvertisingData(to_status(&bytes[3..])?)
+            }
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -149,6 +152,9 @@ pub enum ReturnParameters {
 
     /// Parameters returned by the LE Read Advertising Channel TX Power command.
     LeReadAdvertisingChannelTxPower(LeAdvertisingChannelTxPower),
+
+    /// Status returned by the LE Set Advertising Data command.
+    LeSetAdvertisingData(::Status),
 }
 
 fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {

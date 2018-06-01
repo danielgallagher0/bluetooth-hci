@@ -421,6 +421,28 @@ pub trait Hci<E, Header> {
     ///
     /// A command complete event is generated.
     fn le_read_advertising_channel_tx_power(&mut self) -> nb::Result<(), E>;
+
+    /// Sets the data used in advertising packets that have a data field.
+    ///
+    /// Only the significant part of the Advertising_Data should be transmitted in the advertising
+    /// packets, as defined in the Bluetooth spec, Vol 3, Part C, Section 11.
+    ///
+    /// If advertising is currently enabled, the Controller shall use the new data in subsequent
+    /// advertising events. If an advertising event is in progress when this command is issued, the
+    /// Controller may use the old or new data for that event.  If advertising is currently
+    /// disabled, the data shall be kept by the Controller and used once advertising is enabled.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.7.
+    ///
+    /// # Errors
+    ///
+    /// - `AdvertisingDataTooLong` if `data` is 32 bytes or more.
+    /// - Underlying communication errors
+    ///
+    /// # Generated events
+    ///
+    /// A command complete is geerated.
+    fn le_set_advertising_data(&mut self, data: &[u8]) -> nb::Result<(), Error<E>>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -454,6 +476,10 @@ pub enum Error<E> {
     /// restriction is removed in version 5.0 of the spec.
     #[cfg(not(feature = "version-5-0"))]
     BadAdvertisingIntervalMin(Duration, AdvertisingType),
+
+    /// For the LE Set Advertising Data command: The provided data is too long to fit in the
+    /// command.  The maximum allowed length is 31.  The actual length is returned.
+    AdvertisingDataTooLong(usize),
 
     /// Underlying communication error.
     Comm(E),
@@ -594,6 +620,18 @@ where
 
     fn le_read_advertising_channel_tx_power(&mut self) -> nb::Result<(), E> {
         write_command::<Header, T, E>(self, ::opcode::LE_READ_ADVERTISING_CHANNEL_TX_POWER, &[])
+    }
+
+    fn le_set_advertising_data(&mut self, data: &[u8]) -> nb::Result<(), Error<E>> {
+        const MAX_ADVERTISING_DATA_LEN: usize = 31;
+        if data.len() > MAX_ADVERTISING_DATA_LEN {
+            return Err(nb::Error::Other(Error::AdvertisingDataTooLong(data.len())));
+        }
+        let mut params = [0; 32];
+        params[0] = data.len() as u8;
+        params[1..=data.len()].copy_from_slice(data);
+        write_command::<Header, T, E>(self, ::opcode::LE_SET_ADVERTISING_DATA, &params)
+            .map_err(rewrap_as_comm)
     }
 }
 

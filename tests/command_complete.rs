@@ -635,3 +635,23 @@ fn le_read_advertising_channel_tx_power() {
         other => panic!("Did not get command complete event: {:?}", other),
     }
 }
+
+#[test]
+fn le_set_advertising_data() {
+    let buffer = [0x0E, 4, 1, 0x08, 0x20, 0x00];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::CommandComplete(event)) => {
+            assert_eq!(event.num_hci_command_packets, 1);
+            match event.return_params {
+                ReturnParameters::LeSetAdvertisingData(status) => {
+                    assert_eq!(status, ::hci::Status::Success);
+                }
+                other => panic!(
+                    "Did not get LE Set Advertising Data return params: {:?}",
+                    other
+                ),
+            }
+        }
+        other => panic!("Did not get command complete event: {:?}", other),
+    }
+}
