@@ -498,3 +498,60 @@ fn le_set_advertising_data_too_long() {
         .unwrap();
     assert_eq!(err, nb::Error::Other(Error::AdvertisingDataTooLong(32)));
 }
+
+#[test]
+fn le_set_scan_response_data_empty() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller().le_set_scan_response_data(&[]).unwrap();
+    assert_eq!(
+        sink.written_data,
+        vec![
+            1, 0x09, 0x20, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ]
+    );
+}
+
+#[test]
+fn le_set_scan_response_data_partial() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller()
+        .le_set_scan_response_data(&[1, 2, 3, 4, 5, 6, 7, 8])
+        .unwrap();
+    assert_eq!(
+        sink.written_data,
+        vec![
+            1, 0x09, 0x20, 32, 8, 1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ]
+    );
+}
+
+#[test]
+fn le_set_scan_response_data_full() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller()
+        .le_set_scan_response_data(&[
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+            25, 26, 27, 28, 29, 30, 31,
+        ])
+        .unwrap();
+    assert_eq!(
+        sink.written_data,
+        vec![
+            1, 0x09, 0x20, 32, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+            19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+        ]
+    );
+}
+
+#[test]
+fn le_set_scan_response_data_too_long() {
+    let mut sink = RecordingSink::new();
+    let err = sink
+        .as_controller()
+        .le_set_scan_response_data(&[0; 32])
+        .err()
+        .unwrap();
+    assert_eq!(err, nb::Error::Other(Error::AdvertisingDataTooLong(32)));
+}

@@ -441,8 +441,30 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// A command complete is geerated.
+    /// A command complete is generated.
     fn le_set_advertising_data(&mut self, data: &[u8]) -> nb::Result<(), Error<E>>;
+
+    /// Provides data used in Scanning Packets that have a data field.
+    ///
+    /// Only the significant part of the Scan_Response_Data should be transmitted in the Scanning
+    /// Packets, as defined in the Bluetooth spec, Vol 3, Part C, Section 11.
+    ///
+    /// If advertising is currently enabled, the Controller shall use the new data in subsequent
+    /// advertising events. If an advertising event is in progress when this command is issued, the
+    /// Controller may use the old or new data for that event. If advertising is currently disabled,
+    /// the data shall be kept by the Controller and used once advertising is enabled.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.8.
+    ///
+    /// # Errors
+    ///
+    /// - `AdvertisingDataTooLong` if `data` is 32 bytes or more.
+    /// - Underlying communication errors
+    ///
+    /// # Generated events
+    ///
+    /// A command complete is generated.
+    fn le_set_scan_response_data(&mut self, data: &[u8]) -> nb::Result<(), Error<E>>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -505,6 +527,25 @@ where
     Header::new(opcode, params.len()).into_bytes(&mut header);
 
     controller.write(&header[..Header::HEADER_LENGTH], &params)
+}
+
+fn set_outbound_data<Header, T, E>(
+    controller: &mut T,
+    opcode: ::opcode::Opcode,
+    data: &[u8],
+) -> nb::Result<(), Error<E>>
+where
+    Header: HciHeader,
+    T: ::Controller<Error = E>,
+{
+    const MAX_DATA_LEN: usize = 31;
+    if data.len() > MAX_DATA_LEN {
+        return Err(nb::Error::Other(Error::AdvertisingDataTooLong(data.len())));
+    }
+    let mut params = [0; 32];
+    params[0] = data.len() as u8;
+    params[1..=data.len()].copy_from_slice(data);
+    write_command::<Header, T, E>(controller, opcode, &params).map_err(rewrap_as_comm)
 }
 
 impl<E, T, Header> Hci<E, Header> for T
@@ -623,15 +664,11 @@ where
     }
 
     fn le_set_advertising_data(&mut self, data: &[u8]) -> nb::Result<(), Error<E>> {
-        const MAX_ADVERTISING_DATA_LEN: usize = 31;
-        if data.len() > MAX_ADVERTISING_DATA_LEN {
-            return Err(nb::Error::Other(Error::AdvertisingDataTooLong(data.len())));
-        }
-        let mut params = [0; 32];
-        params[0] = data.len() as u8;
-        params[1..=data.len()].copy_from_slice(data);
-        write_command::<Header, T, E>(self, ::opcode::LE_SET_ADVERTISING_DATA, &params)
-            .map_err(rewrap_as_comm)
+        set_outbound_data::<Header, T, E>(self, ::opcode::LE_SET_ADVERTISING_DATA, data)
+    }
+
+    fn le_set_scan_response_data(&mut self, data: &[u8]) -> nb::Result<(), Error<E>> {
+        set_outbound_data::<Header, T, E>(self, ::opcode::LE_SET_SCAN_RESPONSE_DATA, data)
     }
 }
 

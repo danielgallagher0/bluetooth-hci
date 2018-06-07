@@ -94,6 +94,9 @@ impl CommandComplete {
             ::opcode::LE_SET_ADVERTISING_DATA => {
                 ReturnParameters::LeSetAdvertisingData(to_status(&bytes[3..])?)
             }
+            ::opcode::LE_SET_SCAN_RESPONSE_DATA => {
+                ReturnParameters::LeSetScanResponseData(to_status(&bytes[3..])?)
+            }
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -155,6 +158,9 @@ pub enum ReturnParameters {
 
     /// Status returned by the LE Set Advertising Data command.
     LeSetAdvertisingData(::Status),
+
+    /// Status returned by the LE Set Scan Response Data command.
+    LeSetScanResponseData(::Status),
 }
 
 fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {
