@@ -97,6 +97,17 @@ impl CommandComplete {
             ::opcode::LE_SET_SCAN_RESPONSE_DATA => {
                 ReturnParameters::LeSetScanResponseData(to_status(&bytes[3..])?)
             }
+            ::opcode::LE_SET_ADVERTISE_ENABLE => {
+                #[cfg(any(feature = "version-4-1", feature = "version-4-2"))]
+                {
+                    ReturnParameters::LeSetAdvertiseEnable(to_status(&bytes[3..])?)
+                }
+
+                #[cfg(feature = "version-5-0")]
+                {
+                    ReturnParameters::LeSetAdvertisingEnable(to_status(&bytes[3..])?)
+                }
+            }
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -161,6 +172,14 @@ pub enum ReturnParameters {
 
     /// Status returned by the LE Set Scan Response Data command.
     LeSetScanResponseData(::Status),
+
+    /// Status returned by the LE Set Advertise Enable command.
+    #[cfg(any(feature = "version-4-1", feature = "version-4-2"))]
+    LeSetAdvertiseEnable(::Status),
+
+    /// Status returned by the LE Set Advertising Enable command.
+    #[cfg(feature = "version-5-0")]
+    LeSetAdvertisingEnable(::Status),
 }
 
 fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {

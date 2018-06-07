@@ -73,5 +73,6 @@ opcodes! {
         pub const LE_READ_ADVERTISING_CHANNEL_TX_POWER = 0x0007;
         pub const LE_SET_ADVERTISING_DATA = 0x0008;
         pub const LE_SET_SCAN_RESPONSE_DATA = 0x0009;
+        pub const LE_SET_ADVERTISE_ENABLE = 0x000A;
     }
 }

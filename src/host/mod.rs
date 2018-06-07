@@ -465,6 +465,96 @@ pub trait Hci<E, Header> {
     ///
     /// A command complete is generated.
     fn le_set_scan_response_data(&mut self, data: &[u8]) -> nb::Result<(), Error<E>>;
+
+    /// Requests the Controller to start or stop advertising. The Controller manages the timing of
+    /// advertisements as per the advertising parameters given in the
+    /// [`le_set_advertising_parameters`] command.
+    ///
+    /// The Controller shall continue advertising until the Host issues an `le_set_advertise_enable`
+    /// command with enable set to `false` (Advertising is disabled) or until a connection is
+    /// created or until the Advertising is timed out due to high duty cycle Directed
+    /// Advertising. In these cases, advertising is then disabled.
+    ///
+    /// This function is renamed `le_set_advertising_enable` in Bluetooth v5.0.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.9, in versions 4.1 and 4.2.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported.
+    ///
+    /// # Generated events
+    ///
+    /// When the command has completed, a Command Complete event shall be generated.
+    ///
+    /// If the `advertising_type` parameter is [`AdvertisingType::ConnectableDirectedHighDutyCycle`]
+    /// and the directed advertising fails to create a connection, an LE Connection Complete event
+    /// shall be generated with the Status code set to [`::Status::DirectedAdvertisingTimeout`].
+    ///
+    /// If the `advertising_type` parameter is [`ConnectableUndirected`],
+    /// [`ConnectableDirectedHighDutyCycle`], or [`ConnectableDirectedLowDutyCycle`] and a
+    /// connection is established, an LE Connection Complete event shall be generated.
+    ///
+    /// Note: There is a possible race condition if `enable` is set to false (Disable) and the
+    /// `advertising_type` parameter is `ConnectableUndirected`, `ConnectableDirectedHighDutyCycle`,
+    /// or `ConnectableDirectedLowDutyCycle`. The advertisements might not be stopped before a
+    /// connection is created, and therefore both the Command Complete event and an LE Connection
+    /// Complete event could be generated. This can also occur when high duty cycle directed
+    /// advertising is timed out and this command disables advertising.
+    #[cfg(any(feature = "version-4-1", feature = "version-4-2"))]
+    fn le_set_advertise_enable(&mut self, enable: bool) -> nb::Result<(), E>;
+
+    /// Requests the Controller to start or stop advertising. The Controller manages the timing of
+    /// advertisements as per the advertising parameters given in the
+    /// `le_set_advertising_parameters` command.
+    ///
+    /// The Controller shall continue advertising until the Host issues an
+    /// `le_set_advertising_enable` command with `enable` set to false (Advertising is disabled) or
+    /// until a connection is created or until the Advertising is timed out due to high duty cycle
+    /// Directed Advertising. In these cases, advertising is then disabled.
+    ///
+    /// If the advertising parameters' `own_address_type` parameter is set to 0x01 and the random
+    /// address for the device has not been initialized, the Controller shall return the error code
+    /// [`::Status::InvalidHciCommandParameters`].
+    ///
+    /// If the advertising parameters' `own_address_type` parameter is set to 0x03, the controller's
+    /// resolving list did not contain a matching entry, and the random address for the device has
+    /// not been initialized, the Controller shall return the error code
+    /// [`::Status::InvalidHciCommandParameters`].
+    ///
+    /// Note: Enabling advertising when it is already enabled can cause the random address to
+    /// change. Disabling advertising when it is already disabled has no effect.
+    ///
+    /// This function was renamed from `le_set_advertise_enable` in Bluetooth v5.0.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.9, in versions 5.0.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported.
+    ///
+    /// # Generated events
+    ///
+    /// When the command has completed, a Command Complete event shall be generated.
+    ///
+    /// If the `advertising_type` parameter is [`AdvertisingType::ConnectableDirectedHighDutyCycle`]
+    /// and the directed advertising fails to create a connection, an LE Connection Complete event
+    /// shall be generated with the Status code set to [`::Status::DirectedAdvertisingTimeout`].
+    ///
+    /// If the `advertising_type` parameter is [`ConnectableUndirected`],
+    /// [`ConnectableDirectedHighDutyCycle`], or [`ConnectableDirectedLowDutyCycle`] and a
+    /// connection is created, an LE Connection Complete or LE Enhanced Connection Complete event
+    /// shall be generated.
+    ///
+    /// Note: There is a possible race condition if `enable` is set to false (Disable) and the
+    /// `advertising_type` parameter is `ConnectableUndirected`, `ConnectableDirectedHighDutyCycle`,
+    /// or `ConnectableDirectedLowDutyCycle`. The advertisements might not be stopped before a
+    /// connection is created, and therefore both the Command Complete event and an LE Connection
+    /// Complete event or an LE Enhanced Connection Complete event could be generated. This can also
+    /// occur when high duty cycle directed advertising is timed out and this command disables
+    /// advertising.
+    #[cfg(feature = "version-5-0")]
+    fn le_set_advertising_enable(&mut self, enable: bool) -> nb::Result<(), E>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -669,6 +759,16 @@ where
 
     fn le_set_scan_response_data(&mut self, data: &[u8]) -> nb::Result<(), Error<E>> {
         set_outbound_data::<Header, T, E>(self, ::opcode::LE_SET_SCAN_RESPONSE_DATA, data)
+    }
+
+    #[cfg(any(feature = "version-4-1", feature = "version-4-2"))]
+    fn le_set_advertise_enable(&mut self, enable: bool) -> nb::Result<(), E> {
+        write_command::<Header, T, E>(self, ::opcode::LE_SET_ADVERTISE_ENABLE, &[enable as u8])
+    }
+
+    #[cfg(feature = "version-5-0")]
+    fn le_set_advertising_enable(&mut self, enable: bool) -> nb::Result<(), E> {
+        write_command::<Header, T, E>(self, ::opcode::LE_SET_ADVERTISE_ENABLE, &[enable as u8])
     }
 }
 

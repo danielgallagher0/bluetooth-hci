@@ -555,3 +555,21 @@ fn le_set_scan_response_data_too_long() {
         .unwrap();
     assert_eq!(err, nb::Error::Other(Error::AdvertisingDataTooLong(32)));
 }
+
+#[cfg(any(feature = "version-4-1", feature = "version-4-2"))]
+#[test]
+fn le_set_advertise_enable() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller().le_set_advertise_enable(true).unwrap();
+    assert_eq!(sink.written_data, [1, 0x0A, 0x20, 1, 1]);
+}
+
+#[cfg(feature = "version-5-0")]
+#[test]
+fn le_set_advertising_enable() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller()
+        .le_set_advertising_enable(true)
+        .unwrap();
+    assert_eq!(sink.written_data, [1, 0x0A, 0x20, 1, 1]);
+}

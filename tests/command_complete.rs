@@ -675,3 +675,45 @@ fn le_set_scan_response_data() {
         other => panic!("Did not get command complete event: {:?}", other),
     }
 }
+
+#[cfg(any(feature = "version-4-1", feature = "version-4-2"))]
+#[test]
+fn le_set_advertise_enable() {
+    let buffer = [0x0E, 4, 1, 0x0A, 0x20, 0x00];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::CommandComplete(event)) => {
+            assert_eq!(event.num_hci_command_packets, 1);
+            match event.return_params {
+                ReturnParameters::LeSetAdvertiseEnable(status) => {
+                    assert_eq!(status, ::hci::Status::Success);
+                }
+                other => panic!(
+                    "Did not get LE Set Advertise Enable return params: {:?}",
+                    other
+                ),
+            }
+        }
+        other => panic!("Did not get command complete event: {:?}", other),
+    }
+}
+
+#[cfg(feature = "version-5-0")]
+#[test]
+fn le_set_advertising_enable() {
+    let buffer = [0x0E, 4, 1, 0x0A, 0x20, 0x00];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::CommandComplete(event)) => {
+            assert_eq!(event.num_hci_command_packets, 1);
+            match event.return_params {
+                ReturnParameters::LeSetAdvertisingEnable(status) => {
+                    assert_eq!(status, ::hci::Status::Success);
+                }
+                other => panic!(
+                    "Did not get LE Set Advertising Enable return params: {:?}",
+                    other
+                ),
+            }
+        }
+        other => panic!("Did not get command complete event: {:?}", other),
+    }
+}
