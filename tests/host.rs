@@ -556,7 +556,7 @@ fn le_set_scan_response_data_too_long() {
     assert_eq!(err, nb::Error::Other(Error::AdvertisingDataTooLong(32)));
 }
 
-#[cfg(any(feature = "version-4-1", feature = "version-4-2"))]
+#[cfg(not(feature = "version-5-0"))]
 #[test]
 fn le_set_advertise_enable() {
     let mut sink = RecordingSink::new();

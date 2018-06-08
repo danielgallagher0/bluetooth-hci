@@ -501,7 +501,7 @@ pub trait Hci<E, Header> {
     /// connection is created, and therefore both the Command Complete event and an LE Connection
     /// Complete event could be generated. This can also occur when high duty cycle directed
     /// advertising is timed out and this command disables advertising.
-    #[cfg(any(feature = "version-4-1", feature = "version-4-2"))]
+    #[cfg(not(feature = "version-5-0"))]
     fn le_set_advertise_enable(&mut self, enable: bool) -> nb::Result<(), E>;
 
     /// Requests the Controller to start or stop advertising. The Controller manages the timing of
@@ -785,7 +785,7 @@ where
         set_outbound_data::<Header, T, E>(self, ::opcode::LE_SET_SCAN_RESPONSE_DATA, data)
     }
 
-    #[cfg(any(feature = "version-4-1", feature = "version-4-2"))]
+    #[cfg(not(feature = "version-5-0"))]
     fn le_set_advertise_enable(&mut self, enable: bool) -> nb::Result<(), E> {
         write_command::<Header, T, E>(self, ::opcode::LE_SET_ADVERTISE_ENABLE, &[enable as u8])
     }

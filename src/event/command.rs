@@ -98,15 +98,7 @@ impl CommandComplete {
                 ReturnParameters::LeSetScanResponseData(to_status(&bytes[3..])?)
             }
             ::opcode::LE_SET_ADVERTISE_ENABLE => {
-                #[cfg(any(feature = "version-4-1", feature = "version-4-2"))]
-                {
-                    ReturnParameters::LeSetAdvertiseEnable(to_status(&bytes[3..])?)
-                }
-
-                #[cfg(feature = "version-5-0")]
-                {
-                    ReturnParameters::LeSetAdvertisingEnable(to_status(&bytes[3..])?)
-                }
+                to_le_set_advertise_enable(to_status(&bytes[3..])?)
             }
             ::opcode::LE_SET_SCAN_PARAMETERS => {
                 ReturnParameters::LeSetScanParameters(to_status(&bytes[3..])?)
@@ -177,7 +169,7 @@ pub enum ReturnParameters {
     LeSetScanResponseData(::Status),
 
     /// Status returned by the LE Set Advertise Enable command.
-    #[cfg(any(feature = "version-4-1", feature = "version-4-2"))]
+    #[cfg(not(feature = "version-5-0"))]
     LeSetAdvertiseEnable(::Status),
 
     /// Status returned by the LE Set Advertising Enable command.
@@ -1380,4 +1372,14 @@ fn to_le_advertising_channel_tx_power<VE>(
         status: to_status(bytes)?,
         power: unsafe { mem::transmute::<u8, i8>(bytes[1]) },
     })
+}
+
+#[cfg(not(feature = "version-5-0"))]
+fn to_le_set_advertise_enable(status: ::Status) -> ReturnParameters {
+    ReturnParameters::LeSetAdvertiseEnable(status)
+}
+
+#[cfg(feature = "version-5-0")]
+fn to_le_set_advertise_enable(status: ::Status) -> ReturnParameters {
+    ReturnParameters::LeSetAdvertisingEnable(status)
 }
