@@ -232,7 +232,7 @@ fn le_set_advertising_parameters() {
         .le_set_advertising_parameters(&AdvertisingParameters {
             advertising_interval: (Duration::from_millis(21), Duration::from_millis(1000)),
             advertising_type: AdvertisingType::ConnectableUndirected,
-            own_address_type: OwnAddressType::PrivateFallbackPublic,
+            own_address_type: OwnAddressType::Public,
             peer_address: hci::BdAddrType::Random(hci::BdAddr([
                 0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
             ])),
@@ -252,7 +252,7 @@ fn le_set_advertising_parameters() {
             0x40, // 0x40, 0x06 = 0x0640 = 1600 = 1000 ms / 0.625 ms
             0x06,
             0x00,
-            0x02,
+            0x00,
             0x01,
             0x01,
             0x02,
@@ -280,7 +280,7 @@ fn le_set_advertising_parameters_bad_range() {
             .le_set_advertising_parameters(&AdvertisingParameters {
                 advertising_interval: (*min, *max),
                 advertising_type: AdvertisingType::ConnectableUndirected,
-                own_address_type: OwnAddressType::PrivateFallbackPublic,
+                own_address_type: OwnAddressType::Random,
                 peer_address: hci::BdAddrType::Random(hci::BdAddr([
                     0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
                 ])),
@@ -305,7 +305,7 @@ fn le_set_advertising_parameters_bad_channel_map() {
         .le_set_advertising_parameters(&AdvertisingParameters {
             advertising_interval: (Duration::from_millis(20), Duration::from_millis(1000)),
             advertising_type: AdvertisingType::ConnectableUndirected,
-            own_address_type: OwnAddressType::PrivateFallbackPublic,
+            own_address_type: OwnAddressType::Public,
             peer_address: hci::BdAddrType::Random(hci::BdAddr([
                 0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
             ])),
@@ -330,7 +330,7 @@ fn le_set_advertising_parameters_bad_higher_min() {
         .le_set_advertising_parameters(&AdvertisingParameters {
             advertising_interval: (Duration::from_millis(99), Duration::from_millis(1000)),
             advertising_type: AdvertisingType::ScannableUndirected,
-            own_address_type: OwnAddressType::PrivateFallbackPublic,
+            own_address_type: OwnAddressType::Random,
             peer_address: hci::BdAddrType::Random(hci::BdAddr([
                 0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
             ])),
@@ -399,7 +399,7 @@ fn le_set_advertising_parameters_ignore_interval_for_high_duty_cycle() {
             // Bad interval in every way, but it is ignored for this advertising type
             advertising_interval: (Duration::from_millis(20000), Duration::from_millis(2)),
             advertising_type: AdvertisingType::ConnectableDirectedHighDutyCycle,
-            own_address_type: OwnAddressType::PrivateFallbackPublic,
+            own_address_type: OwnAddressType::Random,
             peer_address: hci::BdAddrType::Random(hci::BdAddr([
                 0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
             ])),
@@ -415,11 +415,11 @@ fn le_set_advertising_parameters_ignore_interval_for_high_duty_cycle() {
             0x20,
             15,
             0x00, // advertising_interval is not used for ConnectableDirectedHighDutyCycle
-            0x00, // advertising type
             0x00,
             0x00,
+            0x00,
+            0x01, // advertising type
             0x01,
-            0x02,
             0x01,
             0x01,
             0x02,
@@ -572,4 +572,56 @@ fn le_set_advertising_enable() {
         .le_set_advertising_enable(true)
         .unwrap();
     assert_eq!(sink.written_data, [1, 0x0A, 0x20, 1, 1]);
+}
+
+#[test]
+fn le_set_scan_parameters() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller()
+        .le_set_scan_parameters(&ScanParameters {
+            scan_type: ScanType::Passive,
+            scan_interval: Duration::from_millis(21),
+            scan_window: Duration::from_millis(10),
+            own_address_type: OwnAddressType::Public,
+            filter_policy: ScanFilterPolicy::AcceptAll,
+        })
+        .unwrap();
+
+    // bytes 5-6: 0x21, 0x00 = 0x0021 = 33 ~= 21 ms / 0.625 ms
+    // bytes 7-8: 0x10, 0x00 = 0x0010 = 16 = 10 ms / 0.625 ms
+    assert_eq!(
+        sink.written_data,
+        [1, 0x0B, 0x20, 7, 0x00, 0x21, 0x00, 0x10, 0x00, 0x00, 0x00]
+    );
+}
+
+#[test]
+fn le_set_scan_parameters_bad_window() {
+    let mut sink = RecordingSink::new();
+    for (interval, window) in [
+        (Duration::from_millis(19), Duration::from_millis(20)),
+        (Duration::from_millis(2), Duration::from_millis(1)),
+        (Duration::from_millis(12), Duration::from_millis(2)),
+        //        (Duration::from_millis(10241), Duration::from_millis(100)),
+        //        (Duration::from_millis(102), Duration::from_millis(10241)),
+    ].iter()
+    {
+        let err = sink
+            .as_controller()
+            .le_set_scan_parameters(&ScanParameters {
+                scan_type: ScanType::Passive,
+                scan_interval: *interval,
+                scan_window: *window,
+                own_address_type: OwnAddressType::Public,
+                filter_policy: ScanFilterPolicy::AcceptAll,
+            })
+            .err()
+            .unwrap();
+
+        assert_eq!(
+            err,
+            nb::Error::Other(Error::BadScanInterval(*interval, *window))
+        );
+    }
+    assert_eq!(sink.written_data, []);
 }

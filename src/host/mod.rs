@@ -555,6 +555,24 @@ pub trait Hci<E, Header> {
     /// advertising.
     #[cfg(feature = "version-5-0")]
     fn le_set_advertising_enable(&mut self, enable: bool) -> nb::Result<(), E>;
+
+    /// Sets the scan parameters.
+    ///
+    /// The Host shall not issue this command when scanning is enabled in the Controller; if it is
+    /// the [`::Status::CommandDisallowed`] error code shall be used.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.10.
+    ///
+    /// # Errors
+    ///
+    /// - `BadScanInterval` if either `scan_interval` or `scan_window` is too short (less than 2.5
+    ///   ms) or too long (more than 10.24 s), or if `scan_window` is longer than `scan_interval`,
+    /// - Underlying communication errors
+    ///
+    /// # Generated events
+    ///
+    /// A command complete event is generated
+    fn le_set_scan_parameters(&mut self, params: &ScanParameters) -> nb::Result<(), Error<E>>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -589,9 +607,15 @@ pub enum Error<E> {
     #[cfg(not(feature = "version-5-0"))]
     BadAdvertisingIntervalMin(Duration, AdvertisingType),
 
-    /// For the LE Set Advertising Data command: The provided data is too long to fit in the
-    /// command.  The maximum allowed length is 31.  The actual length is returned.
+    /// For the LE Set Advertising Data or LE Set Scan Response Data commands: The provided data is
+    /// too long to fit in the command.  The maximum allowed length is 31.  The actual length is
+    /// returned.
     AdvertisingDataTooLong(usize),
+
+    /// For the LE Set Scan Parameters command: The scan interval is too short or too long, or the
+    /// scan window is too short or too long, or the scan window is longer than the scan interval.
+    /// The first value is the scan interval; the second is the scan window.
+    BadScanInterval(Duration, Duration),
 
     /// Underlying communication error.
     Comm(E),
@@ -769,6 +793,13 @@ where
     #[cfg(feature = "version-5-0")]
     fn le_set_advertising_enable(&mut self, enable: bool) -> nb::Result<(), E> {
         write_command::<Header, T, E>(self, ::opcode::LE_SET_ADVERTISE_ENABLE, &[enable as u8])
+    }
+
+    fn le_set_scan_parameters(&mut self, params: &ScanParameters) -> nb::Result<(), Error<E>> {
+        let mut bytes = [0; 7];
+        params.into_bytes(&mut bytes).map_err(nb::Error::Other)?;
+        write_command::<Header, T, E>(self, ::opcode::LE_SET_SCAN_PARAMETERS, &bytes)
+            .map_err(rewrap_as_comm)
     }
 }
 
@@ -1128,10 +1159,12 @@ pub enum OwnAddressType {
     Random = 0x01,
     /// Controller generates Resolvable Private Address based on the local IRK from resolving
     /// list. If resolving list contains no matching entry, use public address.
+    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     PrivateFallbackPublic = 0x02,
     /// Controller generates Resolvable Private Address based on the local IRK from resolving
     /// list. If resolving list contains no matching entry, use random address from
     /// LE_Set_Random_Address.
+    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     PravetFallbackRandom = 0x03,
 }
 
@@ -1168,4 +1201,97 @@ pub enum AdvertisingFilterPolicy {
     WhiteListConnectionAllowScan = 0x02,
     /// Process scan and connection requests only from devices in the White List.
     WhiteListConnectionAndScan = 0x03,
+}
+
+/// Parameters for the `le_set_scan_parameters` command.
+#[derive(Clone, Debug)]
+pub struct ScanParameters {
+    /// The type of scan to perform
+    pub scan_type: ScanType,
+
+    /// Recommendation from the host on how frequently the controller should scan.  See the
+    /// Bluetooth spec, Vol 6, Part B, Section 4.5.3.  `scan_window` shall always be set to a value
+    /// smaller or equal to `scan_interval`. If they are set to the same value scanning should be
+    /// run continuously.
+    ///
+    /// This is defined as the time interval from when the Controller started its last LE scan until
+    /// it begins the subsequent LE scan.
+    ///
+    /// Range: 2.5 msec to 10.24 seconds
+    pub scan_interval: Duration,
+
+    /// Recommendation from the host on how long the controller should scan.  See the Bluetooth
+    /// spec, Vol 6, Part B, Section 4.5.3. `scan_window` shall be less than or equal to
+    /// `scan_interval`.
+    ///
+    /// Range: 2.5 msec to 10.24 seconds
+    pub scan_window: Duration,
+
+    /// Indicates the type of address being used in the scan request packets.
+    pub own_address_type: OwnAddressType,
+
+    /// Indicates which advertising packets to accept.
+    pub filter_policy: ScanFilterPolicy,
+}
+
+impl ScanParameters {
+    fn into_bytes<E>(&self, bytes: &mut [u8]) -> Result<(), Error<E>> {
+        assert_eq!(bytes.len(), 7);
+
+        const MIN_SCAN_INTERVAL: Duration = Duration::from_micros(2500);
+        const MAX_SCAN_INTERVAL: Duration = Duration::from_millis(10240);
+        if self.scan_interval < MIN_SCAN_INTERVAL
+            || self.scan_interval > MAX_SCAN_INTERVAL
+            || self.scan_window < MIN_SCAN_INTERVAL
+            || self.scan_window > self.scan_interval
+        {
+            return Err(Error::BadScanInterval(self.scan_interval, self.scan_window));
+        }
+
+        bytes[0] = self.scan_type as u8;
+        LittleEndian::write_u16(&mut bytes[1..], to_interval_value(self.scan_interval));
+        LittleEndian::write_u16(&mut bytes[3..], to_interval_value(self.scan_window));
+        bytes[5] = self.own_address_type as u8;
+        bytes[6] = self.filter_policy as u8;
+
+        Ok(())
+    }
+}
+
+/// Types of scan to perform.
+#[derive(Copy, Clone, Debug)]
+#[repr(u8)]
+pub enum ScanType {
+    /// Passive Scanning. No scanning PDUs shall be sent (default).
+    Passive = 0x00,
+    /// Active scanning. Scanning PDUs may be sent.
+    Active = 0x01,
+}
+
+/// Which advertising packets to accept from a scan.
+#[derive(Copy, Clone, Debug)]
+#[repr(u8)]
+pub enum ScanFilterPolicy {
+    /// Accept all advertising packets except directed advertising packets not addressed to this
+    /// device (default).
+    AcceptAll = 0x00,
+    /// Accept only advertising packets from devices where the advertiser’s address is in the White
+    /// List. Directed advertising packets which are not addressed to this device shall be ignored.
+    WhiteList = 0x01,
+    /// Accept all advertising packets except directed advertising packets where the initiator's
+    /// identity address does not address this device.
+    ///
+    /// Note: Directed advertising packets where the initiator's address is a resolvable private
+    /// address that cannot be resolved are also accepted.
+    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
+    AddressedToThisDevice = 0x02,
+    /// Accept all advertising packets except:
+    /// - advertising packets where the advertiser's identity address is not in the White List; and
+    /// - directed advertising packets where the initiator's identity addressdoes not address this
+    ///   device
+    ///
+    /// Note: Directed advertising packets where the initiator's address is a resolvable private
+    /// address that cannot be resolved are also accepted.
+    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
+    WhiteListAddressedToThisDevice = 0x03,
 }
