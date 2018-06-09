@@ -602,8 +602,8 @@ fn le_set_scan_parameters_bad_window() {
         (Duration::from_millis(19), Duration::from_millis(20)),
         (Duration::from_millis(2), Duration::from_millis(1)),
         (Duration::from_millis(12), Duration::from_millis(2)),
-        //        (Duration::from_millis(10241), Duration::from_millis(100)),
-        //        (Duration::from_millis(102), Duration::from_millis(10241)),
+        (Duration::from_millis(10241), Duration::from_millis(100)),
+        (Duration::from_millis(102), Duration::from_millis(10241)),
     ].iter()
     {
         let err = sink
@@ -624,4 +624,13 @@ fn le_set_scan_parameters_bad_window() {
         );
     }
     assert_eq!(sink.written_data, []);
+}
+
+#[test]
+fn le_set_scan_enable() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller()
+        .le_set_scan_enable(true, false)
+        .unwrap();
+    assert_eq!(sink.written_data, [1, 0x0C, 0x20, 2, 1, 0]);
 }
