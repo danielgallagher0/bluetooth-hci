@@ -79,5 +79,6 @@ opcodes! {
         pub const LE_CREATE_CONNECTION = 0x000D;
         pub const LE_CREATE_CONNECTION_CANCEL = 0x000E;
         pub const LE_READ_WHITE_LIST_SIZE = 0x000F;
+        pub const LE_CLEAR_WHITE_LIST = 0x0010;
     }
 }

@@ -676,6 +676,25 @@ pub trait Hci<E, Header> {
     ///
     /// A command complete event is generated.
     fn le_read_white_list_size(&mut self) -> nb::Result<(), E>;
+
+    /// Clears the white list stored in the Controller.
+    ///
+    /// This command can be used at any time except when:
+    /// - the advertising filter policy uses the white list and advertising is enabled.
+    /// - the scanning filter policy uses the white list and scanning is enabled.
+    /// - the initiator filter policy uses the white list and an LE_Create_Connection command is
+    ///   outstanding.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.15
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported.
+    ///
+    /// # Generated events
+    ///
+    /// A command complete event is generated.
+    fn le_clear_white_list(&mut self) -> nb::Result<(), E>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -950,6 +969,10 @@ where
 
     fn le_read_white_list_size(&mut self) -> nb::Result<(), E> {
         write_command::<Header, T, E>(self, ::opcode::LE_READ_WHITE_LIST_SIZE, &[])
+    }
+
+    fn le_clear_white_list(&mut self) -> nb::Result<(), E> {
+        write_command::<Header, T, E>(self, ::opcode::LE_CLEAR_WHITE_LIST, &[])
     }
 }
 

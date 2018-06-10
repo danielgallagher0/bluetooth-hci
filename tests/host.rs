@@ -843,3 +843,10 @@ fn le_read_white_list_size() {
     sink.as_controller().le_read_white_list_size().unwrap();
     assert_eq!(sink.written_data, [1, 0x0F, 0x20, 0]);
 }
+
+#[test]
+fn le_clear_white_list() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller().le_clear_white_list().unwrap();
+    assert_eq!(sink.written_data, [1, 0x10, 0x20, 0]);
+}

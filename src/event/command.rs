@@ -112,6 +112,9 @@ impl CommandComplete {
             ::opcode::LE_READ_WHITE_LIST_SIZE => {
                 ReturnParameters::LeReadWhiteListSize(to_status(&bytes[3..])?, bytes[4] as usize)
             }
+            ::opcode::LE_CLEAR_WHITE_LIST => {
+                ReturnParameters::LeClearWhiteList(to_status(&bytes[3..])?)
+            }
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -196,6 +199,9 @@ pub enum ReturnParameters {
 
     /// Status and white list size returned by the LE Read White List Size command.
     LeReadWhiteListSize(::Status, usize),
+
+    /// Status returned by the LE Clear White List command.
+    LeClearWhiteList(::Status),
 }
 
 fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {
