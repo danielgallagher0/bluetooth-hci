@@ -603,6 +603,37 @@ pub trait Hci<E, Header> {
     /// packets received and the duplicate filtering. More than one advertising packet may be
     /// reported in each LE Advertising Report event.
     fn le_set_scan_enable(&mut self, enable: bool, filter_duplicates: bool) -> nb::Result<(), E>;
+
+    /// Create a Link Layer connection to a connectable advertiser.
+    ///
+    /// The Host shall not issue this command when another LE_Create_Connection is pending in the
+    /// Controller; if this does occur the Controller shall return the `::Status::CommandDisallowed`
+    /// error code shall be used.
+    ///
+    /// # Errors
+    ///
+    /// - `BadScanInterval` if either `scan_interval` or `scan_window` are too short (less than 2.5
+    ///   msec) or too long (more than 10.24 s), or `scan_window` is longer than `scan_interval`.
+    /// - `BadConnectionInterval` if the connection interval is inverted, i.e. if the first value
+    ///   (min) is greater than the second (max), or if either value is out of range (7.5 ms to 4
+    ///   sec).
+    /// - `BadConnectionLatency` if `conn_latency` is greater than 514.
+    /// - `BadConnectionLengthRange` if the max expected connection length is less than the min
+    ///   expected connection length.
+    /// - `BadSupervisionTimeout` if `supervision_timeout` is too short (less than 100 ms) or too
+    ///   long (more than 32 s).
+    /// - Underlying communication errors
+    ///
+    /// # Generated events
+    ///
+    /// The Controller sends the Command Status event to the Host when the event is received.  An LE
+    /// Connection Complete event shall be generated when a connection is created or the connection
+    /// creation procedure is cancelled.
+    ///
+    /// Note: No Command Complete event is sent by the Controller to indicate that this command has
+    /// been completed. Instead, the LE Connection Complete event indicates that this command has
+    /// been completed.
+    fn le_create_connection(&mut self, params: &ConnectionParameters) -> nb::Result<(), Error<E>>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -642,10 +673,34 @@ pub enum Error<E> {
     /// returned.
     AdvertisingDataTooLong(usize),
 
-    /// For the LE Set Scan Parameters command: The scan interval is too short or too long, or the
-    /// scan window is too short or too long, or the scan window is longer than the scan interval.
-    /// The first value is the scan interval; the second is the scan window.
+    /// For the LE Set Scan Parameters or LE Create Connection command: The scan interval is too
+    /// short or too long, or the scan window is too short or too long, or the scan window is longer
+    /// than the scan interval.  The first value is the scan interval; the second is the scan
+    /// window.
     BadScanInterval(Duration, Duration),
+
+    /// For the LE Create Connection command: The connection interval is invalid. This
+    /// means that either:
+    /// - The min (or max) is too low (less than 7.5 ms)
+    /// - The max (or min) is too high (higher than 4 s)
+    /// - The min is greater than the max.
+    ///
+    /// Includes the provided interval as a pair. The first value is the min, second is max.
+    BadConnectionInterval(Duration, Duration),
+
+    /// For the LE Create Connection command: the connection latency is too large. The maximum
+    /// allowed value is 514 (defined by the spec).  The value is returned.
+    BadConnectionLatency(u16),
+
+    /// For the LE Create Connection command: the supervision timeout is too small (less than 100
+    /// ms, or does not meet the requirement: `(1 + conn_latency) * conn_interval_max * 2`) or too
+    /// large (greater than 32 seconds).  The first value is the provided supervision timeout.  The
+    /// second value is the minimum as determined by the `conn_latency` and `conn_interval_max`.
+    BadSupervisionTimeout(Duration, Duration),
+
+    /// For the LE Create Connection command: the connection length range is inverted (i.e, the
+    /// minimum is greater than the maximum). Returns the range, min first.
+    BadConnectionLengthRange(Duration, Duration),
 
     /// Underlying communication error.
     Comm(E),
@@ -838,6 +893,13 @@ where
             ::opcode::LE_SET_SCAN_ENABLE,
             &[enable as u8, filter_duplicates as u8],
         )
+    }
+
+    fn le_create_connection(&mut self, params: &ConnectionParameters) -> nb::Result<(), Error<E>> {
+        let mut bytes = [0; 25];
+        params.into_bytes(&mut bytes).map_err(nb::Error::Other)?;
+        write_command::<Header, T, E>(self, ::opcode::LE_CREATE_CONNECTION, &bytes)
+            .map_err(rewrap_as_comm)
     }
 }
 
@@ -1203,7 +1265,7 @@ pub enum OwnAddressType {
     /// list. If resolving list contains no matching entry, use random address from
     /// LE_Set_Random_Address.
     #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
-    PravetFallbackRandom = 0x03,
+    PrivateFallbackRandom = 0x03,
 }
 
 bitflags! {
@@ -1272,19 +1334,24 @@ pub struct ScanParameters {
     pub filter_policy: ScanFilterPolicy,
 }
 
+fn verify_scan_interval<E>(scan_interval: Duration, scan_window: Duration) -> Result<(), Error<E>> {
+    const MIN_SCAN_INTERVAL: Duration = Duration::from_micros(2500);
+    const MAX_SCAN_INTERVAL: Duration = Duration::from_millis(10240);
+    if scan_interval < MIN_SCAN_INTERVAL
+        || scan_interval > MAX_SCAN_INTERVAL
+        || scan_window < MIN_SCAN_INTERVAL
+        || scan_window > scan_interval
+    {
+        Err(Error::BadScanInterval(scan_interval, scan_window))
+    } else {
+        Ok(())
+    }
+}
+
 impl ScanParameters {
     fn into_bytes<E>(&self, bytes: &mut [u8]) -> Result<(), Error<E>> {
         assert_eq!(bytes.len(), 7);
-
-        const MIN_SCAN_INTERVAL: Duration = Duration::from_micros(2500);
-        const MAX_SCAN_INTERVAL: Duration = Duration::from_millis(10240);
-        if self.scan_interval < MIN_SCAN_INTERVAL
-            || self.scan_interval > MAX_SCAN_INTERVAL
-            || self.scan_window < MIN_SCAN_INTERVAL
-            || self.scan_window > self.scan_interval
-        {
-            return Err(Error::BadScanInterval(self.scan_interval, self.scan_window));
-        }
+        verify_scan_interval(self.scan_interval, self.scan_window)?;
 
         bytes[0] = self.scan_type as u8;
         LittleEndian::write_u16(&mut bytes[1..], to_interval_value(self.scan_interval));
@@ -1332,4 +1399,216 @@ pub enum ScanFilterPolicy {
     /// address that cannot be resolved are also accepted.
     #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     WhiteListAddressedToThisDevice = 0x03,
+}
+
+/// Parameters for the LE Create Connection event.
+#[derive(Clone, Debug)]
+pub struct ConnectionParameters {
+    /// Recommendation from the host on how frequently the Controller should scan.  `scan_window`
+    /// shall always be set to a value smaller or equal to `scan_interval`.  If they are set to the
+    /// same value, scanning should run continuously.
+    ///
+    /// This is defined as the time interval from when the Controller started its last LE scan until
+    /// it begins the subsequent LE scan.
+    ///
+    /// Range: 2.5 msec to 10.24 seconds
+    pub scan_interval: Duration,
+
+    /// Recommendation from the host on how long the controller should scan.  `scan_window` shall be
+    /// less than or equal to `scan_interval`.
+    ///
+    /// Range: 2.5 msec to 10.24 seconds
+    pub scan_window: Duration,
+
+    /// Determines whether the White List is used.  If the White List is not used, `peer_address`
+    /// specifies the address type and address of the advertising device to connect to.
+    pub initiator_filter_policy: ConnectionFilterPolicy,
+
+    /// Indicates the type and value of the address used in the connectable advertisement sent by
+    /// the peer. The Host shall not use `PeerAddressType::PublicIdentityAddress` or
+    /// `PeerAddressType::RandomIdentityAddress` if both the Host and the Controller support the LE
+    /// Set Privacy Mode command. If a Controller that supports the LE Set Privacy Mode command
+    /// receives the LE Create Connection command with Peer_Address_Type set to either
+    /// `PeerAddressType::PublicIdentityAddress` or `PeerAddressType::RandomIdentityAddress`, it may
+    /// use either device privacy mode or network privacy mode for that peer device.
+    pub peer_address: PeerAddrType,
+
+    /// The type of address being used in the connection request packets.
+    ///
+    /// If this is `OwnAddressType::Random` and the random address for the device has not been
+    /// initialized, the Controller shall return the error code
+    /// `::Status::InvalidHciCommandParameters`.
+    ///
+    /// If this is `OwnAddressType::PrivateFallbackRandom`, `initiator_filter_policy` is
+    /// `ConnectionFilterPolicy::NoWhiteList`, the controller's resolving list did not contain a
+    /// matching entry, and the random address for the device has not been initialized, the
+    /// Controller shall return the error code `::Status::InvalidHciCommandParameters`.
+    ///
+    /// If this is set `OwnAddressType::PrivateFallbackRandom`, `initiator_filter_policy` is
+    /// `ConnectionFilterPolicy::WhiteList`, and the random address for the device has not been
+    /// initialized, the Controller shall return the error code
+    /// `::Status::InvalidHciCommandParameters`.
+    pub own_address_type: OwnAddressType,
+
+    /// Defines the minimum and maximum allowed connection interval. The first value (min) must be
+    /// less than the second (max).
+    pub conn_interval: (Duration, Duration),
+
+    /// Defines the maximum allowed connection latency. (see the Bluetooth Spec, Vol 6, Part B,
+    /// Section 4.5.1).
+    pub conn_latency: u16,
+
+    /// Defines the link supervision timeout for the connection. This shall be larger than
+    /// `(1 + conn_latency) * conn_interval.1 * 2`.  See the Bluetooth spec, Vol 6, Part B, Section
+    /// 4.5.2.
+    pub supervision_timeout: Duration,
+
+    /// Informative parameters providing the Controller with the expected minimum and maximum length
+    /// of the connection events.  The first value (min) shall be less than or equal to the second
+    /// (max).
+    pub expected_connection_length_range: (Duration, Duration),
+}
+
+impl ConnectionParameters {
+    fn into_bytes<E>(&self, bytes: &mut [u8]) -> Result<(), Error<E>> {
+        assert_eq!(bytes.len(), 25);
+        verify_scan_interval(self.scan_interval, self.scan_window)?;
+
+        const CONN_INTERVAL_MIN: Duration = Duration::from_micros(4500);
+        const CONN_INTERVAL_MAX: Duration = Duration::from_secs(4);
+        if self.conn_interval.0 < CONN_INTERVAL_MIN
+            || self.conn_interval.1 > CONN_INTERVAL_MAX
+            || self.conn_interval.0 > self.conn_interval.1
+        {
+            return Err(Error::BadConnectionInterval(
+                self.conn_interval.0,
+                self.conn_interval.1,
+            ));
+        }
+
+        const CONN_LATENCY_MAX: u16 = 0x01F3;
+        if self.conn_latency > CONN_LATENCY_MAX {
+            return Err(Error::BadConnectionLatency(self.conn_latency));
+        }
+
+        const SUPERVISION_TIMEOUT_ABS_MIN: Duration = Duration::from_millis(100);
+        const SUPERVISION_TIMEOUT_MAX: Duration = Duration::from_secs(32);
+        let min_supervision_timeout = self.conn_interval.1 * (1 + self.conn_latency as u32) * 2;
+        if self.supervision_timeout < min_supervision_timeout
+            || self.supervision_timeout < SUPERVISION_TIMEOUT_ABS_MIN
+            || self.supervision_timeout > SUPERVISION_TIMEOUT_MAX
+        {
+            return Err(Error::BadSupervisionTimeout(
+                self.supervision_timeout,
+                min_supervision_timeout,
+            ));
+        }
+
+        LittleEndian::write_u16(&mut bytes[0..], to_interval_value(self.scan_interval));
+        LittleEndian::write_u16(&mut bytes[2..], to_interval_value(self.scan_window));
+        bytes[4] = self.initiator_filter_policy as u8;
+        match self.initiator_filter_policy {
+            ConnectionFilterPolicy::UseAddress => {
+                self.peer_address.into_bytes(&mut bytes[5..12]);
+            }
+            ConnectionFilterPolicy::WhiteList => {
+                bytes[5..12].copy_from_slice(&[0; 7]);
+            }
+        }
+        bytes[12] = self.own_address_type as u8;
+        LittleEndian::write_u16(
+            &mut bytes[13..],
+            to_conn_interval_value(self.conn_interval.0),
+        );
+        LittleEndian::write_u16(
+            &mut bytes[15..],
+            to_conn_interval_value(self.conn_interval.1),
+        );
+        LittleEndian::write_u16(&mut bytes[17..], self.conn_latency);
+        LittleEndian::write_u16(
+            &mut bytes[19..],
+            to_supervision_timeout_value(self.supervision_timeout),
+        );
+        LittleEndian::write_u16(
+            &mut bytes[21..],
+            to_interval_value(self.expected_connection_length_range.0),
+        );
+        LittleEndian::write_u16(
+            &mut bytes[23..],
+            to_interval_value(self.expected_connection_length_range.1),
+        );
+
+        Ok(())
+    }
+}
+
+fn to_conn_interval_value(d: Duration) -> u16 {
+    // Connection interval value: T = N * 1.25 ms
+    // We have T, we need to return N.
+    // N = T / 1.25 ms
+    //   = 4 * T / 5 ms
+    let millis = (d.as_secs() * 1000) as u32 + d.subsec_millis();
+    (4 * millis / 5) as u16
+}
+
+fn to_supervision_timeout_value(d: Duration) -> u16 {
+    // Supervision timeout value: T = N * 10 ms
+    // We have T, we need to return N.
+    // N = T / 10 ms
+    let millis = (d.as_secs() * 1000) as u32 + d.subsec_millis();
+    (millis / 10) as u16
+}
+
+/// Possible values for the initiator filter policy in the Create Connection command.
+#[derive(Copy, Clone, Debug)]
+#[repr(u8)]
+pub enum ConnectionFilterPolicy {
+    /// White List is not used to determine which advertiser to connect to.  `peer_address shall be
+    /// used in the connection complete event.
+    UseAddress = 0x00,
+
+    /// White List is used to determine which advertiser to connect to. `peer_address` shall be
+    /// ignored in the connection complete event.
+    WhiteList = 0x01,
+}
+
+/// Possible values for the peer address in the Create Connection event.
+#[derive(Clone, Debug)]
+pub enum PeerAddrType {
+    /// Public Device Address
+    PublicDeviceAddress(::BdAddr),
+    /// Random Device Address
+    RandomDeviceAddress(::BdAddr),
+    /// Public Identity Address (Corresponds to peer’s Resolvable Private Address). This value shall
+    /// only be used by the Host if either the Host or the Controller does not support the LE Set
+    /// Privacy Mode command.
+    PublicIdentityAddress(::BdAddr),
+    /// Random (static) Identity Address (Corresponds to peer’s Resolvable Private Address). This
+    /// value shall only be used by a Host if either the Host or the Controller does not support the
+    /// LE Set Privacy Mode command.
+    RandomIdentityAddress(::BdAddr),
+}
+
+impl PeerAddrType {
+    fn into_bytes(&self, bytes: &mut [u8]) {
+        assert_eq!(bytes.len(), 7);
+        match *self {
+            PeerAddrType::PublicDeviceAddress(bd_addr) => {
+                bytes[0] = 0x00;
+                bytes[1..7].copy_from_slice(&bd_addr.0);
+            }
+            PeerAddrType::RandomDeviceAddress(bd_addr) => {
+                bytes[0] = 0x01;
+                bytes[1..7].copy_from_slice(&bd_addr.0);
+            }
+            PeerAddrType::PublicIdentityAddress(bd_addr) => {
+                bytes[0] = 0x02;
+                bytes[1..7].copy_from_slice(&bd_addr.0);
+            }
+            PeerAddrType::RandomIdentityAddress(bd_addr) => {
+                bytes[0] = 0x03;
+                bytes[1..7].copy_from_slice(&bd_addr.0);
+            }
+        }
+    }
 }

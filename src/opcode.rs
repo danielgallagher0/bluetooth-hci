@@ -76,5 +76,6 @@ opcodes! {
         pub const LE_SET_ADVERTISE_ENABLE = 0x000A;
         pub const LE_SET_SCAN_PARAMETERS = 0x000B;
         pub const LE_SET_SCAN_ENABLE = 0x000C;
+        pub const LE_CREATE_CONNECTION = 0x000D;
     }
 }

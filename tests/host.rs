@@ -634,3 +634,198 @@ fn le_set_scan_enable() {
         .unwrap();
     assert_eq!(sink.written_data, [1, 0x0C, 0x20, 2, 1, 0]);
 }
+
+#[test]
+fn le_create_connection_no_whitelist() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller()
+        .le_create_connection(&ConnectionParameters {
+            scan_interval: Duration::from_millis(50),
+            scan_window: Duration::from_millis(25),
+            initiator_filter_policy: ConnectionFilterPolicy::UseAddress,
+            peer_address: PeerAddrType::PublicDeviceAddress(hci::BdAddr([1, 2, 3, 4, 5, 6])),
+            own_address_type: OwnAddressType::Public,
+            conn_interval: (Duration::from_millis(50), Duration::from_millis(500)),
+            conn_latency: 10,
+            supervision_timeout: Duration::from_secs(15),
+            expected_connection_length_range: (
+                Duration::from_millis(200),
+                Duration::from_millis(500),
+            ),
+        })
+        .unwrap();
+    assert_eq!(
+        sink.written_data,
+        vec![
+            1, 0x0D, 0x20, 25, 0x50, 0x00, 0x28, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
+            0x06, 0x00, 0x28, 0x00, 0x90, 0x01, 0x0A, 0x00, 0xDC, 0x05, 0x40, 0x01, 0x20, 0x03,
+        ]
+    );
+}
+
+#[test]
+fn le_create_connection_use_whitelist() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller()
+        .le_create_connection(&ConnectionParameters {
+            scan_interval: Duration::from_millis(50),
+            scan_window: Duration::from_millis(25),
+            initiator_filter_policy: ConnectionFilterPolicy::WhiteList,
+            peer_address: PeerAddrType::PublicDeviceAddress(hci::BdAddr([1, 2, 3, 4, 5, 6])),
+            own_address_type: OwnAddressType::Public,
+            conn_interval: (Duration::from_millis(50), Duration::from_millis(500)),
+            conn_latency: 10,
+            supervision_timeout: Duration::from_secs(15),
+            expected_connection_length_range: (
+                Duration::from_millis(200),
+                Duration::from_millis(500),
+            ),
+        })
+        .unwrap();
+    assert_eq!(
+        sink.written_data,
+        vec![
+            1, 0x0D, 0x20, 25, 0x50, 0x00, 0x28, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x28, 0x00, 0x90, 0x01, 0x0A, 0x00, 0xDC, 0x05, 0x40, 0x01, 0x20, 0x03,
+        ]
+    );
+}
+
+#[test]
+fn le_create_connection_bad_window() {
+    let mut sink = RecordingSink::new();
+    for (interval, window) in [
+        (Duration::from_millis(19), Duration::from_millis(20)),
+        (Duration::from_millis(2), Duration::from_millis(1)),
+        (Duration::from_millis(12), Duration::from_millis(2)),
+        (Duration::from_millis(10241), Duration::from_millis(100)),
+        (Duration::from_millis(102), Duration::from_millis(10241)),
+    ].iter()
+    {
+        let err = sink
+            .as_controller()
+            .le_create_connection(&ConnectionParameters {
+                scan_interval: *interval,
+                scan_window: *window,
+                initiator_filter_policy: ConnectionFilterPolicy::WhiteList,
+                peer_address: PeerAddrType::PublicDeviceAddress(hci::BdAddr([1, 2, 3, 4, 5, 6])),
+                own_address_type: OwnAddressType::Public,
+                conn_interval: (Duration::from_millis(50), Duration::from_millis(500)),
+                conn_latency: 10,
+                supervision_timeout: Duration::from_millis(50),
+                expected_connection_length_range: (
+                    Duration::from_millis(200),
+                    Duration::from_millis(500),
+                ),
+            })
+            .err()
+            .unwrap();
+
+        assert_eq!(
+            err,
+            nb::Error::Other(Error::BadScanInterval(*interval, *window))
+        );
+    }
+    assert_eq!(sink.written_data, []);
+}
+
+#[test]
+fn le_create_connection_bad_connection_interval() {
+    let mut sink = RecordingSink::new();
+    for (min, max) in [
+        (Duration::from_millis(4), Duration::from_millis(1000)),
+        (Duration::from_millis(100), Duration::from_millis(4001)),
+        (Duration::from_millis(500), Duration::from_millis(499)),
+    ].iter()
+    {
+        let err = sink
+            .as_controller()
+            .le_create_connection(&ConnectionParameters {
+                scan_interval: Duration::from_millis(100),
+                scan_window: Duration::from_millis(50),
+                initiator_filter_policy: ConnectionFilterPolicy::WhiteList,
+                peer_address: PeerAddrType::PublicDeviceAddress(hci::BdAddr([1, 2, 3, 4, 5, 6])),
+                own_address_type: OwnAddressType::Public,
+                conn_interval: (*min, *max),
+                conn_latency: 10,
+                supervision_timeout: Duration::from_millis(50),
+                expected_connection_length_range: (
+                    Duration::from_millis(9),
+                    Duration::from_millis(8),
+                ),
+            })
+            .err()
+            .unwrap();
+
+        assert_eq!(
+            err,
+            nb::Error::Other(Error::BadConnectionInterval(*min, *max))
+        );
+    }
+    assert_eq!(sink.written_data, []);
+}
+
+#[test]
+fn le_create_connection_bad_connection_latency() {
+    let mut sink = RecordingSink::new();
+    let err = sink
+        .as_controller()
+        .le_create_connection(&ConnectionParameters {
+            scan_interval: Duration::from_millis(100),
+            scan_window: Duration::from_millis(50),
+            initiator_filter_policy: ConnectionFilterPolicy::WhiteList,
+            peer_address: PeerAddrType::PublicDeviceAddress(hci::BdAddr([1, 2, 3, 4, 5, 6])),
+            own_address_type: OwnAddressType::Public,
+            conn_interval: (Duration::from_millis(50), Duration::from_millis(500)),
+            conn_latency: 515,
+            supervision_timeout: Duration::from_secs(12),
+            expected_connection_length_range: (
+                Duration::from_millis(200),
+                Duration::from_millis(500),
+            ),
+        })
+        .err()
+        .unwrap();
+
+    assert_eq!(err, nb::Error::Other(Error::BadConnectionLatency(515)));
+    assert_eq!(sink.written_data, []);
+}
+
+#[test]
+fn le_create_connection_bad_supervision_timeout() {
+    let mut sink = RecordingSink::new();
+    for timeout in [
+        Duration::from_millis(9),
+        Duration::from_millis(10999),
+        Duration::from_millis(32001),
+    ].iter()
+    {
+        let err = sink
+            .as_controller()
+            .le_create_connection(&ConnectionParameters {
+                scan_interval: Duration::from_millis(100),
+                scan_window: Duration::from_millis(50),
+                initiator_filter_policy: ConnectionFilterPolicy::WhiteList,
+                peer_address: PeerAddrType::PublicDeviceAddress(hci::BdAddr([1, 2, 3, 4, 5, 6])),
+                own_address_type: OwnAddressType::Public,
+                conn_interval: (Duration::from_millis(50), Duration::from_millis(500)),
+                conn_latency: 10,
+                supervision_timeout: *timeout,
+                expected_connection_length_range: (
+                    Duration::from_millis(200),
+                    Duration::from_millis(500),
+                ),
+            })
+            .err()
+            .unwrap();
+
+        assert_eq!(
+            err,
+            nb::Error::Other(Error::BadSupervisionTimeout(
+                *timeout,
+                Duration::from_secs(11)
+            ))
+        );
+    }
+    assert_eq!(sink.written_data, []);
+}
