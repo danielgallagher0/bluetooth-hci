@@ -850,3 +850,28 @@ fn le_clear_white_list() {
     sink.as_controller().le_clear_white_list().unwrap();
     assert_eq!(sink.written_data, [1, 0x10, 0x20, 0]);
 }
+
+#[test]
+fn le_add_device_to_white_list() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller()
+        .le_add_device_to_white_list(hci::BdAddrType::Public(hci::BdAddr([1, 2, 3, 4, 5, 6])))
+        .unwrap();
+    assert_eq!(
+        sink.written_data,
+        [1, 0x11, 0x20, 7, 0x00, 1, 2, 3, 4, 5, 6]
+    );
+}
+
+#[cfg(feature = "version-5-0")]
+#[test]
+fn le_add_anon_advertising_devices_to_white_list() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller()
+        .le_add_anon_advertising_devices_to_white_list()
+        .unwrap();
+    assert_eq!(
+        sink.written_data,
+        [1, 0x11, 0x20, 7, 0xFF, 0, 0, 0, 0, 0, 0]
+    );
+}

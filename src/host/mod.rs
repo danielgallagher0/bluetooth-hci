@@ -695,6 +695,49 @@ pub trait Hci<E, Header> {
     ///
     /// A command complete event is generated.
     fn le_clear_white_list(&mut self) -> nb::Result<(), E>;
+
+    /// Adds a single device to the white list stored in the Controller.
+    ///
+    /// This command can be used at any time except when:
+    /// - the advertising filter policy uses the white list and advertising is enabled.
+    /// - the scanning filter policy uses the white list and scanning is enabled.
+    /// - the initiator filter policy uses the white list and a create connection command is
+    ///   outstanding.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.16.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported.
+    ///
+    /// # Generated events
+    ///
+    /// A command complete event is generated.  When a Controller cannot add a device to the White
+    /// List because there is no space available, it shall return the error code
+    /// `::Status::MemoryCapacityExceeded`.
+    fn le_add_device_to_white_list(&mut self, addr: ::BdAddrType) -> nb::Result<(), E>;
+
+    /// Adds anonymous devices sending advertisements to the white list stored in the Controller.
+    ///
+    /// This command can be used at any time except when:
+    /// - the advertising filter policy uses the white list and advertising is enabled.
+    /// - the scanning filter policy uses the white list and scanning is enabled.
+    /// - the initiator filter policy uses the white list and a create connection command is
+    ///   outstanding.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.16.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported.
+    ///
+    /// # Generated events
+    ///
+    /// A command complete event with `ReturnParameters::LeAddDeviceToWhiteList` is generated.  When
+    /// a Controller cannot add a device to the White List because there is no space available, it
+    /// shall return the error code `::Status::MemoryCapacityExceeded`.
+    #[cfg(feature = "version-5-0")]
+    fn le_add_anon_advertising_devices_to_white_list(&mut self) -> nb::Result<(), E>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -973,6 +1016,21 @@ where
 
     fn le_clear_white_list(&mut self) -> nb::Result<(), E> {
         write_command::<Header, T, E>(self, ::opcode::LE_CLEAR_WHITE_LIST, &[])
+    }
+
+    fn le_add_device_to_white_list(&mut self, addr: ::BdAddrType) -> nb::Result<(), E> {
+        let mut params = [0; 7];
+        addr.into_bytes(&mut params);
+        write_command::<Header, T, E>(self, ::opcode::LE_ADD_DEVICE_TO_WHITE_LIST, &params)
+    }
+
+    #[cfg(feature = "version-5-0")]
+    fn le_add_anon_advertising_devices_to_white_list(&mut self) -> nb::Result<(), E> {
+        write_command::<Header, T, E>(
+            self,
+            ::opcode::LE_ADD_DEVICE_TO_WHITE_LIST,
+            &[0xFF, 0, 0, 0, 0, 0, 0],
+        )
     }
 }
 
@@ -1282,16 +1340,7 @@ impl AdvertisingParameters {
         }
         bytes[4] = self.advertising_type as u8;
         bytes[5] = self.own_address_type as u8;
-        match self.peer_address {
-            ::BdAddrType::Public(bd_addr) => {
-                bytes[6] = 0;
-                bytes[7..13].copy_from_slice(&bd_addr.0);
-            }
-            ::BdAddrType::Random(bd_addr) => {
-                bytes[6] = 1;
-                bytes[7..13].copy_from_slice(&bd_addr.0);
-            }
-        }
+        self.peer_address.into_bytes(&mut bytes[6..13]);
         bytes[13] = self.advertising_channel_map.bits();
         bytes[14] = self.advertising_filter_policy as u8;
 

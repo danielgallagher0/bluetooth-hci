@@ -514,6 +514,24 @@ pub enum BdAddrType {
     Random(BdAddr),
 }
 
+impl BdAddrType {
+    /// Writes a `BdAddrType` into the given slice.  The slice must be exactly the right length (7
+    /// bytes).
+    pub fn into_bytes(&self, bytes: &mut [u8]) {
+        assert_eq!(bytes.len(), 7);
+        match *self {
+            BdAddrType::Public(addr) => {
+                bytes[0] = 0;
+                bytes[1..7].copy_from_slice(&addr.0);
+            }
+            BdAddrType::Random(addr) => {
+                bytes[0] = 1;
+                bytes[1..7].copy_from_slice(&addr.0);
+            }
+        }
+    }
+}
+
 /// The BD Address type is not recognized.  Includes the unrecognized byte.
 pub struct BdAddrTypeError(pub u8);
 

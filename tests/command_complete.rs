@@ -815,3 +815,23 @@ fn le_clear_white_list() {
         other => panic!("Did not get command complete event: {:?}", other),
     }
 }
+
+#[test]
+fn le_add_device_to_whitelist() {
+    let buffer = [0x0E, 4, 1, 0x11, 0x20, 0x00];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::CommandComplete(event)) => {
+            assert_eq!(event.num_hci_command_packets, 1);
+            match event.return_params {
+                ReturnParameters::LeAddDeviceToWhiteList(status) => {
+                    assert_eq!(status, ::hci::Status::Success);
+                }
+                other => panic!(
+                    "Did not get LE Add Device to White List return params: {:?}",
+                    other
+                ),
+            }
+        }
+        other => panic!("Did not get command complete event: {:?}", other),
+    }
+}

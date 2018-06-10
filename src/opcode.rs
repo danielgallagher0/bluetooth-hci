@@ -80,5 +80,6 @@ opcodes! {
         pub const LE_CREATE_CONNECTION_CANCEL = 0x000E;
         pub const LE_READ_WHITE_LIST_SIZE = 0x000F;
         pub const LE_CLEAR_WHITE_LIST = 0x0010;
+        pub const LE_ADD_DEVICE_TO_WHITE_LIST = 0x0011;
     }
 }
