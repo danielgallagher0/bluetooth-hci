@@ -648,7 +648,7 @@ pub trait Hci<E, Header> {
     ///
     /// Only underlying communication errors are reported.
     ///
-    /// # Generated events.
+    /// # Generated events
     ///
     /// A command complete event shall be generated.
     ///
@@ -660,6 +660,22 @@ pub trait Hci<E, Header> {
     /// shall be sent after the Command Complete event for the `le_create_connection_cancel` command
     /// if the cancellation was successful.
     fn le_create_connection_cancel(&mut self) -> nb::Result<(), E>;
+
+    /// The `le_read_white_list_size` command is used to read the total number of White List entries
+    /// that can be stored in the Controller. Note: The number of entries that can be stored is not
+    /// fixed and the Controller can change it at any time (e.g. because the memory used to store
+    /// the White List can also be used for other purposes).
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.14.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported.
+    ///
+    /// # Generated events
+    ///
+    /// A command complete event is generated.
+    fn le_read_white_list_size(&mut self) -> nb::Result<(), E>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -930,6 +946,10 @@ where
 
     fn le_create_connection_cancel(&mut self) -> nb::Result<(), E> {
         write_command::<Header, T, E>(self, ::opcode::LE_CREATE_CONNECTION_CANCEL, &[])
+    }
+
+    fn le_read_white_list_size(&mut self) -> nb::Result<(), E> {
+        write_command::<Header, T, E>(self, ::opcode::LE_READ_WHITE_LIST_SIZE, &[])
     }
 }
 

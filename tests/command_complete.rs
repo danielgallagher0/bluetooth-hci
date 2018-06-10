@@ -777,3 +777,24 @@ fn le_create_connection_cancel() {
         other => panic!("Did not get command complete event: {:?}", other),
     }
 }
+
+#[test]
+fn le_read_white_list_size() {
+    let buffer = [0x0E, 5, 1, 0x0F, 0x20, 0x00, 0x16];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::CommandComplete(event)) => {
+            assert_eq!(event.num_hci_command_packets, 1);
+            match event.return_params {
+                ReturnParameters::LeReadWhiteListSize(status, white_list_size) => {
+                    assert_eq!(status, ::hci::Status::Success);
+                    assert_eq!(white_list_size, 0x16);
+                }
+                other => panic!(
+                    "Did not get LE Read White List Size return params: {:?}",
+                    other
+                ),
+            }
+        }
+        other => panic!("Did not get command complete event: {:?}", other),
+    }
+}

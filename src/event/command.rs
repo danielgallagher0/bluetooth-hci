@@ -109,6 +109,9 @@ impl CommandComplete {
             ::opcode::LE_CREATE_CONNECTION_CANCEL => {
                 ReturnParameters::LeCreateConnectionCancel(to_status(&bytes[3..])?)
             }
+            ::opcode::LE_READ_WHITE_LIST_SIZE => {
+                ReturnParameters::LeReadWhiteListSize(to_status(&bytes[3..])?, bytes[4] as usize)
+            }
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -190,6 +193,9 @@ pub enum ReturnParameters {
 
     /// Status returned by the LE Create Connection Cancel command.
     LeCreateConnectionCancel(::Status),
+
+    /// Status and white list size returned by the LE Read White List Size command.
+    LeReadWhiteListSize(::Status, usize),
 }
 
 fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {

@@ -834,5 +834,12 @@ fn le_create_connection_bad_supervision_timeout() {
 fn le_create_connection_cancel() {
     let mut sink = RecordingSink::new();
     sink.as_controller().le_create_connection_cancel().unwrap();
-    assert_eq!(sink.written_data, [1, 0x0E, 0x20, 0,]);
+    assert_eq!(sink.written_data, [1, 0x0E, 0x20, 0]);
+}
+
+#[test]
+fn le_read_white_list_size() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller().le_read_white_list_size().unwrap();
+    assert_eq!(sink.written_data, [1, 0x0F, 0x20, 0]);
 }
