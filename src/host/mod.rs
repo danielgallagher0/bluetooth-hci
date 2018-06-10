@@ -738,6 +738,46 @@ pub trait Hci<E, Header> {
     /// shall return the error code `::Status::MemoryCapacityExceeded`.
     #[cfg(feature = "version-5-0")]
     fn le_add_anon_advertising_devices_to_white_list(&mut self) -> nb::Result<(), E>;
+
+    /// Removes a single device from the white list stored in the Controller.
+    ///
+    /// This command can be used at any time except when:
+    /// - the advertising filter policy uses the white list and advertising is enabled.
+    /// - the scanning filter policy uses the white list and scanning is enabled.
+    /// - the initiator filter policy uses the white list and a create connection command is
+    ///   outstanding.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.17.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported.
+    ///
+    /// # Generated events
+    ///
+    /// A command complete event is generated.
+    fn le_remove_device_from_white_list(&mut self, addr: ::BdAddrType) -> nb::Result<(), E>;
+
+    /// Removes anonymous devices sending advertisements from the white list stored in the
+    /// Controller.
+    ///
+    /// This command can be used at any time except when:
+    /// - the advertising filter policy uses the white list and advertising is enabled.
+    /// - the scanning filter policy uses the white list and scanning is enabled.
+    /// - the initiator filter policy uses the white list and a create connection command is
+    ///   outstanding.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.17.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported.
+    ///
+    /// # Generated events
+    ///
+    /// A command complete event is generated.
+    #[cfg(feature = "version-5-0")]
+    fn le_remove_anon_advertising_devices_from_white_list(&mut self) -> nb::Result<(), E>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -1029,6 +1069,21 @@ where
         write_command::<Header, T, E>(
             self,
             ::opcode::LE_ADD_DEVICE_TO_WHITE_LIST,
+            &[0xFF, 0, 0, 0, 0, 0, 0],
+        )
+    }
+
+    fn le_remove_device_from_white_list(&mut self, addr: ::BdAddrType) -> nb::Result<(), E> {
+        let mut params = [0; 7];
+        addr.into_bytes(&mut params);
+        write_command::<Header, T, E>(self, ::opcode::LE_REMOVE_DEVICE_FROM_WHITE_LIST, &params)
+    }
+
+    #[cfg(feature = "version-5-0")]
+    fn le_remove_anon_advertising_devices_from_white_list(&mut self) -> nb::Result<(), E> {
+        write_command::<Header, T, E>(
+            self,
+            ::opcode::LE_REMOVE_DEVICE_FROM_WHITE_LIST,
             &[0xFF, 0, 0, 0, 0, 0, 0],
         )
     }

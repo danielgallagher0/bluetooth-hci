@@ -118,6 +118,9 @@ impl CommandComplete {
             ::opcode::LE_ADD_DEVICE_TO_WHITE_LIST => {
                 ReturnParameters::LeAddDeviceToWhiteList(to_status(&bytes[3..])?)
             }
+            ::opcode::LE_REMOVE_DEVICE_FROM_WHITE_LIST => {
+                ReturnParameters::LeRemoveDeviceFromWhiteList(to_status(&bytes[3..])?)
+            }
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -208,6 +211,9 @@ pub enum ReturnParameters {
 
     /// Status returned by the LE Add Device to White List command.
     LeAddDeviceToWhiteList(::Status),
+
+    /// Status returned by the LE Remove Device from White List command.
+    LeRemoveDeviceFromWhiteList(::Status),
 }
 
 fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {
