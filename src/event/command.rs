@@ -106,6 +106,9 @@ impl CommandComplete {
             ::opcode::LE_SET_SCAN_ENABLE => {
                 ReturnParameters::LeSetScanEnable(to_status(&bytes[3..])?)
             }
+            ::opcode::LE_CREATE_CONNECTION_CANCEL => {
+                ReturnParameters::LeCreateConnectionCancel(to_status(&bytes[3..])?)
+            }
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -184,6 +187,9 @@ pub enum ReturnParameters {
 
     /// Status returned by the LE Set Scan Enable command.
     LeSetScanEnable(::Status),
+
+    /// Status returned by the LE Create Connection Cancel command.
+    LeCreateConnectionCancel(::Status),
 }
 
 fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {

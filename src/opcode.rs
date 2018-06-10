@@ -77,5 +77,6 @@ opcodes! {
         pub const LE_SET_SCAN_PARAMETERS = 0x000B;
         pub const LE_SET_SCAN_ENABLE = 0x000C;
         pub const LE_CREATE_CONNECTION = 0x000D;
+        pub const LE_CREATE_CONNECTION_CANCEL = 0x000E;
     }
 }

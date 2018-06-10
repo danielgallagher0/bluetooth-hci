@@ -610,6 +610,8 @@ pub trait Hci<E, Header> {
     /// Controller; if this does occur the Controller shall return the `::Status::CommandDisallowed`
     /// error code shall be used.
     ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.12.
+    ///
     /// # Errors
     ///
     /// - `BadScanInterval` if either `scan_interval` or `scan_window` are too short (less than 2.5
@@ -634,6 +636,30 @@ pub trait Hci<E, Header> {
     /// been completed. Instead, the LE Connection Complete event indicates that this command has
     /// been completed.
     fn le_create_connection(&mut self, params: &ConnectionParameters) -> nb::Result<(), Error<E>>;
+
+    /// Cancels the `le_create_connection` or `le_extended_create_connection` (for v5.0)
+    /// command. This command shall only be issued after the `le_create_connection` command has been
+    /// issued, a `CommandStatus` event has been received for the `le_create_connection` command and
+    /// before the `LeConnectionComplete` event.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.13.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported.
+    ///
+    /// # Generated events.
+    ///
+    /// A command complete event shall be generated.
+    ///
+    /// If the `le_create_connection_cancel` command is sent to the Controller without a preceding
+    /// `le_create_connection` command, the Controller shall return a Command Complete event with
+    /// the error code `::Status::CommandDisallowed`.
+    ///
+    /// The LE Connection Complete event with the error code `::Status::UnknownConnectionIdentifier`
+    /// shall be sent after the Command Complete event for the `le_create_connection_cancel` command
+    /// if the cancellation was successful.
+    fn le_create_connection_cancel(&mut self) -> nb::Result<(), E>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -900,6 +926,10 @@ where
         params.into_bytes(&mut bytes).map_err(nb::Error::Other)?;
         write_command::<Header, T, E>(self, ::opcode::LE_CREATE_CONNECTION, &bytes)
             .map_err(rewrap_as_comm)
+    }
+
+    fn le_create_connection_cancel(&mut self) -> nb::Result<(), E> {
+        write_command::<Header, T, E>(self, ::opcode::LE_CREATE_CONNECTION_CANCEL, &[])
     }
 }
 
