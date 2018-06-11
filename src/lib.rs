@@ -86,6 +86,9 @@ extern crate bitflags;
 extern crate byteorder;
 extern crate nb;
 
+#[macro_use]
+mod bitflag_array;
+
 pub mod event;
 pub mod host;
 mod opcode;

@@ -201,10 +201,7 @@ fn read_local_supported_commands_failed_bad_command_flag() {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     ];
     match TestEvent::new(Packet(&buffer)) {
-        Err(Error::BadCommandFlag(octet, value)) => {
-            assert_eq!(octet, 33);
-            assert_eq!(value, 0x42);
-        }
+        Err(Error::BadCommandFlag) => (),
         other => panic!("Did not get Bad Command Flag: {:?}", other),
     }
 }
@@ -290,10 +287,7 @@ fn read_local_supported_commands_failed_bad_command_flag() {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     ];
     match TestEvent::new(Packet(&buffer)) {
-        Err(Error::BadCommandFlag(octet, value)) => {
-            assert_eq!(octet, 35);
-            assert_eq!(value, 0x10);
-        }
+        Err(Error::BadCommandFlag) => (),
         other => panic!("Did not get Bad Command Flag: {:?}", other),
     }
 }
@@ -382,10 +376,7 @@ fn read_local_supported_commands_failed_bad_command_flag() {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     ];
     match TestEvent::new(Packet(&buffer)) {
-        Err(Error::BadCommandFlag(octet, value)) => {
-            assert_eq!(octet, 39);
-            assert_eq!(value, 0x80);
-        }
+        Err(Error::BadCommandFlag) => (),
         other => panic!("Did not get Bad Command Flag: {:?}", other),
     }
 }

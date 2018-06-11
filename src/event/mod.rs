@@ -163,9 +163,8 @@ pub enum Error<V> {
 
     /// For the Command Complete event, for the Read Local Supported Commands command return
     /// parameters: The returned command flags are invalid (i.e., they include a flag that is
-    /// reserved for future use).  Includes the index of the octet that included the first invalid
-    /// bit, and the value of that octet.
-    BadCommandFlag(usize, u8),
+    /// reserved for future use).
+    BadCommandFlag,
 
     /// For the LE Connection Complete event: The connection role was not recognized. Includes the
     /// unrecognized byte.
