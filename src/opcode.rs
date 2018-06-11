@@ -82,5 +82,6 @@ opcodes! {
         pub const LE_CLEAR_WHITE_LIST = 0x0010;
         pub const LE_ADD_DEVICE_TO_WHITE_LIST = 0x0011;
         pub const LE_REMOVE_DEVICE_FROM_WHITE_LIST = 0x0012;
+        pub const LE_CONNECTION_UPDATE = 0x0013;
     }
 }

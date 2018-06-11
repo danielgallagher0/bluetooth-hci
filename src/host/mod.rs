@@ -778,6 +778,40 @@ pub trait Hci<E, Header> {
     /// A command complete event is generated.
     #[cfg(feature = "version-5-0")]
     fn le_remove_anon_advertising_devices_from_white_list(&mut self) -> nb::Result<(), E>;
+
+    /// Changes the Link Layer connection parameters of a connection. This command may be issued on
+    /// both the master and slave.
+    ///
+    /// The actual parameter values selected by the Link Layer may be different from the parameter
+    /// values provided by the Host through this command.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.18.
+    ///
+    /// # Errors
+    ///
+    /// - `BadConnectionInterval` if the connection interval is inverted, i.e. if the first value
+    ///   (min) is greater than the second (max), or if either value is out of range (7.5 ms to 4
+    ///   sec).
+    /// - `BadConnectionLatency` if `conn_latency` is greater than 514.
+    /// - `BadConnectionLengthRange` if the max expected connection length is less than the min
+    ///   expected connection length.
+    /// - `BadSupervisionTimeout` if `supervision_timeout` is too short (less than 100 ms) or too
+    ///   long (more than 32 s).
+    /// - Underlying communication errors
+    ///
+    /// # Generated events
+    ///
+    /// When the Controller receives the LE_Connection_Update command, the Controller sends the
+    /// Command Status event to the Host. The LE Connection Update Complete event shall be generated
+    /// after the connection parameters have been applied by the Controller.
+    ///
+    /// Note: a Command Complete event is not sent by the Controller to indicate that this command
+    /// has been completed. Instead, the LE Connection Update Complete event indicates that this
+    /// command has been completed.
+    fn le_connection_update(
+        &mut self,
+        params: &ConnectionUpdateParameters,
+    ) -> nb::Result<(), Error<E>>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -1086,6 +1120,16 @@ where
             ::opcode::LE_REMOVE_DEVICE_FROM_WHITE_LIST,
             &[0xFF, 0, 0, 0, 0, 0, 0],
         )
+    }
+
+    fn le_connection_update(
+        &mut self,
+        params: &ConnectionUpdateParameters,
+    ) -> nb::Result<(), Error<E>> {
+        let mut bytes = [0; 14];
+        params.into_bytes(&mut bytes).map_err(nb::Error::Other)?;
+        write_command::<Header, T, E>(self, ::opcode::LE_CONNECTION_UPDATE, &bytes)
+            .map_err(rewrap_as_comm)
     }
 }
 
@@ -1649,37 +1693,15 @@ pub struct ConnectionParameters {
 impl ConnectionParameters {
     fn into_bytes<E>(&self, bytes: &mut [u8]) -> Result<(), Error<E>> {
         assert_eq!(bytes.len(), 25);
+
         verify_scan_interval(self.scan_interval, self.scan_window)?;
-
-        const CONN_INTERVAL_MIN: Duration = Duration::from_micros(4500);
-        const CONN_INTERVAL_MAX: Duration = Duration::from_secs(4);
-        if self.conn_interval.0 < CONN_INTERVAL_MIN
-            || self.conn_interval.1 > CONN_INTERVAL_MAX
-            || self.conn_interval.0 > self.conn_interval.1
-        {
-            return Err(Error::BadConnectionInterval(
-                self.conn_interval.0,
-                self.conn_interval.1,
-            ));
-        }
-
-        const CONN_LATENCY_MAX: u16 = 0x01F3;
-        if self.conn_latency > CONN_LATENCY_MAX {
-            return Err(Error::BadConnectionLatency(self.conn_latency));
-        }
-
-        const SUPERVISION_TIMEOUT_ABS_MIN: Duration = Duration::from_millis(100);
-        const SUPERVISION_TIMEOUT_MAX: Duration = Duration::from_secs(32);
-        let min_supervision_timeout = self.conn_interval.1 * (1 + self.conn_latency as u32) * 2;
-        if self.supervision_timeout < min_supervision_timeout
-            || self.supervision_timeout < SUPERVISION_TIMEOUT_ABS_MIN
-            || self.supervision_timeout > SUPERVISION_TIMEOUT_MAX
-        {
-            return Err(Error::BadSupervisionTimeout(
-                self.supervision_timeout,
-                min_supervision_timeout,
-            ));
-        }
+        verify_conn_interval(self.conn_interval.0, self.conn_interval.1)?;
+        verify_conn_latency(self.conn_latency)?;
+        verify_supervision_timeout(
+            self.supervision_timeout,
+            self.conn_interval.1,
+            self.conn_latency,
+        )?;
 
         LittleEndian::write_u16(&mut bytes[0..], to_interval_value(self.scan_interval));
         LittleEndian::write_u16(&mut bytes[2..], to_interval_value(self.scan_window));
@@ -1717,6 +1739,46 @@ impl ConnectionParameters {
 
         Ok(())
     }
+}
+
+fn verify_conn_interval<E>(min: Duration, max: Duration) -> Result<(), Error<E>> {
+    const CONN_INTERVAL_MIN: Duration = Duration::from_micros(7500);
+    const CONN_INTERVAL_MAX: Duration = Duration::from_secs(4);
+    if min < CONN_INTERVAL_MIN || max > CONN_INTERVAL_MAX || min > max {
+        return Err(Error::BadConnectionInterval(min, max));
+    }
+
+    Ok(())
+}
+
+fn verify_conn_latency<E>(latency: u16) -> Result<(), Error<E>> {
+    const CONN_LATENCY_MAX: u16 = 0x01F3;
+    if latency > CONN_LATENCY_MAX {
+        return Err(Error::BadConnectionLatency(latency));
+    }
+
+    Ok(())
+}
+
+fn verify_supervision_timeout<E>(
+    supervision_timeout: Duration,
+    conn_interval_max: Duration,
+    conn_latency: u16,
+) -> Result<(), Error<E>> {
+    const SUPERVISION_TIMEOUT_ABS_MIN: Duration = Duration::from_millis(100);
+    const SUPERVISION_TIMEOUT_MAX: Duration = Duration::from_secs(32);
+    let min_supervision_timeout = conn_interval_max * (1 + conn_latency as u32) * 2;
+    if supervision_timeout < min_supervision_timeout
+        || supervision_timeout < SUPERVISION_TIMEOUT_ABS_MIN
+        || supervision_timeout > SUPERVISION_TIMEOUT_MAX
+    {
+        return Err(Error::BadSupervisionTimeout(
+            supervision_timeout,
+            min_supervision_timeout,
+        ));
+    }
+
+    Ok(())
 }
 
 fn to_conn_interval_value(d: Duration) -> u16 {
@@ -1787,5 +1849,75 @@ impl PeerAddrType {
                 bytes[1..7].copy_from_slice(&bd_addr.0);
             }
         }
+    }
+}
+
+/// Parameters for the `le_connection_update` command.
+///
+/// See the Bluetooth spec, Vol 2, Part E, Section 7.8.18.
+pub struct ConnectionUpdateParameters {
+    /// Handle for identifying a connection.
+    pub conn_handle: ::ConnectionHandle,
+
+    /// Defines the minimum and maximum allowed connection interval. The first value shall not be
+    /// greater than the second.
+    ///
+    /// Range: 7.5 msec to 4 seconds.
+    pub conn_interval: (Duration, Duration),
+
+    /// Defines the maximum allowed connection latency, in number of connection events.
+    ///
+    /// Range: 0x0000 to 0x01F3
+    pub conn_latency: u16,
+
+    /// Defines the link supervision timeout for the connection. This shall be larger than
+    /// `(1 + conn_latency) * conn_interval.1 * 2`.
+    ///
+    /// Absolute range: 100 msec to 32 seconds
+    pub supervision_timeout: Duration,
+
+    /// Information parameters providing the Controller with a hint about the expected minimum and
+    /// maximum length of the connection events. The first value shall be less than the second.
+    ///
+    /// Range: 0 to 40.959375 seconds.
+    pub expected_connection_length_range: (Duration, Duration),
+}
+
+impl ConnectionUpdateParameters {
+    fn into_bytes<E>(&self, bytes: &mut [u8]) -> Result<(), Error<E>> {
+        assert_eq!(bytes.len(), 14);
+
+        verify_conn_interval(self.conn_interval.0, self.conn_interval.1)?;
+        verify_conn_latency(self.conn_latency)?;
+        verify_supervision_timeout(
+            self.supervision_timeout,
+            self.conn_interval.1,
+            self.conn_latency,
+        )?;
+
+        LittleEndian::write_u16(&mut bytes[0..], self.conn_handle.0);
+        LittleEndian::write_u16(
+            &mut bytes[2..],
+            to_conn_interval_value(self.conn_interval.0),
+        );
+        LittleEndian::write_u16(
+            &mut bytes[4..],
+            to_conn_interval_value(self.conn_interval.1),
+        );
+        LittleEndian::write_u16(&mut bytes[6..], self.conn_latency);
+        LittleEndian::write_u16(
+            &mut bytes[8..],
+            to_supervision_timeout_value(self.supervision_timeout),
+        );
+        LittleEndian::write_u16(
+            &mut bytes[10..],
+            to_interval_value(self.expected_connection_length_range.0),
+        );
+        LittleEndian::write_u16(
+            &mut bytes[12..],
+            to_interval_value(self.expected_connection_length_range.1),
+        );
+
+        Ok(())
     }
 }

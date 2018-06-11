@@ -900,3 +900,116 @@ fn le_remove_anon_advertising_devices_from_white_list() {
         [1, 0x12, 0x20, 7, 0xFF, 0, 0, 0, 0, 0, 0]
     );
 }
+
+#[test]
+fn le_connection_update() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller()
+        .le_connection_update(&ConnectionUpdateParameters {
+            conn_handle: hci::ConnectionHandle(0x0201),
+            conn_interval: (Duration::from_millis(50), Duration::from_millis(500)),
+            conn_latency: 10,
+            supervision_timeout: Duration::from_secs(15),
+            expected_connection_length_range: (
+                Duration::from_millis(200),
+                Duration::from_millis(500),
+            ),
+        })
+        .unwrap();
+    assert_eq!(
+        sink.written_data,
+        vec![
+            1, 0x13, 0x20, 14, 0x01, 0x02, 0x28, 0x00, 0x90, 0x01, 0x0A, 0x00, 0xDC, 0x05, 0x40,
+            0x01, 0x20, 0x03,
+        ]
+    );
+}
+
+#[test]
+fn le_connection_update_bad_connection_interval() {
+    let mut sink = RecordingSink::new();
+    for (min, max) in [
+        (Duration::from_millis(4), Duration::from_millis(1000)),
+        (Duration::from_millis(100), Duration::from_millis(4001)),
+        (Duration::from_millis(500), Duration::from_millis(499)),
+    ].iter()
+    {
+        let err = sink
+            .as_controller()
+            .le_connection_update(&ConnectionUpdateParameters {
+                conn_handle: hci::ConnectionHandle(0x0201),
+                conn_interval: (*min, *max),
+                conn_latency: 10,
+                supervision_timeout: Duration::from_millis(50),
+                expected_connection_length_range: (
+                    Duration::from_millis(9),
+                    Duration::from_millis(8),
+                ),
+            })
+            .err()
+            .unwrap();
+
+        assert_eq!(
+            err,
+            nb::Error::Other(Error::BadConnectionInterval(*min, *max))
+        );
+    }
+    assert_eq!(sink.written_data, []);
+}
+
+#[test]
+fn le_connection_update_bad_connection_latency() {
+    let mut sink = RecordingSink::new();
+    let err = sink
+        .as_controller()
+        .le_connection_update(&ConnectionUpdateParameters {
+            conn_handle: hci::ConnectionHandle(0x0201),
+            conn_interval: (Duration::from_millis(50), Duration::from_millis(500)),
+            conn_latency: 515,
+            supervision_timeout: Duration::from_secs(12),
+            expected_connection_length_range: (
+                Duration::from_millis(200),
+                Duration::from_millis(500),
+            ),
+        })
+        .err()
+        .unwrap();
+
+    assert_eq!(err, nb::Error::Other(Error::BadConnectionLatency(515)));
+    assert_eq!(sink.written_data, []);
+}
+
+#[test]
+fn le_connection_update_bad_supervision_timeout() {
+    let mut sink = RecordingSink::new();
+    for timeout in [
+        Duration::from_millis(9),
+        Duration::from_millis(10999),
+        Duration::from_millis(32001),
+    ].iter()
+    {
+        let err = sink
+            .as_controller()
+            .le_connection_update(&ConnectionUpdateParameters {
+                conn_handle: hci::ConnectionHandle(0x0201),
+                conn_interval: (Duration::from_millis(50), Duration::from_millis(500)),
+                conn_latency: 10,
+                supervision_timeout: *timeout,
+                expected_connection_length_range: (
+                    Duration::from_millis(200),
+                    Duration::from_millis(500),
+                ),
+            })
+            .err()
+            .unwrap();
+
+        assert_eq!(
+            err,
+            nb::Error::Other(Error::BadSupervisionTimeout(
+                *timeout,
+                Duration::from_secs(11)
+            ))
+        );
+    }
+    assert_eq!(sink.written_data, []);
+}
