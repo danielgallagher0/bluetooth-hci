@@ -87,6 +87,8 @@ status_only! {
     le_clear_white_list(0x10, 0x20, ReturnParameters::LeClearWhiteList);
     le_add_device_to_whitelist(0x11, 0x20, ReturnParameters::LeAddDeviceToWhiteList);
     le_remove_device_from_whitelist(0x12, 0x20, ReturnParameters::LeRemoveDeviceFromWhiteList);
+    le_set_host_channel_classification(0x14, 0x20,
+                                       ReturnParameters::LeSetHostChannelClassification);
 }
 
 #[test]

@@ -120,6 +120,9 @@ impl CommandComplete {
             ::opcode::LE_REMOVE_DEVICE_FROM_WHITE_LIST => {
                 ReturnParameters::LeRemoveDeviceFromWhiteList(to_status(&bytes[3..])?)
             }
+            ::opcode::LE_SET_HOST_CHANNEL_CLASSIFICATION => {
+                ReturnParameters::LeSetHostChannelClassification(to_status(&bytes[3..])?)
+            }
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -213,6 +216,9 @@ pub enum ReturnParameters {
 
     /// Status returned by the LE Remove Device from White List command.
     LeRemoveDeviceFromWhiteList(::Status),
+
+    /// Status returned by the LE Set Host Channel Classification command.
+    LeSetHostChannelClassification(::Status),
 }
 
 fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {

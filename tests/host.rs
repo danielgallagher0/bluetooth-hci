@@ -1013,3 +1013,38 @@ fn le_connection_update_bad_supervision_timeout() {
     }
     assert_eq!(sink.written_data, []);
 }
+
+#[test]
+fn le_set_host_channel_classification() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller()
+        .le_set_host_channel_classification(
+            ChannelClassification::CH_0
+                | ChannelClassification::CH_4
+                | ChannelClassification::CH_8
+                | ChannelClassification::CH_12
+                | ChannelClassification::CH_16
+                | ChannelClassification::CH_20
+                | ChannelClassification::CH_24
+                | ChannelClassification::CH_28
+                | ChannelClassification::CH_32
+                | ChannelClassification::CH_36,
+        )
+        .unwrap();
+    assert_eq!(
+        sink.written_data,
+        [1, 0x14, 0x20, 5, 0x11, 0x11, 0x11, 0x11, 0x11]
+    );
+}
+
+#[test]
+fn le_set_host_channel_classification_failed_empty() {
+    let mut sink = RecordingSink::new();
+    let err = sink
+        .as_controller()
+        .le_set_host_channel_classification(ChannelClassification::empty())
+        .err()
+        .unwrap();
+    assert_eq!(err, nb::Error::Other(Error::NoValidChannel));
+    assert_eq!(sink.written_data, []);
+}

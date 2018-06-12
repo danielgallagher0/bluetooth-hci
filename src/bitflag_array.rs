@@ -54,6 +54,13 @@ macro_rules! bitflag_array {
                 Some(flags)
             }
 
+            /// Copies the bitfield array into the given slice.  The slice must have exactly the
+            /// right number of elements.
+            pub fn into_bytes(&self, bytes: &mut [u8]) {
+                assert_eq!(self.0.len(), bytes.len());
+                bytes.copy_from_slice(&self.0);
+            }
+
             /// Returns a bit field with all flags set.
             #[allow(deprecated)]
             #[allow(unused_doc_comments)]
@@ -67,6 +74,11 @@ macro_rules! bitflag_array {
                     }
                 )+
                 $flags(bits)
+            }
+
+            /// Returns a bit field with no flags set.
+            pub fn empty() -> $flags {
+                $flags([0; $size])
             }
 
             /// Returns a slice to the underlying representation of the bit field.
