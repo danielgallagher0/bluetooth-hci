@@ -42,38 +42,51 @@ fn unsolicited_command_complete() {
     }
 }
 
-#[test]
-fn set_event_mask() {
-    let buffer = [0x0E, 4, 8, 0x01, 0x0C, 0x00];
-    match TestEvent::new(Packet(&buffer)) {
-        Ok(Event::CommandComplete(event)) => {
-            assert_eq!(event.num_hci_command_packets, 8);
-            match event.return_params {
-                ReturnParameters::SetEventMask(status) => {
-                    assert_eq!(status, hci::Status::Success);
+macro_rules! status_only {
+    {
+        $($(#[$inner:ident $($args:tt)*])*
+          $fn:ident($oc0:expr, $oc1:expr, $return:path);)*
+    } => {
+        $(
+            $(#[$inner $($args)*])*
+            #[test]
+            fn $fn() {
+                let buffer = [0x0E, 4, 8, $oc0, $oc1, 0];
+                match TestEvent::new(Packet(&buffer)) {
+                    Ok(Event::CommandComplete(event)) => {
+                        assert_eq!(event.num_hci_command_packets, 8);
+                        match event.return_params {
+                            $return(status) => {
+                                assert_eq!(status, hci::Status::Success);
+                            }
+                            other => panic!("Wrong return parameters: {:?}", other),
+                        }
+                    }
+                    other => panic!("Did not get command complete event: {:?}", other),
                 }
-                other => panic!("Got return parameters: {:?}", other),
             }
-        }
-        other => panic!("Did not get command complete event: {:?}", other),
+        )*
     }
 }
 
-#[test]
-fn reset() {
-    let buffer = [0x0E, 4, 8, 0x03, 0x0C, 0x00];
-    match TestEvent::new(Packet(&buffer)) {
-        Ok(Event::CommandComplete(event)) => {
-            assert_eq!(event.num_hci_command_packets, 8);
-            match event.return_params {
-                ReturnParameters::Reset(status) => {
-                    assert_eq!(status, hci::Status::Success);
-                }
-                other => panic!("Got return parameters: {:?}", other),
-            }
-        }
-        other => panic!("Did not get command complete event: {:?}", other),
-    }
+status_only! {
+    set_event_mask(0x01, 0x0C, ReturnParameters::SetEventMask);
+    reset(0x03, 0x0C, ReturnParameters::Reset);
+    le_set_event_mask(0x01, 0x20, ReturnParameters::LeSetEventMask);
+    le_set_random_address(0x05, 0x20, ReturnParameters::LeSetRandomAddress);
+    le_set_advertising_parameters(0x06, 0x20, ReturnParameters::LeSetAdvertisingParameters);
+    le_set_advertising_data(0x08, 0x20, ReturnParameters::LeSetAdvertisingData);
+    le_set_scan_response_data(0x09, 0x20, ReturnParameters::LeSetScanResponseData);
+    #[cfg(not(feature = "version-5-0"))]
+    le_set_advertise_enable(0x0A, 0x20, ReturnParameters::LeSetAdvertiseEnable);
+    #[cfg(feature = "version-5-0")]
+    le_set_advertising_enable(0x0A, 0x20, ReturnParameters::LeSetAdvertisingEnable);
+    le_set_scan_parameters(0x0B, 0x20, ReturnParameters::LeSetScanParameters);
+    le_set_scan_enable(0x0C, 0x20, ReturnParameters::LeSetScanEnable);
+    le_create_connection_cancel(0x0E, 0x20, ReturnParameters::LeCreateConnectionCancel);
+    le_clear_white_list(0x10, 0x20, ReturnParameters::LeClearWhiteList);
+    le_add_device_to_whitelist(0x11, 0x20, ReturnParameters::LeAddDeviceToWhiteList);
+    le_remove_device_from_whitelist(0x12, 0x20, ReturnParameters::LeRemoveDeviceFromWhiteList);
 }
 
 #[test]
@@ -457,23 +470,6 @@ fn read_rssi() {
 }
 
 #[test]
-fn le_set_event_mask() {
-    let buffer = [0x0E, 4, 2, 0x01, 0x20, 0x00];
-    match TestEvent::new(Packet(&buffer)) {
-        Ok(Event::CommandComplete(event)) => {
-            assert_eq!(event.num_hci_command_packets, 2);
-            match event.return_params {
-                ReturnParameters::LeSetEventMask(status) => {
-                    assert_eq!(status, ::hci::Status::Success)
-                }
-                other => panic!("Did not get LE Set Event Mask return params: {:?}", other),
-            }
-        }
-        other => panic!("Did not get command complete event: {:?}", other),
-    }
-}
-
-#[test]
 fn le_read_buffer_size() {
     let buffer = [0x0E, 7, 2, 0x02, 0x20, 0x00, 0x01, 0x02, 0x03];
     match TestEvent::new(Packet(&buffer)) {
@@ -567,46 +563,6 @@ fn le_read_local_supported_features() {
 }
 
 #[test]
-fn le_set_random_address() {
-    let buffer = [0x0E, 4, 1, 0x05, 0x20, 0x00];
-    match TestEvent::new(Packet(&buffer)) {
-        Ok(Event::CommandComplete(event)) => {
-            assert_eq!(event.num_hci_command_packets, 1);
-            match event.return_params {
-                ReturnParameters::LeSetRandomAddress(status) => {
-                    assert_eq!(status, ::hci::Status::Success);
-                }
-                other => panic!(
-                    "Did not get LE Set Random Address return params: {:?}",
-                    other
-                ),
-            }
-        }
-        other => panic!("Did not get command complete event: {:?}", other),
-    }
-}
-
-#[test]
-fn le_set_advertising_parameters() {
-    let buffer = [0x0E, 4, 1, 0x06, 0x20, 0x00];
-    match TestEvent::new(Packet(&buffer)) {
-        Ok(Event::CommandComplete(event)) => {
-            assert_eq!(event.num_hci_command_packets, 1);
-            match event.return_params {
-                ReturnParameters::LeSetAdvertisingParameters(status) => {
-                    assert_eq!(status, ::hci::Status::Success);
-                }
-                other => panic!(
-                    "Did not get LE Set Advertising Parameters return params: {:?}",
-                    other
-                ),
-            }
-        }
-        other => panic!("Did not get command complete event: {:?}", other),
-    }
-}
-
-#[test]
 fn le_read_advertising_channel_tx_power() {
     let buffer = [0x0E, 5, 1, 0x07, 0x20, 0x00, 0x01];
     match TestEvent::new(Packet(&buffer)) {
@@ -628,148 +584,6 @@ fn le_read_advertising_channel_tx_power() {
 }
 
 #[test]
-fn le_set_advertising_data() {
-    let buffer = [0x0E, 4, 1, 0x08, 0x20, 0x00];
-    match TestEvent::new(Packet(&buffer)) {
-        Ok(Event::CommandComplete(event)) => {
-            assert_eq!(event.num_hci_command_packets, 1);
-            match event.return_params {
-                ReturnParameters::LeSetAdvertisingData(status) => {
-                    assert_eq!(status, ::hci::Status::Success);
-                }
-                other => panic!(
-                    "Did not get LE Set Advertising Data return params: {:?}",
-                    other
-                ),
-            }
-        }
-        other => panic!("Did not get command complete event: {:?}", other),
-    }
-}
-
-#[test]
-fn le_set_scan_response_data() {
-    let buffer = [0x0E, 4, 1, 0x09, 0x20, 0x00];
-    match TestEvent::new(Packet(&buffer)) {
-        Ok(Event::CommandComplete(event)) => {
-            assert_eq!(event.num_hci_command_packets, 1);
-            match event.return_params {
-                ReturnParameters::LeSetScanResponseData(status) => {
-                    assert_eq!(status, ::hci::Status::Success);
-                }
-                other => panic!(
-                    "Did not get LE Set Scan Response Data return params: {:?}",
-                    other
-                ),
-            }
-        }
-        other => panic!("Did not get command complete event: {:?}", other),
-    }
-}
-
-#[cfg(any(feature = "version-4-1", feature = "version-4-2"))]
-#[test]
-fn le_set_advertise_enable() {
-    let buffer = [0x0E, 4, 1, 0x0A, 0x20, 0x00];
-    match TestEvent::new(Packet(&buffer)) {
-        Ok(Event::CommandComplete(event)) => {
-            assert_eq!(event.num_hci_command_packets, 1);
-            match event.return_params {
-                ReturnParameters::LeSetAdvertiseEnable(status) => {
-                    assert_eq!(status, ::hci::Status::Success);
-                }
-                other => panic!(
-                    "Did not get LE Set Advertise Enable return params: {:?}",
-                    other
-                ),
-            }
-        }
-        other => panic!("Did not get command complete event: {:?}", other),
-    }
-}
-
-#[cfg(feature = "version-5-0")]
-#[test]
-fn le_set_advertising_enable() {
-    let buffer = [0x0E, 4, 1, 0x0A, 0x20, 0x00];
-    match TestEvent::new(Packet(&buffer)) {
-        Ok(Event::CommandComplete(event)) => {
-            assert_eq!(event.num_hci_command_packets, 1);
-            match event.return_params {
-                ReturnParameters::LeSetAdvertisingEnable(status) => {
-                    assert_eq!(status, ::hci::Status::Success);
-                }
-                other => panic!(
-                    "Did not get LE Set Advertising Enable return params: {:?}",
-                    other
-                ),
-            }
-        }
-        other => panic!("Did not get command complete event: {:?}", other),
-    }
-}
-
-#[test]
-fn le_set_scan_parameters() {
-    let buffer = [0x0E, 4, 1, 0x0B, 0x20, 0x00];
-    match TestEvent::new(Packet(&buffer)) {
-        Ok(Event::CommandComplete(event)) => {
-            assert_eq!(event.num_hci_command_packets, 1);
-            match event.return_params {
-                ReturnParameters::LeSetScanParameters(status) => {
-                    assert_eq!(status, ::hci::Status::Success);
-                }
-                other => panic!(
-                    "Did not get LE Set Scan Parameters return params: {:?}",
-                    other
-                ),
-            }
-        }
-        other => panic!("Did not get command complete event: {:?}", other),
-    }
-}
-
-#[test]
-fn le_set_scan_enable() {
-    let buffer = [0x0E, 4, 1, 0x0C, 0x20, 0x00];
-    match TestEvent::new(Packet(&buffer)) {
-        Ok(Event::CommandComplete(event)) => {
-            assert_eq!(event.num_hci_command_packets, 1);
-            match event.return_params {
-                ReturnParameters::LeSetScanEnable(status) => {
-                    assert_eq!(status, ::hci::Status::Success);
-                }
-                other => panic!(
-                    "Did not get LE Set Scan Parameters return params: {:?}",
-                    other
-                ),
-            }
-        }
-        other => panic!("Did not get command complete event: {:?}", other),
-    }
-}
-
-#[test]
-fn le_create_connection_cancel() {
-    let buffer = [0x0E, 4, 1, 0x0E, 0x20, 0x00];
-    match TestEvent::new(Packet(&buffer)) {
-        Ok(Event::CommandComplete(event)) => {
-            assert_eq!(event.num_hci_command_packets, 1);
-            match event.return_params {
-                ReturnParameters::LeCreateConnectionCancel(status) => {
-                    assert_eq!(status, ::hci::Status::Success);
-                }
-                other => panic!(
-                    "Did not get LE Set Scan Parameters return params: {:?}",
-                    other
-                ),
-            }
-        }
-        other => panic!("Did not get command complete event: {:?}", other),
-    }
-}
-
-#[test]
 fn le_read_white_list_size() {
     let buffer = [0x0E, 5, 1, 0x0F, 0x20, 0x00, 0x16];
     match TestEvent::new(Packet(&buffer)) {
@@ -782,63 +596,6 @@ fn le_read_white_list_size() {
                 }
                 other => panic!(
                     "Did not get LE Read White List Size return params: {:?}",
-                    other
-                ),
-            }
-        }
-        other => panic!("Did not get command complete event: {:?}", other),
-    }
-}
-
-#[test]
-fn le_clear_white_list() {
-    let buffer = [0x0E, 4, 1, 0x10, 0x20, 0x00];
-    match TestEvent::new(Packet(&buffer)) {
-        Ok(Event::CommandComplete(event)) => {
-            assert_eq!(event.num_hci_command_packets, 1);
-            match event.return_params {
-                ReturnParameters::LeClearWhiteList(status) => {
-                    assert_eq!(status, ::hci::Status::Success);
-                }
-                other => panic!("Did not get LE Clear White List return params: {:?}", other),
-            }
-        }
-        other => panic!("Did not get command complete event: {:?}", other),
-    }
-}
-
-#[test]
-fn le_add_device_to_whitelist() {
-    let buffer = [0x0E, 4, 1, 0x11, 0x20, 0x00];
-    match TestEvent::new(Packet(&buffer)) {
-        Ok(Event::CommandComplete(event)) => {
-            assert_eq!(event.num_hci_command_packets, 1);
-            match event.return_params {
-                ReturnParameters::LeAddDeviceToWhiteList(status) => {
-                    assert_eq!(status, ::hci::Status::Success);
-                }
-                other => panic!(
-                    "Did not get LE Add Device to White List return params: {:?}",
-                    other
-                ),
-            }
-        }
-        other => panic!("Did not get command complete event: {:?}", other),
-    }
-}
-
-#[test]
-fn le_remove_device_from_whitelist() {
-    let buffer = [0x0E, 4, 1, 0x12, 0x20, 0x00];
-    match TestEvent::new(Packet(&buffer)) {
-        Ok(Event::CommandComplete(event)) => {
-            assert_eq!(event.num_hci_command_packets, 1);
-            match event.return_params {
-                ReturnParameters::LeRemoveDeviceFromWhiteList(status) => {
-                    assert_eq!(status, ::hci::Status::Success);
-                }
-                other => panic!(
-                    "Did not get LE Add Device to White List return params: {:?}",
                     other
                 ),
             }
