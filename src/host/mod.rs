@@ -854,6 +854,35 @@ pub trait Hci<E, Header> {
     ///
     /// A command complete event is generated.
     fn le_read_channel_map(&mut self, conn_handle: ::ConnectionHandle) -> nb::Result<(), E>;
+
+    /// Requests a list of the used LE features from the remote device.  This command shall return a
+    /// list of the used LE features.
+    ///
+    /// This command may be issued on both the central and peripheral devices.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.21.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported.
+    ///
+    /// # Generated events
+    ///
+    /// When the Controller receives the LE_Read_Remote_Used_Features command, the Controller shall
+    /// send the Command Status event to the Host. When the Controller has completed the procedure
+    /// to determine the remote features, the Controller shall send a LE Read Remote Used Features
+    /// Complete event to the Host.
+    ///
+    /// The LE Read Remote Used Features Complete event contains the status of this command, and the
+    /// parameter describing the used features of the remote device.
+    ///
+    /// Note: A Command Complete event is not sent by the Controller to indicate that this command
+    /// has been completed. Instead, the LE Read Remote Used Fea- tures Complete event indicates
+    /// that this command has been completed.
+    fn le_read_remote_used_features(
+        &mut self,
+        conn_handle: ::ConnectionHandle,
+    ) -> nb::Result<(), E>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -1195,6 +1224,15 @@ where
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes, conn_handle.0);
         write_command::<Header, T, E>(self, ::opcode::LE_READ_CHANNEL_MAP, &bytes)
+    }
+
+    fn le_read_remote_used_features(
+        &mut self,
+        conn_handle: ::ConnectionHandle,
+    ) -> nb::Result<(), E> {
+        let mut bytes = [0; 2];
+        LittleEndian::write_u16(&mut bytes, conn_handle.0);
+        write_command::<Header, T, E>(self, ::opcode::LE_READ_REMOTE_USED_FEATURES, &bytes)
     }
 }
 

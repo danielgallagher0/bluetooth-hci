@@ -85,5 +85,6 @@ opcodes! {
         pub const LE_CONNECTION_UPDATE = 0x0013;
         pub const LE_SET_HOST_CHANNEL_CLASSIFICATION = 0x0014;
         pub const LE_READ_CHANNEL_MAP = 0x0015;
+        pub const LE_READ_REMOTE_USED_FEATURES = 0x0016;
     }
 }

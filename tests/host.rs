@@ -1057,3 +1057,12 @@ fn le_read_channel_map() {
         .unwrap();
     assert_eq!(sink.written_data, [1, 0x15, 0x20, 2, 0x01, 0x02]);
 }
+
+#[test]
+fn le_read_remote_used_features() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller()
+        .le_read_remote_used_features(hci::ConnectionHandle(0x0201))
+        .unwrap();
+    assert_eq!(sink.written_data, [1, 0x16, 0x20, 2, 0x01, 0x02]);
+}
