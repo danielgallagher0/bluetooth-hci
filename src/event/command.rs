@@ -123,6 +123,9 @@ impl CommandComplete {
             ::opcode::LE_SET_HOST_CHANNEL_CLASSIFICATION => {
                 ReturnParameters::LeSetHostChannelClassification(to_status(&bytes[3..])?)
             }
+            ::opcode::LE_READ_CHANNEL_MAP => {
+                ReturnParameters::LeReadChannelMap(to_le_channel_map_parameters(&bytes[3..])?)
+            }
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -219,6 +222,9 @@ pub enum ReturnParameters {
 
     /// Status returned by the LE Set Host Channel Classification command.
     LeSetHostChannelClassification(::Status),
+
+    /// Parameters returned by the LE Read Channel Map command.
+    LeReadChannelMap(ChannelMapParameters),
 }
 
 fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {
@@ -1289,4 +1295,33 @@ fn to_le_set_advertise_enable(status: ::Status) -> ReturnParameters {
 #[cfg(feature = "version-5-0")]
 fn to_le_set_advertise_enable(status: ::Status) -> ReturnParameters {
     ReturnParameters::LeSetAdvertisingEnable(status)
+}
+
+/// Parameters returned by the LE Read Channel Map command.
+#[derive(Copy, Clone, Debug)]
+pub struct ChannelMapParameters {
+    /// Did the command fail, and if so, how?
+    pub status: ::Status,
+
+    /// Connection handle whose channel map is returned
+    pub conn_handle: ::ConnectionHandle,
+
+    /// Channels that may be used for this connection.
+    pub channel_map: ::ChannelClassification,
+}
+
+fn to_le_channel_map_parameters<VE>(
+    bytes: &[u8],
+) -> Result<ChannelMapParameters, ::event::Error<VE>> {
+    require_len!(bytes, 8);
+
+    let mut channel_bits = [0; 5];
+    channel_bits.copy_from_slice(&bytes[3..8]);
+    let channel_bits = channel_bits;
+    Ok(ChannelMapParameters {
+        status: to_status(&bytes[0..])?,
+        conn_handle: ::ConnectionHandle(LittleEndian::read_u16(&bytes[1..])),
+        channel_map: ::ChannelClassification::from_bits(&bytes[3..])
+            .ok_or(::event::Error::InvalidChannelMap(channel_bits))?,
+    })
 }

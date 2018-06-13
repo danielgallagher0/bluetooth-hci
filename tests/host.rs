@@ -1019,16 +1019,16 @@ fn le_set_host_channel_classification() {
     let mut sink = RecordingSink::new();
     sink.as_controller()
         .le_set_host_channel_classification(
-            ChannelClassification::CH_0
-                | ChannelClassification::CH_4
-                | ChannelClassification::CH_8
-                | ChannelClassification::CH_12
-                | ChannelClassification::CH_16
-                | ChannelClassification::CH_20
-                | ChannelClassification::CH_24
-                | ChannelClassification::CH_28
-                | ChannelClassification::CH_32
-                | ChannelClassification::CH_36,
+            hci::ChannelClassification::CH_0
+                | hci::ChannelClassification::CH_4
+                | hci::ChannelClassification::CH_8
+                | hci::ChannelClassification::CH_12
+                | hci::ChannelClassification::CH_16
+                | hci::ChannelClassification::CH_20
+                | hci::ChannelClassification::CH_24
+                | hci::ChannelClassification::CH_28
+                | hci::ChannelClassification::CH_32
+                | hci::ChannelClassification::CH_36,
         )
         .unwrap();
     assert_eq!(
@@ -1042,9 +1042,18 @@ fn le_set_host_channel_classification_failed_empty() {
     let mut sink = RecordingSink::new();
     let err = sink
         .as_controller()
-        .le_set_host_channel_classification(ChannelClassification::empty())
+        .le_set_host_channel_classification(hci::ChannelClassification::empty())
         .err()
         .unwrap();
     assert_eq!(err, nb::Error::Other(Error::NoValidChannel));
     assert_eq!(sink.written_data, []);
+}
+
+#[test]
+fn le_read_channel_map() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller()
+        .le_read_channel_map(hci::ConnectionHandle(0x0201))
+        .unwrap();
+    assert_eq!(sink.written_data, [1, 0x15, 0x20, 2, 0x01, 0x02]);
 }

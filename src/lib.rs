@@ -607,3 +607,86 @@ bitflags! {
         const MINIMUM_NUMBER_OF_USED_CHANNELS_PROCEDURE = 1 << 16;
     }
 }
+
+bitflag_array! {
+    /// Channel classifications for the LE Set Host Channel Classification command.  If a flag is
+    /// set, its classification is "Unknown".  If the flag is cleared, it is known "bad".
+    #[derive(Copy, Clone, Debug)]
+    pub struct ChannelClassification : 5;
+    pub struct ChannelFlag;
+
+    /// Channel 0 classification not known.
+    const CH_0 = 0, 1 << 0;
+    /// Channel 1 classification not known.
+    const CH_1 = 0, 1 << 1;
+    /// Channel 2 classification not known.
+    const CH_2 = 0, 1 << 2;
+    /// Channel 3 classification not known.
+    const CH_3 = 0, 1 << 3;
+    /// Channel 4 classification not known.
+    const CH_4 = 0, 1 << 4;
+    /// Channel 5 classification not known.
+    const CH_5 = 0, 1 << 5;
+    /// Channel 6 classification not known.
+    const CH_6 = 0, 1 << 6;
+    /// Channel 7 classification not known.
+    const CH_7 = 0, 1 << 7;
+    /// Channel 8 classification not known.
+    const CH_8 = 1, 1 << 0;
+    /// Channel 9 classification not known.
+    const CH_9 = 1, 1 << 1;
+    /// Channel 10 classification not known.
+    const CH_10 = 1, 1 << 2;
+    /// Channel 11 classification not known.
+    const CH_11 = 1, 1 << 3;
+    /// Channel 12 classification not known.
+    const CH_12 = 1, 1 << 4;
+    /// Channel 13 classification not known.
+    const CH_13 = 1, 1 << 5;
+    /// Channel 14 classification not known.
+    const CH_14 = 1, 1 << 6;
+    /// Channel 15 classification not known.
+    const CH_15 = 1, 1 << 7;
+    /// Channel 16 classification not known.
+    const CH_16 = 2, 1 << 0;
+    /// Channel 17 classification not known.
+    const CH_17 = 2, 1 << 1;
+    /// Channel 18 classification not known.
+    const CH_18 = 2, 1 << 2;
+    /// Channel 19 classification not known.
+    const CH_19 = 2, 1 << 3;
+    /// Channel 20 classification not known.
+    const CH_20 = 2, 1 << 4;
+    /// Channel 21 classification not known.
+    const CH_21 = 2, 1 << 5;
+    /// Channel 22 classification not known.
+    const CH_22 = 2, 1 << 6;
+    /// Channel 23 classification not known.
+    const CH_23 = 2, 1 << 7;
+    /// Channel 24 classification not known.
+    const CH_24 = 3, 1 << 0;
+    /// Channel 25 classification not known.
+    const CH_25 = 3, 1 << 1;
+    /// Channel 26 classification not known.
+    const CH_26 = 3, 1 << 2;
+    /// Channel 27 classification not known.
+    const CH_27 = 3, 1 << 3;
+    /// Channel 28 classification not known.
+    const CH_28 = 3, 1 << 4;
+    /// Channel 29 classification not known.
+    const CH_29 = 3, 1 << 5;
+    /// Channel 30 classification not known.
+    const CH_30 = 3, 1 << 6;
+    /// Channel 31 classification not known.
+    const CH_31 = 3, 1 << 7;
+    /// Channel 32 classification not known.
+    const CH_32 = 4, 1 << 0;
+    /// Channel 33 classification not known.
+    const CH_33 = 4, 1 << 1;
+    /// Channel 34 classification not known.
+    const CH_34 = 4, 1 << 2;
+    /// Channel 35 classification not known.
+    const CH_35 = 4, 1 << 3;
+    /// Channel 36 classification not known.
+    const CH_36 = 4, 1 << 4;
+}

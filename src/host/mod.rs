@@ -836,8 +836,24 @@ pub trait Hci<E, Header> {
     /// A command complete event is generated.
     fn le_set_host_channel_classification(
         &mut self,
-        channels: ChannelClassification,
+        channels: ::ChannelClassification,
     ) -> nb::Result<(), Error<E>>;
+
+    /// Returns the current channel map for the specified connection handle. The returned value
+    /// indicates the state of the channel map specified by the last transmitted or received channel
+    /// map (in a CONNECT_REQ or LL_CHANNEL_MAP_REQ message) for the specified connection handle,
+    /// regardless of whether the Master has received an acknowledgement.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.20.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported.
+    ///
+    /// # Generated events
+    ///
+    /// A command complete event is generated.
+    fn le_read_channel_map(&mut self, conn_handle: ::ConnectionHandle) -> nb::Result<(), E>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -1163,7 +1179,7 @@ where
 
     fn le_set_host_channel_classification(
         &mut self,
-        channels: ChannelClassification,
+        channels: ::ChannelClassification,
     ) -> nb::Result<(), Error<E>> {
         if channels.is_empty() {
             return Err(nb::Error::Other(Error::NoValidChannel));
@@ -1173,6 +1189,12 @@ where
         channels.into_bytes(&mut bytes);
         write_command::<Header, T, E>(self, ::opcode::LE_SET_HOST_CHANNEL_CLASSIFICATION, &bytes)
             .map_err(rewrap_as_comm)
+    }
+
+    fn le_read_channel_map(&mut self, conn_handle: ::ConnectionHandle) -> nb::Result<(), E> {
+        let mut bytes = [0; 2];
+        LittleEndian::write_u16(&mut bytes, conn_handle.0);
+        write_command::<Header, T, E>(self, ::opcode::LE_READ_CHANNEL_MAP, &bytes)
     }
 }
 
@@ -1963,86 +1985,4 @@ impl ConnectionUpdateParameters {
 
         Ok(())
     }
-}
-
-bitflag_array! {
-    /// Channel classifications for the LE Set Host Channel Classification command.  If a flag is
-    /// set, its classification is "Unknown".  If the flag is cleared, it is known "bad".
-    pub struct ChannelClassification : 5;
-    pub struct ChannelFlag;
-
-    /// Channel 0 classification not known.
-    const CH_0 = 0, 1 << 0;
-    /// Channel 1 classification not known.
-    const CH_1 = 0, 1 << 1;
-    /// Channel 2 classification not known.
-    const CH_2 = 0, 1 << 2;
-    /// Channel 3 classification not known.
-    const CH_3 = 0, 1 << 3;
-    /// Channel 4 classification not known.
-    const CH_4 = 0, 1 << 4;
-    /// Channel 5 classification not known.
-    const CH_5 = 0, 1 << 5;
-    /// Channel 6 classification not known.
-    const CH_6 = 0, 1 << 6;
-    /// Channel 7 classification not known.
-    const CH_7 = 0, 1 << 7;
-    /// Channel 8 classification not known.
-    const CH_8 = 1, 1 << 0;
-    /// Channel 9 classification not known.
-    const CH_9 = 1, 1 << 1;
-    /// Channel 10 classification not known.
-    const CH_10 = 1, 1 << 2;
-    /// Channel 11 classification not known.
-    const CH_11 = 1, 1 << 3;
-    /// Channel 12 classification not known.
-    const CH_12 = 1, 1 << 4;
-    /// Channel 13 classification not known.
-    const CH_13 = 1, 1 << 5;
-    /// Channel 14 classification not known.
-    const CH_14 = 1, 1 << 6;
-    /// Channel 15 classification not known.
-    const CH_15 = 1, 1 << 7;
-    /// Channel 16 classification not known.
-    const CH_16 = 2, 1 << 0;
-    /// Channel 17 classification not known.
-    const CH_17 = 2, 1 << 1;
-    /// Channel 18 classification not known.
-    const CH_18 = 2, 1 << 2;
-    /// Channel 19 classification not known.
-    const CH_19 = 2, 1 << 3;
-    /// Channel 20 classification not known.
-    const CH_20 = 2, 1 << 4;
-    /// Channel 21 classification not known.
-    const CH_21 = 2, 1 << 5;
-    /// Channel 22 classification not known.
-    const CH_22 = 2, 1 << 6;
-    /// Channel 23 classification not known.
-    const CH_23 = 2, 1 << 7;
-    /// Channel 24 classification not known.
-    const CH_24 = 3, 1 << 0;
-    /// Channel 25 classification not known.
-    const CH_25 = 3, 1 << 1;
-    /// Channel 26 classification not known.
-    const CH_26 = 3, 1 << 2;
-    /// Channel 27 classification not known.
-    const CH_27 = 3, 1 << 3;
-    /// Channel 28 classification not known.
-    const CH_28 = 3, 1 << 4;
-    /// Channel 29 classification not known.
-    const CH_29 = 3, 1 << 5;
-    /// Channel 30 classification not known.
-    const CH_30 = 3, 1 << 6;
-    /// Channel 31 classification not known.
-    const CH_31 = 3, 1 << 7;
-    /// Channel 32 classification not known.
-    const CH_32 = 4, 1 << 0;
-    /// Channel 33 classification not known.
-    const CH_33 = 4, 1 << 1;
-    /// Channel 34 classification not known.
-    const CH_34 = 4, 1 << 2;
-    /// Channel 35 classification not known.
-    const CH_35 = 4, 1 << 3;
-    /// Channel 36 classification not known.
-    const CH_36 = 4, 1 << 4;
 }

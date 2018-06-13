@@ -120,7 +120,7 @@ fn read_local_version_information() {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
                 ReturnParameters::ReadLocalVersionInformation(local_version_info) => {
-                    assert_eq!(local_version_info.status, ::hci::Status::Success);
+                    assert_eq!(local_version_info.status, hci::Status::Success);
                     assert_eq!(local_version_info.hci_version, 2);
                     assert_eq!(local_version_info.hci_revision, 0x0403);
                     assert_eq!(local_version_info.lmp_version, 5);
@@ -152,7 +152,7 @@ fn read_local_supported_commands() {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
                 ReturnParameters::ReadLocalSupportedCommands(params) => {
-                    assert_eq!(params.status, ::hci::Status::Success);
+                    assert_eq!(params.status, hci::Status::Success);
                     assert_eq!(
                         params.supported_commands,
                         CommandFlags::INQUIRY
@@ -236,7 +236,7 @@ fn read_local_supported_commands() {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
                 ReturnParameters::ReadLocalSupportedCommands(params) => {
-                    assert_eq!(params.status, ::hci::Status::Success);
+                    assert_eq!(params.status, hci::Status::Success);
                     assert_eq!(
                         params.supported_commands,
                         CommandFlags::INQUIRY
@@ -322,7 +322,7 @@ fn read_local_supported_commands() {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
                 ReturnParameters::ReadLocalSupportedCommands(params) => {
-                    assert_eq!(params.status, ::hci::Status::Success);
+                    assert_eq!(params.status, hci::Status::Success);
                     assert_eq!(
                         params.supported_commands,
                         CommandFlags::INQUIRY
@@ -406,7 +406,7 @@ fn read_local_supported_features() {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
                 ReturnParameters::ReadLocalSupportedFeatures(params) => {
-                    assert_eq!(params.status, ::hci::Status::Success);
+                    assert_eq!(params.status, hci::Status::Success);
                     assert_eq!(
                         params.supported_features,
                         LmpFeatures::THREE_SLOT_PACKETS
@@ -439,10 +439,10 @@ fn read_bd_addr() {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
                 ReturnParameters::ReadBdAddr(params) => {
-                    assert_eq!(params.status, ::hci::Status::Success);
+                    assert_eq!(params.status, hci::Status::Success);
                     assert_eq!(
                         params.bd_addr,
-                        ::hci::BdAddr([0x01, 0x02, 0x03, 0x04, 0x05, 0x06])
+                        hci::BdAddr([0x01, 0x02, 0x03, 0x04, 0x05, 0x06])
                     );
                 }
                 other => panic!("Did not get Read BDADDR return params: {:?}", other),
@@ -460,8 +460,8 @@ fn read_rssi() {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
                 ReturnParameters::ReadRssi(params) => {
-                    assert_eq!(params.status, ::hci::Status::Success);
-                    assert_eq!(params.conn_handle, ::hci::ConnectionHandle(0x0201));
+                    assert_eq!(params.status, hci::Status::Success);
+                    assert_eq!(params.conn_handle, hci::ConnectionHandle(0x0201));
                     assert_eq!(params.rssi, 0x03);
                 }
                 other => panic!("Did not get Read RSSI return params: {:?}", other),
@@ -479,7 +479,7 @@ fn le_read_buffer_size() {
             assert_eq!(event.num_hci_command_packets, 2);
             match event.return_params {
                 ReturnParameters::LeReadBufferSize(event) => {
-                    assert_eq!(event.status, ::hci::Status::Success);
+                    assert_eq!(event.status, hci::Status::Success);
                     assert_eq!(event.data_packet_length, 0x0201);
                     assert_eq!(event.data_packet_count, 0x03);
                 }
@@ -501,7 +501,7 @@ fn le_read_local_supported_features() {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
                 ReturnParameters::LeReadLocalSupportedFeatures(event) => {
-                    assert_eq!(event.status, ::hci::Status::Success);
+                    assert_eq!(event.status, hci::Status::Success);
                     assert_eq!(
                         event.supported_features,
                         LeFeatures::ENCRYPTION | LeFeatures::PING
@@ -525,7 +525,7 @@ fn le_read_local_supported_features() {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
                 ReturnParameters::LeReadLocalSupportedFeatures(event) => {
-                    assert_eq!(event.status, ::hci::Status::Success);
+                    assert_eq!(event.status, hci::Status::Success);
                     assert_eq!(
                         event.supported_features,
                         LeFeatures::ENCRYPTION | LeFeatures::EXTENDED_SCANNER_FILTER_POLICIES
@@ -549,7 +549,7 @@ fn le_read_local_supported_features() {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
                 ReturnParameters::LeReadLocalSupportedFeatures(event) => {
-                    assert_eq!(event.status, ::hci::Status::Success);
+                    assert_eq!(event.status, hci::Status::Success);
                     assert_eq!(
                         event.supported_features,
                         LeFeatures::EXTENDED_REJECT_INDICATION
@@ -572,7 +572,7 @@ fn le_read_advertising_channel_tx_power() {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
                 ReturnParameters::LeReadAdvertisingChannelTxPower(params) => {
-                    assert_eq!(params.status, ::hci::Status::Success);
+                    assert_eq!(params.status, hci::Status::Success);
                     assert_eq!(params.power, 0x01);
                 }
                 other => panic!(
@@ -593,7 +593,7 @@ fn le_read_white_list_size() {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
                 ReturnParameters::LeReadWhiteListSize(status, white_list_size) => {
-                    assert_eq!(status, ::hci::Status::Success);
+                    assert_eq!(status, hci::Status::Success);
                     assert_eq!(white_list_size, 0x16);
                 }
                 other => panic!(
@@ -603,5 +603,54 @@ fn le_read_white_list_size() {
             }
         }
         other => panic!("Did not get command complete event: {:?}", other),
+    }
+}
+
+#[test]
+fn le_read_channel_map() {
+    let buffer = [
+        0x0E, 11, 1, 0x15, 0x20, 0x00, 0x01, 0x02, 0x11, 0x11, 0x11, 0x11, 0x11,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::CommandComplete(event)) => {
+            assert_eq!(event.num_hci_command_packets, 1);
+            match event.return_params {
+                ReturnParameters::LeReadChannelMap(params) => {
+                    assert_eq!(params.status, hci::Status::Success);
+                    assert_eq!(params.conn_handle, hci::ConnectionHandle(0x0201));
+                    assert_eq!(
+                        params.channel_map,
+                        hci::ChannelClassification::CH_0
+                            | hci::ChannelClassification::CH_4
+                            | hci::ChannelClassification::CH_8
+                            | hci::ChannelClassification::CH_12
+                            | hci::ChannelClassification::CH_16
+                            | hci::ChannelClassification::CH_20
+                            | hci::ChannelClassification::CH_24
+                            | hci::ChannelClassification::CH_28
+                            | hci::ChannelClassification::CH_32
+                            | hci::ChannelClassification::CH_36
+                    );
+                }
+                other => panic!(
+                    "Did not get LE Read White List Size return params: {:?}",
+                    other
+                ),
+            }
+        }
+        other => panic!("Did not get command complete event: {:?}", other),
+    }
+}
+
+#[test]
+fn le_read_channel_map_failed_reserved() {
+    let buffer = [
+        0x0E, 11, 1, 0x15, 0x20, 0x00, 0x01, 0x02, 0x00, 0x00, 0x00, 0x00, 0x20,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Err(Error::InvalidChannelMap(bytes)) => {
+            assert_eq!(bytes, [0x00, 0x00, 0x00, 0x00, 0x20]);
+        }
+        other => panic!("Did not get invalid channel map: {:?}", other),
     }
 }

@@ -166,6 +166,10 @@ pub enum Error<V> {
     /// reserved for future use).
     BadCommandFlag,
 
+    /// For the Command Complete event, for the LE Read Channel Map command return parameters: The
+    /// eturned channel map includes a reserved bit.
+    InvalidChannelMap([u8; 5]),
+
     /// For the LE Connection Complete event: The connection role was not recognized. Includes the
     /// unrecognized byte.
     BadLeConnectionRole(u8),
