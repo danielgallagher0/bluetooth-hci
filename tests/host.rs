@@ -69,13 +69,64 @@ fn disconnect_bad_reason() {
     assert_eq!(sink.written_data, []);
 }
 
-#[test]
-fn read_remote_version_information() {
-    let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .read_remote_version_information(hci::ConnectionHandle(0x0201))
-        .unwrap();
-    assert_eq!(sink.written_data, [1, 0x1D, 0x04, 2, 0x01, 0x02]);
+macro_rules! conn_handle_only {
+    {
+        $($(#[$inner:ident $($args:tt)*])*
+        $fn:ident($oc0:expr, $oc1:expr);)*
+    } => {
+        $(
+            $(#[$inner $($args)*])*
+            #[test]
+            fn $fn() {
+                let mut sink = RecordingSink::new();
+                sink.as_controller()
+                    .$fn(hci::ConnectionHandle(0x0201))
+                    .unwrap();
+                assert_eq!(sink.written_data, [1, $oc0, $oc1, 2, 0x01, 0x02]);
+            }
+        )*
+    }
+}
+
+conn_handle_only! {
+    read_remote_version_information(0x1D, 0x04);
+    read_rssi(0x05, 0x14);
+    le_read_channel_map(0x15, 0x20);
+    le_read_remote_used_features(0x16, 0x20);
+}
+
+macro_rules! no_params {
+    {
+        $($(#[$inner:ident $($args:tt)*])*
+        $fn:ident($oc0:expr, $oc1:expr);)*
+    } => {
+        $(
+            $(#[$inner $($args)*])*
+            #[test]
+            fn $fn() {
+                let mut sink = RecordingSink::new();
+                sink.as_controller()
+                    .$fn()
+                    .unwrap();
+                assert_eq!(sink.written_data, [1, $oc0, $oc1, 0]);
+            }
+        )*
+    }
+}
+
+no_params! {
+    reset(0x03, 0x0C);
+    read_local_version_information(0x01, 0x10);
+    read_local_supported_commands(0x02, 0x10);
+    read_local_supported_features(0x03, 0x10);
+    read_bd_addr(0x09, 0x10);
+    le_read_buffer_size(0x02, 0x20);
+    le_read_local_supported_features(0x03, 0x20);
+    le_read_advertising_channel_tx_power(0x07, 0x20);
+    le_create_connection_cancel(0x0E, 0x20);
+    le_read_white_list_size(0x0F, 0x20);
+    le_clear_white_list(0x10, 0x20);
+    le_rand(0x18, 0x20);
 }
 
 #[test]
@@ -91,62 +142,12 @@ fn set_event_mask() {
 }
 
 #[test]
-fn reset() {
-    let mut sink = RecordingSink::new();
-    sink.as_controller().reset().unwrap();
-    assert_eq!(sink.written_data, [1, 0x03, 0x0C, 0]);
-}
-
-#[test]
 fn read_tx_power_level() {
     let mut sink = RecordingSink::new();
     sink.as_controller()
         .read_tx_power_level(hci::ConnectionHandle(0x0201), TxPowerLevel::Current)
         .unwrap();
     assert_eq!(sink.written_data, [1, 0x2D, 0x0C, 3, 0x01, 0x02, 0x00])
-}
-
-#[test]
-fn read_local_version_information() {
-    let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .read_local_version_information()
-        .unwrap();
-    assert_eq!(sink.written_data, [1, 0x01, 0x10, 0])
-}
-
-#[test]
-fn read_local_supported_commands() {
-    let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .read_local_supported_commands()
-        .unwrap();
-    assert_eq!(sink.written_data, [1, 0x02, 0x10, 0]);
-}
-
-#[test]
-fn read_local_supported_features() {
-    let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .read_local_supported_features()
-        .unwrap();
-    assert_eq!(sink.written_data, [1, 0x03, 0x10, 0]);
-}
-
-#[test]
-fn read_bd_addr() {
-    let mut sink = RecordingSink::new();
-    sink.as_controller().read_bd_addr().unwrap();
-    assert_eq!(sink.written_data, [1, 0x09, 0x10, 0]);
-}
-
-#[test]
-fn read_rssi() {
-    let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .read_rssi(hci::ConnectionHandle(0x0201))
-        .unwrap();
-    assert_eq!(sink.written_data, [1, 0x05, 0x14, 2, 0x01, 0x02]);
 }
 
 #[test]
@@ -161,22 +162,6 @@ fn le_set_event_mask() {
         sink.written_data,
         [1, 0x01, 0x20, 8, 0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
     );
-}
-
-#[test]
-fn le_read_buffer_size() {
-    let mut sink = RecordingSink::new();
-    sink.as_controller().le_read_buffer_size().unwrap();
-    assert_eq!(sink.written_data, [1, 0x02, 0x20, 0]);
-}
-
-#[test]
-fn le_read_local_supported_features() {
-    let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_read_local_supported_features()
-        .unwrap();
-    assert_eq!(sink.written_data, [1, 0x03, 0x20, 0]);
 }
 
 #[test]
@@ -431,15 +416,6 @@ fn le_set_advertising_parameters_ignore_interval_for_high_duty_cycle() {
             0x00
         ]
     );
-}
-
-#[test]
-fn le_read_advertising_channel_tx_power() {
-    let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_read_advertising_channel_tx_power()
-        .unwrap();
-    assert_eq!(sink.written_data, [1, 0x07, 0x20, 0]);
 }
 
 #[test]
@@ -831,27 +807,6 @@ fn le_create_connection_bad_supervision_timeout() {
 }
 
 #[test]
-fn le_create_connection_cancel() {
-    let mut sink = RecordingSink::new();
-    sink.as_controller().le_create_connection_cancel().unwrap();
-    assert_eq!(sink.written_data, [1, 0x0E, 0x20, 0]);
-}
-
-#[test]
-fn le_read_white_list_size() {
-    let mut sink = RecordingSink::new();
-    sink.as_controller().le_read_white_list_size().unwrap();
-    assert_eq!(sink.written_data, [1, 0x0F, 0x20, 0]);
-}
-
-#[test]
-fn le_clear_white_list() {
-    let mut sink = RecordingSink::new();
-    sink.as_controller().le_clear_white_list().unwrap();
-    assert_eq!(sink.written_data, [1, 0x10, 0x20, 0]);
-}
-
-#[test]
 fn le_add_device_to_white_list() {
     let mut sink = RecordingSink::new();
     sink.as_controller()
@@ -1050,24 +1005,6 @@ fn le_set_host_channel_classification_failed_empty() {
 }
 
 #[test]
-fn le_read_channel_map() {
-    let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_read_channel_map(hci::ConnectionHandle(0x0201))
-        .unwrap();
-    assert_eq!(sink.written_data, [1, 0x15, 0x20, 2, 0x01, 0x02]);
-}
-
-#[test]
-fn le_read_remote_used_features() {
-    let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_read_remote_used_features(hci::ConnectionHandle(0x0201))
-        .unwrap();
-    assert_eq!(sink.written_data, [1, 0x16, 0x20, 2, 0x01, 0x02]);
-}
-
-#[test]
 fn le_encrypt() {
     let mut sink = RecordingSink::new();
     sink.as_controller()
@@ -1089,11 +1026,4 @@ fn le_encrypt() {
             0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
         ]
     );
-}
-
-#[test]
-fn le_rand() {
-    let mut sink = RecordingSink::new();
-    sink.as_controller().le_rand().unwrap();
-    assert_eq!(sink.written_data, [1, 0x18, 0x20, 0]);
 }

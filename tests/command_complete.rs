@@ -45,7 +45,7 @@ fn unsolicited_command_complete() {
 macro_rules! status_only {
     {
         $($(#[$inner:ident $($args:tt)*])*
-          $fn:ident($oc0:expr, $oc1:expr, $return:path);)*
+        $fn:ident($oc0:expr, $oc1:expr, $return:path);)*
     } => {
         $(
             $(#[$inner $($args)*])*
