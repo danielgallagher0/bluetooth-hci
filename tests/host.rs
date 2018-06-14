@@ -1090,3 +1090,10 @@ fn le_encrypt() {
         ]
     );
 }
+
+#[test]
+fn le_rand() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller().le_rand().unwrap();
+    assert_eq!(sink.written_data, [1, 0x18, 0x20, 0]);
+}

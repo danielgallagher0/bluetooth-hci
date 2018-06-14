@@ -900,6 +900,21 @@ pub trait Hci<E, Header> {
     ///
     /// A command complete is generated.
     fn le_encrypt(&mut self, params: &EncryptionParameters) -> nb::Result<(), E>;
+
+    /// Requests the Controller to generate 8 octets of random data to be sent to the Host. The
+    /// random number shall be generated according to the Bluetooth spec, Vol 2, Part H, Section 2
+    /// if the LE Feature (LL Encryption) is supported.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.23.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication are reported.
+    ///
+    /// # Generated events
+    ///
+    /// A command complete is generated.
+    fn le_rand(&mut self) -> nb::Result<(), E>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -1257,6 +1272,10 @@ where
         bytes[..16].copy_from_slice(&params.key.0);
         bytes[16..].copy_from_slice(&params.plaintext_data.0);
         write_command::<Header, T, E>(self, ::opcode::LE_ENCRYPT, &bytes)
+    }
+
+    fn le_rand(&mut self) -> nb::Result<(), E> {
+        write_command::<Header, T, E>(self, ::opcode::LE_RAND, &[])
     }
 }
 

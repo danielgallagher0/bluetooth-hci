@@ -127,6 +127,7 @@ impl CommandComplete {
                 ReturnParameters::LeReadChannelMap(to_le_channel_map_parameters(&bytes[3..])?)
             }
             ::opcode::LE_ENCRYPT => ReturnParameters::LeEncrypt(to_le_encrypted_data(&bytes[3..])?),
+            ::opcode::LE_RAND => ReturnParameters::LeRand(to_random_number(&bytes[3..])?),
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -229,6 +230,9 @@ pub enum ReturnParameters {
 
     /// Parameters returned by the LE Encrypt command.
     LeEncrypt(EncryptedReturnParameters),
+
+    /// Parameters returned by the LE Rand command.
+    LeRand(LeRandom),
 }
 
 fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {
@@ -1361,5 +1365,24 @@ fn to_le_encrypted_data<VE>(bytes: &[u8]) -> Result<EncryptedReturnParameters, :
     Ok(EncryptedReturnParameters {
         status: to_status(&bytes)?,
         encrypted_data: EncryptedBlock(block),
+    })
+}
+
+/// Return parameters for the LE Rand command.
+#[derive(Copy, Clone, Debug)]
+pub struct LeRandom {
+    /// Did the command fail, and if so, how?
+    pub status: ::Status,
+
+    /// Controller-generated random number.
+    pub random_number: u64,
+}
+
+fn to_random_number<VE>(bytes: &[u8]) -> Result<LeRandom, ::event::Error<VE>> {
+    require_len!(bytes, 9);
+
+    Ok(LeRandom {
+        status: to_status(&bytes)?,
+        random_number: LittleEndian::read_u64(&bytes[1..]),
     })
 }

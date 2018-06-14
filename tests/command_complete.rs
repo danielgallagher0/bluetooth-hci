@@ -677,3 +677,23 @@ fn le_encrypt() {
         other => panic!("Did not get command complete event: {:?}", other),
     }
 }
+
+#[test]
+fn le_rand() {
+    let buffer = [
+        0x0E, 12, 1, 0x18, 0x20, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::CommandComplete(event)) => {
+            assert_eq!(event.num_hci_command_packets, 1);
+            match event.return_params {
+                ReturnParameters::LeRand(params) => {
+                    assert_eq!(params.status, hci::Status::Success);
+                    assert_eq!(params.random_number, 0x0807_0605_0403_0201);
+                }
+                other => panic!("Did not get LE Rand return params: {:?}", other),
+            }
+        }
+        other => panic!("Did not get command complete event: {:?}", other),
+    }
+}
