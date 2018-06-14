@@ -88,5 +88,6 @@ opcodes! {
         pub const LE_READ_REMOTE_USED_FEATURES = 0x0016;
         pub const LE_ENCRYPT = 0x0017;
         pub const LE_RAND = 0x0018;
+        pub const LE_START_ENCRYPTION = 0x0019;
     }
 }

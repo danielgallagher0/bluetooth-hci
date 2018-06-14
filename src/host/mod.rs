@@ -899,7 +899,7 @@ pub trait Hci<E, Header> {
     /// # Generated events
     ///
     /// A command complete is generated.
-    fn le_encrypt(&mut self, params: &EncryptionParameters) -> nb::Result<(), E>;
+    fn le_encrypt(&mut self, params: &AesParameters) -> nb::Result<(), E>;
 
     /// Requests the Controller to generate 8 octets of random data to be sent to the Host. The
     /// random number shall be generated according to the Bluetooth spec, Vol 2, Part H, Section 2
@@ -915,6 +915,36 @@ pub trait Hci<E, Header> {
     ///
     /// A command complete is generated.
     fn le_rand(&mut self) -> nb::Result<(), E>;
+
+    /// Authenticates the given encryption key associated with the remote device specified by the
+    /// connection handle, and once authenticated will encrypt the connection. The parameters are as
+    /// defined in the Bluetooth spec, Vol 3, Part H, Section 2.4.4.
+    ///
+    /// If the connection is already encrypted then the Controller shall pause connection encryption
+    /// before attempting to authenticate the given encryption key, and then re-encrypt the
+    /// connection. While encryption is paused no user data shall be transmitted.
+    ///
+    /// On an authentication failure, the connection shall be automatically disconnected by the Link
+    /// Layer. If this command succeeds, then the connection shall be encrypted.
+    ///
+    /// This command shall only be used when the local device's role is Master.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported
+    ///
+    /// # Generated events
+    ///
+    /// When the Controller receives the LE_Start_Encryption command it shall send the Command
+    /// Status event to the Host. If the connection is not encrypted when this command is issued, an
+    /// Encryption Change event shall occur when encryption has been started for the connection. If
+    /// the connection is encrypted when this command is issued, an Encryption Key Refresh Complete
+    /// event shall occur when encryption has been resumed.
+    ///
+    /// Note: A Command Complete event is not sent by the Controller to indicate that this command
+    /// has been completed. Instead, the Encryption Change or Encryption Key Refresh Complete events
+    /// indicate that this command has been completed.
+    fn le_start_encryption(&mut self, params: &EncryptionParameters) -> nb::Result<(), E>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -1267,7 +1297,7 @@ where
         write_command::<Header, T, E>(self, ::opcode::LE_READ_REMOTE_USED_FEATURES, &bytes)
     }
 
-    fn le_encrypt(&mut self, params: &EncryptionParameters) -> nb::Result<(), E> {
+    fn le_encrypt(&mut self, params: &AesParameters) -> nb::Result<(), E> {
         let mut bytes = [0; 32];
         bytes[..16].copy_from_slice(&params.key.0);
         bytes[16..].copy_from_slice(&params.plaintext_data.0);
@@ -1276,6 +1306,15 @@ where
 
     fn le_rand(&mut self) -> nb::Result<(), E> {
         write_command::<Header, T, E>(self, ::opcode::LE_RAND, &[])
+    }
+
+    fn le_start_encryption(&mut self, params: &EncryptionParameters) -> nb::Result<(), E> {
+        let mut bytes = [0; 28];
+        LittleEndian::write_u16(&mut bytes[0..], params.conn_handle.0);
+        LittleEndian::write_u64(&mut bytes[2..], params.random_number);
+        LittleEndian::write_u16(&mut bytes[10..], params.encrypted_diversifier);
+        bytes[12..].copy_from_slice(&params.long_term_key.0);
+        write_command::<Header, T, E>(self, ::opcode::LE_START_ENCRYPTION, &bytes)
     }
 }
 
@@ -2070,7 +2109,7 @@ impl ConnectionUpdateParameters {
 
 /// Parameters for the LE Encrypt command.
 #[derive(Clone, Debug)]
-pub struct EncryptionParameters {
+pub struct AesParameters {
     /// Key for the encryption of the data given in the command.
     ///
     /// The most significant (last) octet of the key corresponds to key[0] using the notation
@@ -2102,4 +2141,19 @@ impl Debug for PlaintextBlock {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         write!(f, "AES-128 Plaintext (REDACTED)")
     }
+}
+
+/// Parameters for the LE Start Encryption command.
+pub struct EncryptionParameters {
+    /// ID for the connection.
+    pub conn_handle: ::ConnectionHandle,
+
+    /// Random value distrubuted by the peripheral during pairing
+    pub random_number: u64,
+
+    /// Encrypted diversifier distrubuted by the peripheral during pairing
+    pub encrypted_diversifier: u16,
+
+    /// Encryption key, distributed by the host.
+    pub long_term_key: EncryptionKey,
 }
