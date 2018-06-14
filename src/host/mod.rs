@@ -11,6 +11,7 @@
 extern crate nb;
 
 use byteorder::{ByteOrder, LittleEndian};
+use core::fmt::{Debug, Formatter, Result as FmtResult};
 use core::time::Duration;
 
 pub mod cmd_link;
@@ -883,6 +884,22 @@ pub trait Hci<E, Header> {
         &mut self,
         conn_handle: ::ConnectionHandle,
     ) -> nb::Result<(), E>;
+
+    /// The `le_encrypt` command is used to request the Controller to encrypt the plaintext data in
+    /// the command using the key given in the command and returns the encrypted data to the
+    /// Host. The AES-128 bit block cypher is defined in NIST Publication
+    /// [FIPS-197](http://csrc.nist.gov/publications/fips/fips197/fips-197.pdf).
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.22.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported.
+    ///
+    /// # Generated events
+    ///
+    /// A command complete is generated.
+    fn le_encrypt(&mut self, params: &EncryptionParameters) -> nb::Result<(), E>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -1233,6 +1250,13 @@ where
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes, conn_handle.0);
         write_command::<Header, T, E>(self, ::opcode::LE_READ_REMOTE_USED_FEATURES, &bytes)
+    }
+
+    fn le_encrypt(&mut self, params: &EncryptionParameters) -> nb::Result<(), E> {
+        let mut bytes = [0; 32];
+        bytes[..16].copy_from_slice(&params.key.0);
+        bytes[16..].copy_from_slice(&params.plaintext_data.0);
+        write_command::<Header, T, E>(self, ::opcode::LE_ENCRYPT, &bytes)
     }
 }
 
@@ -2022,5 +2046,41 @@ impl ConnectionUpdateParameters {
         );
 
         Ok(())
+    }
+}
+
+/// Parameters for the LE Encrypt command.
+#[derive(Clone, Debug)]
+pub struct EncryptionParameters {
+    /// Key for the encryption of the data given in the command.
+    ///
+    /// The most significant (last) octet of the key corresponds to key[0] using the notation
+    /// specified in FIPS 197.
+    pub key: EncryptionKey,
+
+    /// Data block that is requested to be encrypted.
+    ///
+    /// The most significant (last) octet of the PlainText_Data corresponds to in[0] using the
+    /// notation specified in FIPS 197.
+    pub plaintext_data: PlaintextBlock,
+}
+
+/// Newtype for the encryption key.
+#[derive(Clone)]
+pub struct EncryptionKey(pub [u8; 16]);
+
+impl Debug for EncryptionKey {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        write!(f, "AES-128 Key ({:X?})", self.0)
+    }
+}
+
+/// Newtype for the plaintext data.
+#[derive(Clone)]
+pub struct PlaintextBlock(pub [u8; 16]);
+
+impl Debug for PlaintextBlock {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        write!(f, "AES-128 Plaintext (REDACTED)")
     }
 }

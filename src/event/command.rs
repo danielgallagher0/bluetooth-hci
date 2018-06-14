@@ -126,6 +126,7 @@ impl CommandComplete {
             ::opcode::LE_READ_CHANNEL_MAP => {
                 ReturnParameters::LeReadChannelMap(to_le_channel_map_parameters(&bytes[3..])?)
             }
+            ::opcode::LE_ENCRYPT => ReturnParameters::LeEncrypt(to_le_encrypted_data(&bytes[3..])?),
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -225,6 +226,9 @@ pub enum ReturnParameters {
 
     /// Parameters returned by the LE Read Channel Map command.
     LeReadChannelMap(ChannelMapParameters),
+
+    /// Parameters returned by the LE Encrypt command.
+    LeEncrypt(EncryptedReturnParameters),
 }
 
 fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {
@@ -1323,5 +1327,39 @@ fn to_le_channel_map_parameters<VE>(
         conn_handle: ::ConnectionHandle(LittleEndian::read_u16(&bytes[1..])),
         channel_map: ::ChannelClassification::from_bits(&bytes[3..])
             .ok_or(::event::Error::InvalidChannelMap(channel_bits))?,
+    })
+}
+
+/// Parameters returned by the LE Encrypt command.
+#[derive(Copy, Clone, Debug)]
+pub struct EncryptedReturnParameters {
+    /// Did the command fail, and if so, how?
+    pub status: ::Status,
+
+    /// Encrypted data block.
+    ///
+    /// The most significant octet (last) of the block corresponds to out[0] using the notation
+    /// specified in FIPS 197.
+    pub encrypted_data: EncryptedBlock,
+}
+
+/// Newtype for a 128-bit encrypted block of data.
+#[derive(Copy, Clone)]
+pub struct EncryptedBlock(pub [u8; 16]);
+
+impl Debug for EncryptedBlock {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        writeln!(f, "AES-128 Encrypted Data ({:X?})", &self.0)
+    }
+}
+
+fn to_le_encrypted_data<VE>(bytes: &[u8]) -> Result<EncryptedReturnParameters, ::event::Error<VE>> {
+    require_len!(bytes, 17);
+
+    let mut block = [0; 16];
+    block.copy_from_slice(&bytes[1..]);
+    Ok(EncryptedReturnParameters {
+        status: to_status(&bytes)?,
+        encrypted_data: EncryptedBlock(block),
     })
 }

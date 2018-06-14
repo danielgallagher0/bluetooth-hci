@@ -654,3 +654,26 @@ fn le_read_channel_map_failed_reserved() {
         other => panic!("Did not get invalid channel map: {:?}", other),
     }
 }
+
+#[test]
+fn le_encrypt() {
+    let buffer = [
+        0x0E, 20, 1, 0x17, 0x20, 0x00, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::CommandComplete(event)) => {
+            assert_eq!(event.num_hci_command_packets, 1);
+            match event.return_params {
+                ReturnParameters::LeEncrypt(params) => {
+                    assert_eq!(params.status, hci::Status::Success);
+                    assert_eq!(
+                        params.encrypted_data.0,
+                        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+                    );
+                }
+                other => panic!("Did not get LE Encrypt return params: {:?}", other),
+            }
+        }
+        other => panic!("Did not get command complete event: {:?}", other),
+    }
+}
