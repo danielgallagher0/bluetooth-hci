@@ -929,6 +929,8 @@ pub trait Hci<E, Header> {
     ///
     /// This command shall only be used when the local device's role is Master.
     ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.24.
+    ///
     /// # Errors
     ///
     /// Only underlying communication errors are reported
@@ -945,6 +947,24 @@ pub trait Hci<E, Header> {
     /// has been completed. Instead, the Encryption Change or Encryption Key Refresh Complete events
     /// indicate that this command has been completed.
     fn le_start_encryption(&mut self, params: &EncryptionParameters) -> nb::Result<(), E>;
+
+    /// Replies to an LE Long Term Key Request event from the Controller, and specifies the long
+    /// term key parameter that shall be used for this connection handle.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.25.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported
+    ///
+    /// # Generated events
+    ///
+    /// A command complete event is generated.
+    fn le_long_term_key_request_reply(
+        &mut self,
+        conn_handle: ::ConnectionHandle,
+        key: &EncryptionKey,
+    ) -> nb::Result<(), E>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -1315,6 +1335,17 @@ where
         LittleEndian::write_u16(&mut bytes[10..], params.encrypted_diversifier);
         bytes[12..].copy_from_slice(&params.long_term_key.0);
         write_command::<Header, T, E>(self, ::opcode::LE_START_ENCRYPTION, &bytes)
+    }
+
+    fn le_long_term_key_request_reply(
+        &mut self,
+        conn_handle: ::ConnectionHandle,
+        key: &EncryptionKey,
+    ) -> nb::Result<(), E> {
+        let mut bytes = [0; 18];
+        LittleEndian::write_u16(&mut bytes[0..], conn_handle.0);
+        bytes[2..].copy_from_slice(&key.0);
+        write_command::<Header, T, E>(self, ::opcode::LE_LTK_REQUEST_REPLY, &bytes)
     }
 }
 

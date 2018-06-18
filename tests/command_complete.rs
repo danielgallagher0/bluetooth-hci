@@ -697,3 +697,24 @@ fn le_rand() {
         other => panic!("Did not get command complete event: {:?}", other),
     }
 }
+
+#[test]
+fn le_long_term_key_request_reply() {
+    let buffer = [0x0E, 6, 1, 0x1A, 0x20, 0x00, 0x01, 0x02];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::CommandComplete(event)) => {
+            assert_eq!(event.num_hci_command_packets, 1);
+            match event.return_params {
+                ReturnParameters::LeLongTermKeyRequestReply(params) => {
+                    assert_eq!(params.status, hci::Status::Success);
+                    assert_eq!(params.conn_handle, hci::ConnectionHandle(0x0201));
+                }
+                other => panic!(
+                    "Did not get LE LTK Request Reply return params: {:?}",
+                    other
+                ),
+            }
+        }
+        other => panic!("Did not get command complete event: {:?}", other),
+    }
+}

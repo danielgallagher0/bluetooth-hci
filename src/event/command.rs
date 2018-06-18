@@ -128,6 +128,9 @@ impl CommandComplete {
             }
             ::opcode::LE_ENCRYPT => ReturnParameters::LeEncrypt(to_le_encrypted_data(&bytes[3..])?),
             ::opcode::LE_RAND => ReturnParameters::LeRand(to_random_number(&bytes[3..])?),
+            ::opcode::LE_LTK_REQUEST_REPLY => {
+                ReturnParameters::LeLongTermKeyRequestReply(to_le_ltk_request_reply(&bytes[3..])?)
+            }
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -233,6 +236,9 @@ pub enum ReturnParameters {
 
     /// Parameters returned by the LE Rand command.
     LeRand(LeRandom),
+
+    /// Parameters returned by the LE Long Term Key Request Reply command.
+    LeLongTermKeyRequestReply(LeLongTermRequestReply),
 }
 
 fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {
@@ -1384,5 +1390,24 @@ fn to_random_number<VE>(bytes: &[u8]) -> Result<LeRandom, ::event::Error<VE>> {
     Ok(LeRandom {
         status: to_status(&bytes)?,
         random_number: LittleEndian::read_u64(&bytes[1..]),
+    })
+}
+
+/// Parameters returned by the LE LTK Request Reply command.
+#[derive(Copy, Clone, Debug)]
+pub struct LeLongTermRequestReply {
+    /// Did the command fail, and if so, how?
+    pub status: ::Status,
+
+    /// Connection handle that the request came from
+    pub conn_handle: ::ConnectionHandle,
+}
+
+fn to_le_ltk_request_reply<VE>(bytes: &[u8]) -> Result<LeLongTermRequestReply, ::event::Error<VE>> {
+    require_len!(bytes, 3);
+
+    Ok(LeLongTermRequestReply {
+        status: to_status(&bytes)?,
+        conn_handle: ::ConnectionHandle(LittleEndian::read_u16(&bytes[1..])),
     })
 }

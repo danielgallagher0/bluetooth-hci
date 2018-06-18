@@ -89,5 +89,6 @@ opcodes! {
         pub const LE_ENCRYPT = 0x0017;
         pub const LE_RAND = 0x0018;
         pub const LE_START_ENCRYPTION = 0x0019;
+        pub const LE_LTK_REQUEST_REPLY = 0x001A;
     }
 }
