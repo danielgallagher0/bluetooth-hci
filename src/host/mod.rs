@@ -965,6 +965,23 @@ pub trait Hci<E, Header> {
         conn_handle: ::ConnectionHandle,
         key: &EncryptionKey,
     ) -> nb::Result<(), E>;
+
+    /// Replies to an LE Long Term Key Request event from the Controller if the Host cannot provide
+    /// a Long Term Key for this connection handle.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.26.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported
+    ///
+    /// # Generated events
+    ///
+    /// A command complete event is generated.
+    fn le_long_term_key_request_negative_reply(
+        &mut self,
+        conn_handle: ::ConnectionHandle,
+    ) -> nb::Result<(), E>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -1346,6 +1363,15 @@ where
         LittleEndian::write_u16(&mut bytes[0..], conn_handle.0);
         bytes[2..].copy_from_slice(&key.0);
         write_command::<Header, T, E>(self, ::opcode::LE_LTK_REQUEST_REPLY, &bytes)
+    }
+
+    fn le_long_term_key_request_negative_reply(
+        &mut self,
+        conn_handle: ::ConnectionHandle,
+    ) -> nb::Result<(), E> {
+        let mut bytes = [0; 2];
+        LittleEndian::write_u16(&mut bytes[0..], conn_handle.0);
+        write_command::<Header, T, E>(self, ::opcode::LE_LTK_REQUEST_NEGATIVE_REPLY, &bytes)
     }
 }
 

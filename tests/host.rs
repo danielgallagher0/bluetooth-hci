@@ -93,6 +93,7 @@ conn_handle_only! {
     read_rssi(0x05, 0x14);
     le_read_channel_map(0x15, 0x20);
     le_read_remote_used_features(0x16, 0x20);
+    le_long_term_key_request_negative_reply(0x1B, 0x20);
 }
 
 macro_rules! no_params {

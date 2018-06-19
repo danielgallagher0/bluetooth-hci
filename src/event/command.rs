@@ -131,6 +131,11 @@ impl CommandComplete {
             ::opcode::LE_LTK_REQUEST_REPLY => {
                 ReturnParameters::LeLongTermKeyRequestReply(to_le_ltk_request_reply(&bytes[3..])?)
             }
+            ::opcode::LE_LTK_REQUEST_NEGATIVE_REPLY => {
+                ReturnParameters::LeLongTermKeyRequestNegativeReply(to_le_ltk_request_reply(
+                    &bytes[3..],
+                )?)
+            }
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -239,6 +244,9 @@ pub enum ReturnParameters {
 
     /// Parameters returned by the LE Long Term Key Request Reply command.
     LeLongTermKeyRequestReply(LeLongTermRequestReply),
+
+    /// Parameters returned by the LE Long Term Key Request Negative Reply command.
+    LeLongTermKeyRequestNegativeReply(LeLongTermRequestReply),
 }
 
 fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {
