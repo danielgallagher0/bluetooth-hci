@@ -995,6 +995,21 @@ pub trait Hci<E, Header> {
     ///
     /// A command complete event is generated.
     fn le_read_supported_states(&mut self) -> nb::Result<(), E>;
+
+    /// Starts a test where the DUT receives test reference packets at a fixed interval. The tester
+    /// generates the test reference packets.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.28.
+    ///
+    /// # Errors
+    ///
+    /// - InvalidTestChannel if the channel is out of range (greater than 39).
+    /// - Underlying communication errors
+    ///
+    /// # Generated events
+    ///
+    /// A command complete event is generated.
+    fn le_receiver_test(&mut self, channel: u8) -> nb::Result<(), Error<E>>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -1065,6 +1080,10 @@ pub enum Error<E> {
 
     /// For the LE Set Host Channel Classification event: all channels were marked 'bad'.
     NoValidChannel,
+
+    /// For the LE Receiver Test and LE Transmitter Test commands: the channel was out of range. The
+    /// maximum allowed channel is 39. Includes the invalid value.
+    InvalidTestChannel(u8),
 
     /// Underlying communication error.
     Comm(E),
@@ -1389,6 +1408,16 @@ where
 
     fn le_read_supported_states(&mut self) -> nb::Result<(), E> {
         write_command::<Header, T, E>(self, ::opcode::LE_READ_STATES, &[])
+    }
+
+    fn le_receiver_test(&mut self, channel: u8) -> nb::Result<(), Error<E>> {
+        const MAX_CHANNEL: u8 = 0x27;
+        if channel > MAX_CHANNEL {
+            return Err(nb::Error::Other(Error::InvalidTestChannel(channel)));
+        }
+
+        write_command::<Header, T, E>(self, ::opcode::LE_RECEIVER_TEST, &[channel])
+            .map_err(rewrap_as_comm)
     }
 }
 

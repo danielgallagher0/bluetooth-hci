@@ -92,5 +92,6 @@ opcodes! {
         pub const LE_LTK_REQUEST_REPLY = 0x001A;
         pub const LE_LTK_REQUEST_NEGATIVE_REPLY = 0x001B;
         pub const LE_READ_STATES = 0x001C;
+        pub const LE_RECEIVER_TEST = 0x001D;
     }
 }

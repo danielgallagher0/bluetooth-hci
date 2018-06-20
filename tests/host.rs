@@ -1071,3 +1071,18 @@ fn le_long_term_key_request_reply() {
         ]
     );
 }
+
+#[test]
+fn le_receiver_test() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller().le_receiver_test(0x27).unwrap();
+    assert_eq!(sink.written_data, [1, 0x1D, 0x20, 1, 0x27]);
+}
+
+#[test]
+fn le_receiver_test_out_of_range() {
+    let mut sink = RecordingSink::new();
+    let err = sink.as_controller().le_receiver_test(0x28).err().unwrap();
+    assert_eq!(err, nb::Error::Other(Error::InvalidTestChannel(0x28)));
+    assert_eq!(sink.written_data, []);
+}
