@@ -982,6 +982,19 @@ pub trait Hci<E, Header> {
         &mut self,
         conn_handle: ::ConnectionHandle,
     ) -> nb::Result<(), E>;
+
+    /// Reads the states and state combinations that the link layer supports.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.27.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported
+    ///
+    /// # Generated events
+    ///
+    /// A command complete event is generated.
+    fn le_read_supported_states(&mut self) -> nb::Result<(), E>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -1372,6 +1385,10 @@ where
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes[0..], conn_handle.0);
         write_command::<Header, T, E>(self, ::opcode::LE_LTK_REQUEST_NEGATIVE_REPLY, &bytes)
+    }
+
+    fn le_read_supported_states(&mut self) -> nb::Result<(), E> {
+        write_command::<Header, T, E>(self, ::opcode::LE_READ_STATES, &[])
     }
 }
 

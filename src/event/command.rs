@@ -136,6 +136,9 @@ impl CommandComplete {
                     &bytes[3..],
                 )?)
             }
+            ::opcode::LE_READ_STATES => {
+                ReturnParameters::LeReadSupportedStates(to_le_read_states(&bytes[3..])?)
+            }
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -247,6 +250,9 @@ pub enum ReturnParameters {
 
     /// Parameters returned by the LE Long Term Key Request Negative Reply command.
     LeLongTermKeyRequestNegativeReply(LeLongTermRequestReply),
+
+    /// Parameters returned by the LE Read States command.
+    LeReadSupportedStates(LeReadSupportedStates),
 }
 
 fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {
@@ -1417,5 +1423,118 @@ fn to_le_ltk_request_reply<VE>(bytes: &[u8]) -> Result<LeLongTermRequestReply, :
     Ok(LeLongTermRequestReply {
         status: to_status(&bytes)?,
         conn_handle: ::ConnectionHandle(LittleEndian::read_u16(&bytes[1..])),
+    })
+}
+
+/// Parameters returned by the LE Read States command.
+#[derive(Copy, Clone, Debug)]
+pub struct LeReadSupportedStates {
+    /// Did the command fail, and if so, how?
+    pub status: ::Status,
+
+    /// States or state combinations supported by the Controller. Multipl state and state
+    /// combinations may be supported.
+    pub supported_states: LeStates,
+}
+
+bitflags! {
+    /// Possible LE states or state combinations for the LE Read States command.  See the Bluetooth
+    /// specification, Vol 2, Part E, Section 7.8.27.
+    pub struct LeStates : u64 {
+        /// Non-connectable advertising state alone.
+        const NON_CONNECTABLE_ADVERTISING = 1 << 0;
+        /// Scannable advertising state alone
+        const SCANNABLE_ADVERTISING = 1 << 1;
+        /// Connectable advertising state alone
+        const CONNECTABLE_ADVERTISING = 1 << 2;
+        /// Directed advertising (high duty cycle) state alone
+        const DIRECTED_ADVERTISING_HIGH_DUTY_CYCLE = 1 << 3;
+        /// Passive scanning state alone
+        const PASSIVE_SCANNING = 1 << 4;
+        /// Active scanning state alone
+        const ACTIVE_SCANNING = 1 << 5;
+        /// Initianing state alone
+        const INITIATING = 1 << 6;
+        /// Peripheral (slave) connection state alone
+        const PERIPHERAL_CONNECTION = 1 << 7;
+        /// Non-connectable advertising and passive scan states.
+        const NONCONN_AD_AND_PASS_SCAN = 1 << 8;
+        /// Scannable advertising and passive scan states
+        const SCAN_AD_AND_PASS_SCAN = 1 << 9;
+        /// Connectable advertising and passive scan states
+        const CONN_AD_AND_PASS_SCAN = 1 << 10;
+        /// Directed advertising (high duty cycle) and passive scan states
+        const DIR_AD_HDC_AND_PASS_SCAN = 1 << 11;
+        /// Non-connectable advertising and active scan states.
+        const NONCONN_AD_AND_ACT_SCAN = 1 << 12;
+        /// Scannable advertising and active scan states
+        const SCAN_AD_AND_ACT_SCAN = 1 << 13;
+        /// Connectable advertising and active scan states
+        const CONN_AD_AND_ACT_SCAN = 1 << 14;
+        /// Directed advertising (high duty cycle) and active scan states
+        const DIR_AD_HDC_AND_ACT_SCAN = 1 << 15;
+        /// Non-connectable advertising and initiating states.
+        const NONCONN_AD_AND_INITIATING = 1 << 16;
+        /// Scannable advertising and initiating states
+        const SCAN_AD_AND_INITIATING = 1 << 17;
+        /// Non-connectable advertising and central (master) connection states.
+        const NONCONN_AD_AND_CENTRAL_CONN = 1 << 18;
+        /// Scannable advertising and central (master) connection states
+        const SCAN_AD_AND_CENTRAL_CONN = 1 << 19;
+        /// Non-connectable advertising and peripheral (slave) connection states.
+        const NONCONN_AD_AND_PERIPH_CONN = 1 << 20;
+        /// Scannable advertising and peripheral (slave) connection states
+        const SCAN_AD_AND_PERIPH_CONN = 1 << 21;
+        /// Passive scan and initiating states
+        const PASS_SCAN_AND_INITIATING = 1 << 22;
+        /// Active scan and initiating states
+        const ACT_SCAN_AND_INITIATING = 1 << 23;
+        /// Passive scan and central (master) connection states
+        const PASS_SCAN_AND_CENTRAL_CONN = 1 << 24;
+        /// Active scan and central (master) connection states
+        const ACT_SCAN_AND_CENTRAL_CONN = 1 << 25;
+        /// Passive scan and peripheral (slave) connection states
+        const PASS_SCAN_AND_PERIPH_CONN = 1 << 26;
+        /// Active scan and peripheral (slave) connection states
+        const ACT_SCAN_AND_PERIPH_CONN = 1 << 27;
+        /// Initiating and central (master) connection states
+        const INITIATING_AND_CENTRAL_CONN = 1 << 28;
+        /// Directed advertising (low duty cycle) state alone
+        const DIRECTED_ADVERTISING_LOW_DUTY_CYCLE = 1 << 29;
+        /// Directed advertising (low duty cycle) and passive scan states
+        const DIR_AD_LDC_AND_PASS_SCAN = 1 << 30;
+        /// Directed advertising (low duty cycle) and active scan states
+        const DIR_AD_LDC_AND_ACT_SCAN = 1 << 31;
+        /// Connectable advertising and initiating states
+        const CONN_AD_AND_INITIATING = 1 << 32;
+        /// Directed advertising (high duty cycle) and initiating states
+        const DIR_AD_HDC_AND_INITIATING = 1 << 33;
+        /// Directed advertising (low duty cycle) and initiating states
+        const DIR_AD_LDC_AND_INITIATING = 1 << 34;
+        /// Connectable advertising and central (master) connection states
+        const CONN_AD_AND_CENTRAL_CONN = 1 << 35;
+        /// Directed advertising (high duty cycle) and central (master) states
+        const DIR_AD_HDC_AND_CENTRAL_CONN = 1 << 36;
+        /// Directed advertising (low duty cycle) and central (master) states
+        const DIR_AD_LDC_AND_CENTRAL_CONN = 1 << 37;
+        /// Connectable advertising and peripheral (slave) connection states
+        const CONN_AD_AND_PERIPH_CONN = 1 << 38;
+        /// Directed advertising (high duty cycle) and peripheral (slave) states
+        const DIR_AD_HDC_AND_PERIPH_CONN = 1 << 39;
+        /// Directed advertising (low duty cycle) and peripheral (slave) states
+        const DIR_AD_LDC_AND_PERIPH_CONN = 1 << 40;
+        /// Initiating and peripheral (slave) connection states
+        const INITIATING_AND_PERIPH_CONN = 1 << 41;
+    }
+}
+
+fn to_le_read_states<VE>(bytes: &[u8]) -> Result<LeReadSupportedStates, ::event::Error<VE>> {
+    require_len!(bytes, 9);
+
+    let bitfield = LittleEndian::read_u64(&bytes[1..]);
+    Ok(LeReadSupportedStates {
+        status: to_status(bytes)?,
+        supported_states: LeStates::from_bits(bitfield)
+            .ok_or(::event::Error::InvalidLeStates(bitfield))?,
     })
 }

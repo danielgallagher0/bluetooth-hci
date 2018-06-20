@@ -739,3 +739,47 @@ fn le_long_term_key_request_negative_reply() {
         other => panic!("Did not get command complete event: {:?}", other),
     }
 }
+
+#[test]
+fn le_read_supported_states() {
+    let buffer = [
+        0x0E, 12, 1, 0x1C, 0x20, 0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x02, 0x00, 0x00,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::CommandComplete(event)) => {
+            assert_eq!(event.num_hci_command_packets, 1);
+            match event.return_params {
+                ReturnParameters::LeReadSupportedStates(params) => {
+                    assert_eq!(params.status, hci::Status::Success);
+                    assert_eq!(
+                        params.supported_states,
+                        LeStates::NON_CONNECTABLE_ADVERTISING
+                            | LeStates::SCAN_AD_AND_PASS_SCAN
+                            | LeStates::NONCONN_AD_AND_CENTRAL_CONN
+                            | LeStates::ACT_SCAN_AND_PERIPH_CONN
+                            | LeStates::DIR_AD_HDC_AND_CENTRAL_CONN
+                            | LeStates::INITIATING_AND_PERIPH_CONN
+                    );
+                }
+                other => panic!(
+                    "Did not get LE Read Supported States return params: {:?}",
+                    other
+                ),
+            }
+        }
+        other => panic!("Did not get command complete event: {:?}", other),
+    }
+}
+
+#[test]
+fn le_read_supported_states_failed_reserved_flag() {
+    let buffer = [
+        0x0E, 12, 1, 0x1C, 0x20, 0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x04, 0x00, 0x00,
+    ];
+    match TestEvent::new(Packet(&buffer)) {
+        Err(Error::InvalidLeStates(bitfield)) => {
+            assert_eq!(bitfield, 0x0000_0410_0804_0201);
+        }
+        other => panic!("Did not get bad LE State flags: {:?}", other),
+    }
+}
