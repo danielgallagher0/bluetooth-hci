@@ -90,6 +90,7 @@ status_only! {
     le_set_host_channel_classification(0x14, 0x20,
                                        ReturnParameters::LeSetHostChannelClassification);
     le_receiver_test(0x1D, 0x20, ReturnParameters::LeReceiverTest);
+    le_transmitter_test(0x1E, 0x20, ReturnParameters::LeTransmitterTest);
 }
 
 #[test]

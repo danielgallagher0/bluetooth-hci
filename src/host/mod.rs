@@ -1010,6 +1010,31 @@ pub trait Hci<E, Header> {
     ///
     /// A command complete event is generated.
     fn le_receiver_test(&mut self, channel: u8) -> nb::Result<(), Error<E>>;
+
+    /// Starts a test where the DUT generates test reference packets at a fixed interval. The
+    /// Controller shall transmit at maximum power.
+    ///
+    /// An LE Controller supporting the LE_Transmitter_Test command shall support `payload` values
+    /// `PrbS9`, `Nibbles10` and `Bits10`. An LE Controller may support other values of
+    /// `payload`.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.29.
+    ///
+    /// # Errors
+    ///
+    /// - InvalidTestChannel if the channel is out of range (greater than 39).
+    /// - InvalidTestPayloadLength if `payload_length` is out of range (greater than 37).
+    /// - Underlying communication errors.
+    ///
+    /// # Generated events
+    ///
+    /// A command complete event is generated.
+    fn le_transmitter_test(
+        &mut self,
+        channel: u8,
+        payload_length: usize,
+        payload: TestPacketPayload,
+    ) -> nb::Result<(), Error<E>>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -1084,6 +1109,10 @@ pub enum Error<E> {
     /// For the LE Receiver Test and LE Transmitter Test commands: the channel was out of range. The
     /// maximum allowed channel is 39. Includes the invalid value.
     InvalidTestChannel(u8),
+
+    /// For the LE Transmitter Test command: The payload length is invalid. The maximum value is
+    /// 37. Includes the invalid value.
+    InvalidTestPayloadLength(usize),
 
     /// Underlying communication error.
     Comm(E),
@@ -1411,15 +1440,40 @@ where
     }
 
     fn le_receiver_test(&mut self, channel: u8) -> nb::Result<(), Error<E>> {
-        const MAX_CHANNEL: u8 = 0x27;
-        if channel > MAX_CHANNEL {
+        if channel > MAX_TEST_CHANNEL {
             return Err(nb::Error::Other(Error::InvalidTestChannel(channel)));
         }
 
         write_command::<Header, T, E>(self, ::opcode::LE_RECEIVER_TEST, &[channel])
             .map_err(rewrap_as_comm)
     }
+
+    fn le_transmitter_test(
+        &mut self,
+        channel: u8,
+        payload_length: usize,
+        payload: TestPacketPayload,
+    ) -> nb::Result<(), Error<E>> {
+        if channel > MAX_TEST_CHANNEL {
+            return Err(nb::Error::Other(Error::InvalidTestChannel(channel)));
+        }
+
+        const MAX_PAYLOAD_LENGTH: usize = 0x25;
+        if payload_length > MAX_PAYLOAD_LENGTH {
+            return Err(nb::Error::Other(Error::InvalidTestPayloadLength(
+                payload_length,
+            )));
+        }
+
+        write_command::<Header, _, _>(
+            self,
+            ::opcode::LE_TRANSMITTER_TEST,
+            &[channel, payload_length as u8, payload as u8],
+        ).map_err(rewrap_as_comm)
+    }
 }
+
+const MAX_TEST_CHANNEL: u8 = 0x27;
 
 bitflags! {
     /// Event flags defined for the Set Event Mask command.
@@ -2259,4 +2313,26 @@ pub struct EncryptionParameters {
 
     /// Encryption key, distributed by the host.
     pub long_term_key: EncryptionKey,
+}
+
+/// Possible values of the `payload` parameter for the `le_transmitter_test` command.
+#[derive(Copy, Clone, Debug)]
+#[repr(u8)]
+pub enum TestPacketPayload {
+    /// Pseudo-Random bit sequence 9
+    PrbS9 = 0x00,
+    /// Pattern of alternating bits `11110000
+    Nibbles10 = 0x01,
+    /// Pattern of alternating bits `10101010'
+    Bits10 = 0x02,
+    /// Pseudo-Random bit sequence 15
+    PrbS15 = 0x03,
+    /// Pattern of All `1' bits
+    All1 = 0x04,
+    /// Pattern of All `0' bits
+    All0 = 0x05,
+    /// Pattern of alternating bits `00001111
+    Nibbles01 = 0x06,
+    /// Pattern of alternating bits `0101'
+    Bits01 = 0x07,
 }

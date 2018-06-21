@@ -1086,3 +1086,36 @@ fn le_receiver_test_out_of_range() {
     assert_eq!(err, nb::Error::Other(Error::InvalidTestChannel(0x28)));
     assert_eq!(sink.written_data, []);
 }
+
+#[test]
+fn le_transmitter_test() {
+    let mut sink = RecordingSink::new();
+    sink.as_controller()
+        .le_transmitter_test(0x27, 0x25, TestPacketPayload::PrbS9)
+        .unwrap();
+    assert_eq!(sink.written_data, [1, 0x1E, 0x20, 3, 0x27, 0x25, 0x00]);
+}
+
+#[test]
+fn le_transmitter_test_channel_out_of_range() {
+    let mut sink = RecordingSink::new();
+    let err = sink
+        .as_controller()
+        .le_transmitter_test(0x28, 0x25, TestPacketPayload::PrbS9)
+        .err()
+        .unwrap();
+    assert_eq!(err, nb::Error::Other(Error::InvalidTestChannel(0x28)));
+    assert_eq!(sink.written_data, []);
+}
+
+#[test]
+fn le_transmitter_test_length_out_of_range() {
+    let mut sink = RecordingSink::new();
+    let err = sink
+        .as_controller()
+        .le_transmitter_test(0x27, 0x26, TestPacketPayload::PrbS9)
+        .err()
+        .unwrap();
+    assert_eq!(err, nb::Error::Other(Error::InvalidTestPayloadLength(0x26)));
+    assert_eq!(sink.written_data, []);
+}

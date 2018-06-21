@@ -140,6 +140,9 @@ impl CommandComplete {
                 ReturnParameters::LeReadSupportedStates(to_le_read_states(&bytes[3..])?)
             }
             ::opcode::LE_RECEIVER_TEST => ReturnParameters::LeReceiverTest(to_status(&bytes[3..])?),
+            ::opcode::LE_TRANSMITTER_TEST => {
+                ReturnParameters::LeTransmitterTest(to_status(&bytes[3..])?)
+            }
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -257,6 +260,9 @@ pub enum ReturnParameters {
 
     /// Status returned by the LE Receiver Test command.
     LeReceiverTest(::Status),
+
+    /// Status returned by the LE Transmitter Test command.
+    LeTransmitterTest(::Status),
 }
 
 fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {
