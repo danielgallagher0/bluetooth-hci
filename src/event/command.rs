@@ -143,6 +143,7 @@ impl CommandComplete {
             ::opcode::LE_TRANSMITTER_TEST => {
                 ReturnParameters::LeTransmitterTest(to_status(&bytes[3..])?)
             }
+            ::opcode::LE_TEST_END => ReturnParameters::LeTestEnd(to_le_test_end(&bytes[3..])?),
             other => return Err(::event::Error::UnknownOpcode(other)),
         };
         Ok(CommandComplete {
@@ -263,6 +264,9 @@ pub enum ReturnParameters {
 
     /// Status returned by the LE Transmitter Test command.
     LeTransmitterTest(::Status),
+
+    /// Parameters returned by the LE Test End command.
+    LeTestEnd(LeTestEnd),
 }
 
 fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {
@@ -1546,5 +1550,25 @@ fn to_le_read_states<VE>(bytes: &[u8]) -> Result<LeReadSupportedStates, ::event:
         status: to_status(bytes)?,
         supported_states: LeStates::from_bits(bitfield)
             .ok_or(::event::Error::InvalidLeStates(bitfield))?,
+    })
+}
+
+/// Parameters returned by the LE Test End command.
+#[derive(Copy, Clone, Debug)]
+pub struct LeTestEnd {
+    /// Did the command fail, and if so, how?
+    pub status: ::Status,
+
+    /// The number of packets received during the test.  For transmitter tests, this value shall be
+    /// 0.
+    pub number_of_packets: usize,
+}
+
+fn to_le_test_end<VE>(bytes: &[u8]) -> Result<LeTestEnd, ::event::Error<VE>> {
+    require_len!(bytes, 3);
+
+    Ok(LeTestEnd {
+        status: to_status(bytes)?,
+        number_of_packets: LittleEndian::read_u16(&bytes[1..]) as usize,
     })
 }

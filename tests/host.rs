@@ -129,6 +129,7 @@ no_params! {
     le_clear_white_list(0x10, 0x20);
     le_rand(0x18, 0x20);
     le_read_supported_states(0x1C, 0x20);
+    le_test_end(0x1F, 0x20);
 }
 
 #[test]

@@ -94,5 +94,6 @@ opcodes! {
         pub const LE_READ_STATES = 0x001C;
         pub const LE_RECEIVER_TEST = 0x001D;
         pub const LE_TRANSMITTER_TEST = 0x001E;
+        pub const LE_TEST_END = 0x001F;
     }
 }

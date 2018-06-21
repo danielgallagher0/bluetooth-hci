@@ -1035,6 +1035,19 @@ pub trait Hci<E, Header> {
         payload_length: usize,
         payload: TestPacketPayload,
     ) -> nb::Result<(), Error<E>>;
+
+    /// Stops any test which is in progress.
+    ///
+    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.30.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported.
+    ///
+    /// # Generated events
+    ///
+    /// A command complete event is generated.
+    fn le_test_end(&mut self) -> nb::Result<(), E>;
 }
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
@@ -1470,6 +1483,10 @@ where
             ::opcode::LE_TRANSMITTER_TEST,
             &[channel, payload_length as u8, payload as u8],
         ).map_err(rewrap_as_comm)
+    }
+
+    fn le_test_end(&mut self) -> nb::Result<(), E> {
+        write_command::<Header, _, _>(self, ::opcode::LE_TEST_END, &[])
     }
 }
 
