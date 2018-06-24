@@ -28,7 +28,7 @@ fn connection_complete() {
             assert_eq!(event.status, hci::Status::Success);
             assert_eq!(event.conn_handle, hci::ConnectionHandle(0x0201));
             assert_eq!(
-                event.bdaddr,
+                event.bd_addr,
                 hci::BdAddr([0x03, 0x04, 0x05, 0x06, 0x07, 0x08])
             );
             assert_eq!(event.link_type, LinkType::Sco);
@@ -248,7 +248,7 @@ fn le_connection_complete() {
             assert_eq!(event.conn_handle, hci::ConnectionHandle(0x0201));
             assert_eq!(event.role, ConnectionRole::Central);
             assert_eq!(
-                event.peer_bdaddr,
+                event.peer_bd_addr,
                 hci::BdAddrType::Public(hci::BdAddr([0x03, 0x04, 0x05, 0x06, 0x07, 0x08]))
             );
 

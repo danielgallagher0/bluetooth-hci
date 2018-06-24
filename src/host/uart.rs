@@ -41,7 +41,7 @@ pub struct CommandHeader {
 
 /// Trait for reading packets from the controller.
 ///
-/// Implementors must also implement `::host::Hci`, which provides all of the functions to write
+/// Implementors must also implement [`::host::Hci`], which provides all of the functions to write
 /// commands to the controller. This trait adds the ability to read packets back from the
 /// controller.
 ///
@@ -53,17 +53,14 @@ pub trait Hci<E, Vendor, VE>: super::Hci<E, CommandHeader> {
     ///
     /// # Errors
     ///
-    /// - Returns `nb::Error::WouldBlock` if the controller does not have enough bytes available to
-    ///   read the full packet right now.
-    ///
-    /// - Returns `nb::Error::Other(Error::BadPacketType(b))` if the next byte is not a valid packet
-    ///   type.
-    ///
-    /// - Returns `nb::Error::Other(Error::BLE(e))` if there is an error deserializing the packet
-    ///   (such as a mismatch between the packet length and the expected length of the event). See
-    ///   [`::event::Error`] for possible values of `e`.
-    ///
-    /// - Returns `nb::Error::Other(Error::Comm(e))` if there is an error reading from the
+    /// - Returns [`nb::Error::WouldBlock`] if the controller does not have enough bytes available
+    ///   to read the full packet right now.
+    /// - Returns [`nb::Error::Other`]`(`[`Error::BadPacketType`]`)` if the next byte is not a valid
+    ///   packet type.
+    /// - Returns [`nb::Error::Other`]`(`[`Error::BLE`]`)` if there is an error deserializing the
+    ///   packet (such as a mismatch between the packet length and the expected length of the
+    ///   event). See [`::event::Error`] for possible values of `e`.
+    /// - Returns [`nb::Error::Other`]`(`[`Error::Comm`]`)` if there is an error reading from the
     ///   controller.
     fn read(&mut self) -> nb::Result<Packet<Vendor>, Error<E, VE>>
     where

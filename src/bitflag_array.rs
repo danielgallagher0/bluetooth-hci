@@ -3,7 +3,60 @@
 #[doc(hidden)]
 pub extern crate core as _core;
 
-#[macro_export]
+/// Implements an arbitrary-length bitfield.  The implementation and interface is similar to and
+/// derived from [bitflags](https://crates.io/crates/bitflags).
+///
+/// Instead of implementing the bitfield over an integral type, this implements it on an array of
+/// bytes.  Each flag is defined using the byte and the mask _within that byte_.  It does not
+/// support masks across bytes.
+///
+/// # Example
+///
+/// See [`ChannelClassification`] and [`event::command::CommandFlags`] for examples in this crate.
+///
+/// Basic usage is similar to [bitflags](https://crates.io/crates/bitflags):
+///
+/// ```
+/// # #[macro_use]
+/// # extern crate bluetooth_hci;
+/// # fn main() {}
+/// bitflag_array! {
+///     #[derive(Clone)]
+///     pub struct Flags : 3; // Bit field over a [u8; 3]
+///     pub struct Flag;      // Name the internal struct
+///
+///     const ALPHA = 0, 0x01; // First byte, first bit
+///     const BETA = 0, 0x02;
+///     // ...
+///     const THETA = 1, 0x01; // Second byte, first bit
+///     // ...
+///     const OMEGA = 2, 0x80; // Third byte, last bit
+/// }
+/// ```
+///
+/// A subset of the bitflags interface is implemented, including bitwise OR operations:
+/// ```
+/// # #[macro_use]
+/// # extern crate bluetooth_hci;
+/// # bitflag_array! {
+/// #    #[derive(Clone)]
+/// #    pub struct Flags : 3;
+/// #    pub struct Flag;
+/// #
+/// #    const ALPHA = 0, 0x01;
+/// #    const BETA = 0, 0x02;
+/// #    const THETA = 1, 0x01;
+/// #    const OMEGA = 2, 0x80;
+/// # }
+/// # fn main() {
+/// let mut letters = Flags::ALPHA | Flags::BETA;
+/// letters |= Flags::THETA;
+/// assert_eq!(letters.bits(), [0x03, 0x01, 0x00]);
+/// assert_eq!(letters.is_empty(), false);
+/// assert_eq!(letters.is_set(Flags::OMEGA), false);
+/// assert!(letters.contains(Flags::BETA | Flags::THETA));
+/// # }
+/// ```
 macro_rules! bitflag_array {
     {
         $(#[$inner:ident $($args:tt)*])*
@@ -18,6 +71,7 @@ macro_rules! bitflag_array {
         $(#[$inner $($args)*])*
         pub struct $flags([u8; $size]);
 
+        #[doc(hidden)]
         #[allow(missing_docs)]
         #[derive(Copy, Clone, Debug)]
         pub struct $flag {

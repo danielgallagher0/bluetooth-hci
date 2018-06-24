@@ -103,7 +103,7 @@ pub use opcode::Opcode;
 /// which enables full access to all of the functions and events of the HCI through [`host::Hci`]
 /// and [`host::uart::Hci`], respectively.
 pub trait Controller {
-    /// Enumeration of `Controller` errors. These typically will be specializations of
+    /// Enumeration of [`Controller`] errors. These typically will be specializations of
     /// [`host::uart::Error`] that specify both the vendor-specific error type _and_ a communication
     /// error type. The communication error type in turn will depend on the bus used to communicate
     /// with the controller as well as the device crate (e.g., [`linux-embedded-hal::Spidev`] uses
@@ -116,7 +116,7 @@ pub trait Controller {
 
     /// Writes the bytes to the controller, in a single transaction if possible. All of `header`
     /// shall be written, followed by all of `payload`. `write` is allowed to block internally, but
-    /// should return `nb::Error::WouldBlock` if the controller is not ready to receive the data.
+    /// should return [`nb::Error::WouldBlock`] if the controller is not ready to receive the data.
     fn write(&mut self, header: &[u8], payload: &[u8]) -> nb::Result<(), Self::Error>;
 
     /// Reads data from the controller into the provided `buffer`. The length of the buffer
@@ -125,7 +125,8 @@ pub trait Controller {
     /// implementor may read all available bytes from the controller and maintain them in an
     /// internal buffer, but `read_into` shall only read the number of bytes requested.
     ///
-    /// Example:
+    /// # Example
+    ///
     /// ```
     /// // Controller sends:
     /// // +------+------+------+------+------+------+------+------+
@@ -171,15 +172,16 @@ pub trait Controller {
     /// # }
     /// ```
     /// If the next call to `read_into` requests more than 1 byte, the controller may return
-    /// `nb::Error::WouldBlock`, or may attempt to read more data from the controller. If not enough
-    /// data is available from the controller, the implementor shall return `nb::Error::WouldBlock`.
+    /// [`nb::Error::WouldBlock`], or may attempt to read more data from the controller. If not
+    /// enough data is available from the controller, the implementor shall return
+    /// [`nb::Error::WouldBlock`].
     fn read_into(&mut self, buffer: &mut [u8]) -> nb::Result<(), Self::Error>;
 
     /// Looks ahead at the data coming from the Controller without consuming it. Implementors should
     /// be able to support values of `n` up to 5 to support all potential data types.
     ///
-    /// `peek(0)` will typically be used to the the packet type (see Bluetooth Spec, section Blah
-    /// blah blah), which will be followed by another peek to determine the amount of data to
+    /// `peek(0)` will typically be used to the the packet type (see Bluetooth Spec, Vol 4, Part A,
+    /// Section 2), which will be followed by another peek to determine the amount of data to
     /// read. For example, the code to read an HCI event looks like this:
     ///
     /// ```
@@ -211,7 +213,8 @@ pub trait Controller {
     /// let mut buffer = [0; MAX_EVENT_LENGTH + HEADER_LENGTH];
     /// let packet_type = controller.peek(0)?;
     /// if packet_type == PACKET_TYPE_HCI_EVENT {
-    ///     let param_len = controller.peek(3)? as usize;  // Byte 3 has the parameter length in HCI events
+    ///     // Byte 3 has the parameter length in HCI events
+    ///     let param_len = controller.peek(3)? as usize;
     ///
     ///     // We want to consume the full HCI Event packet, and we now know the length.
     ///     controller.read_into(&mut buffer[..HEADER_LENGTH + param_len])?;
@@ -536,15 +539,17 @@ impl BdAddrType {
 }
 
 /// The BD Address type is not recognized.  Includes the unrecognized byte.
+///
+/// See [`to_bd_addr_type`]
 pub struct BdAddrTypeError(pub u8);
 
-/// Wraps a [`BdAddr`] in a `BdAddrType`.
+/// Wraps a [`BdAddr`] in a [`BdAddrType`].
 ///
 /// # Errors
 ///
 /// - `bd_addr_type` does not denote an appropriate type. Returns the byte. The address is
 ///   discarded.
-pub fn to_bdaddr_type(bd_addr_type: u8, addr: BdAddr) -> Result<BdAddrType, BdAddrTypeError> {
+pub fn to_bd_addr_type(bd_addr_type: u8, addr: BdAddr) -> Result<BdAddrType, BdAddrTypeError> {
     match bd_addr_type {
         0 => Ok(BdAddrType::Public(addr)),
         1 => Ok(BdAddrType::Random(addr)),
@@ -609,8 +614,10 @@ bitflags! {
 }
 
 bitflag_array! {
-    /// Channel classifications for the LE Set Host Channel Classification command.  If a flag is
-    /// set, its classification is "Unknown".  If the flag is cleared, it is known "bad".
+    /// Channel classifications for the LE Set Host Channel Classification command.
+    ///
+    /// If a flag is set, its classification is "Unknown".  If the flag is cleared, it is known
+    /// "bad".
     #[derive(Copy, Clone, Debug)]
     pub struct ChannelClassification : 5;
     pub struct ChannelFlag;

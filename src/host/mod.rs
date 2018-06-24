@@ -2,11 +2,11 @@
 //!
 //! # Ideas for discussion and improvements
 //!
-//! - Remove [`cmd_link`] and [`event_link`] modules. These provide alternative mechanisms for
-//!   writing to and reading from the controller, respectively, without the packet identifier
-//!   byte. The open-source Bluetooth implementations I have found (admittedly, I haven't looked
-//!   hard) only support sending the packet ID, as [`uart`] does. In that case, it would make sense
-//!   to also remove [`uart`] and move its contents up one level.
+//! - Remove `cmd_link` and `event_link` modules. These provide alternative mechanisms for writing
+//! to and reading from the controller, respectively, without the packet identifier byte. The
+//! open-source Bluetooth implementations I have found (admittedly, I haven't looked hard) only
+//! support sending the packet ID, as `uart` does. In that case, it would make sense to also remove
+//! `uart` and move its contents up one level.
 
 extern crate nb;
 
@@ -27,9 +27,9 @@ const MAX_HEADER_LENGTH: usize = 5;
 /// itself then contains various parameters as defined by the Bluetooth specification.
 ///
 /// Before this command header, many (all?) Bluetooth implementations include a 1-byte packet type
-/// preceding the command header. This version of the HciHeader is implemented by [`uart::HciHeader`],
-/// while versions without the packet byte are implemented by [`cmd_link::Header`] and
-/// [`event_link::EventHeader`].
+/// preceding the command header. This version of the HciHeader is implemented by
+/// [`uart::CommandHeader`], while versions without the packet byte are implemented by
+/// [`cmd_link::Header`] and [`event_link::NoCommands`].
 pub trait HciHeader {
     /// Defines the length of the packet header. With the packet byte, this is 4. Without it, the
     /// length shall be 3.
@@ -48,52 +48,57 @@ pub trait HciHeader {
 
 /// Trait defining the interface from the host to the controller.
 ///
-/// Defines one function for each command in the Bluetooth Specification Vol 2, Part E, Sections 7.1
-/// - 7.6.
+/// Defines one function for each command in the Bluetooth Specification Vol 2, Part E, Sections
+/// 7.1-7.6.
 ///
 /// Specializations must define the error type `E`, used for communication errors, and the header
-/// type `Header`, which should be either uart::CommandHeader`, `cmd_link::CommandHeader`, or
-/// `event_link::CommandHeader`, depending on the controller implementation.
+/// type `Header`, which should be either [`uart::CommandHeader`], [`cmd_link::Header`], or
+/// [`event_link::NoCommands`], depending on the controller implementation.
 ///
-/// An implementation is defined or all types that implement `host::Controller`.
+/// An implementation is defined or all types that implement [`Controller`](super::Controller).
 pub trait Hci<E, Header> {
-    /// The Disconnection command is used to terminate an existing connection.  All synchronous
-    /// connections on a physical link should be disconnected before the ACL connection on the same
-    /// physical connection is disconnected.
+    /// Terminates an existing connection.  All synchronous connections on a physical link should be
+    /// disconnected before the ACL connection on the same physical connection is disconnected.
     ///
     /// - `conn_handle` indicates which connection is to be disconnected.
     /// - `reason` indicates the reason for ending the connection. The remote Controller will
-    ///   receive the Reason command parameter in the Disconnection Complete event.
+    ///   receive the Reason command parameter in the [Disconnection
+    ///   Complete](::event::Event::DisconnectionComplete) event.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.1.6.
     ///
     /// # Errors
     ///
-    /// - `Error::BadDisconnectionReason` when the provided `reason` is not a valid disconnection
-    ///   reason.  The reason must be one of `Status::AuthFailure`,
-    ///   `Status::RemoteTerminationByUser`, `Status::RemoteTerminationLowResources`,
-    ///   `Status::RemoteTerminationPowerOff`, `Status::UnsupportedRemoteFeature`,
-    ///   `Status::PairingWithUnitKeyNotSupported`, or `Status::UnacceptableConnectionParameters`.
+    /// - [`BadDisconnectionReason`](Error::BadDisconnectionReason) when `reason` is not a valid
+    ///   disconnection reason.  The reason must be one of [`AuthFailure`](::Status::AuthFailure),
+    ///   [`RemoteTerminationByUser`](::Status::RemoteTerminationByUser),
+    ///   [`RemoteTerminationLowResources`](::Status::RemoteTerminationLowResources),
+    ///   [`RemoteTerminationPowerOff`](::Status::RemoteTerminationPowerOff),
+    ///   [`UnsupportedRemoteFeature`](::Status::UnsupportedRemoteFeature),
+    ///   [`PairingWithUnitKeyNotSupported`](::Status::PairingWithUnitKeyNotSupported), or
+    ///   [`UnacceptableConnectionParameters`](::Status::UnacceptableConnectionParameters).
     /// - Underlying communication errors.
     ///
     /// # Generated Events
     ///
-    /// When the Controller receives the Disconnect command, it shall send the Command Status event
-    /// to the Host. The Disconnection Complete event will occur at each Host when the termination
-    /// of the connection has completed, and indicates that this command has been completed.
+    /// When the Controller receives the Disconnect command, it shall send the
+    /// [Command Status](::event::Event::CommandStatus) event to the Host. The [Disconnection
+    /// Complete](::event::Event::DisconnectionComplete) event will occur at each Host when the
+    /// termination of the connection has completed, and indicates that this command has been
+    /// completed.
     ///
     /// Note: No Command Complete event will be sent by the Controller to indicate that this command
-    /// has been completed. Instead, the Disconnection Complete event will indicate that this
-    /// command has been completed.
+    /// has been completed. Instead, the [Disconnection
+    /// Complete](::event::Event::DisconnectionComplete) event will indicate that this command has
+    /// been completed.
     fn disconnect(
         &mut self,
         conn_handle: ::ConnectionHandle,
         reason: ::Status,
     ) -> nb::Result<(), Error<E>>;
 
-    /// This command obtains the values for the version information for the remote device identified
-    /// by the `conn_handle` parameter, which must be a connection handle for an ACL or LE
-    /// connection.
+    /// Obtains the values for the version information for the remote device identified by the
+    /// `conn_handle` parameter, which must be a connection handle for an ACL or LE connection.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.1.23.
     ///
@@ -104,26 +109,27 @@ pub trait Hci<E, Header> {
     /// # Generated Events
     ///
     /// When the Controller receives the Read Remote Version Information command, the Controller
-    /// shall send the Command Status event to the Host. When the Link Manager or Link Layer has
-    /// completed the sequence to determine the remote version information, the local Controller
-    /// shall send a Read Remote Version Information Complete event to the Host. The Read Remote
-    /// Version Information Complete event contains the status of this command, and parameters
-    /// describing the version and subversion of the LMP or Link Layer used by the remote device.
+    /// shall send the [Command Status](::event::Event::CommandStatus) event to the Host. When the
+    /// Link Manager or Link Layer has completed the sequence to determine the remote version
+    /// information, the local Controller shall send a [Read Remote Version Information
+    /// Complete](::event::Event::ReadRemoteVersionInformationComplete) event to the Host. That
+    /// event contains the status of this command, and parameters describing the version and
+    /// subversion of the LMP or Link Layer used by the remote device.
     ///
     /// Note: No Command Complete event will be sent by the Controller to indicate that this command
-    /// has been completed. Instead, the Read Remote Version Information Complete event will
-    /// indicate that this command has been completed.
+    /// has been completed. Instead, the [Read Remote Version Information
+    /// Complete](::event::Event::ReadRemoteVersionInformationComplete) event will indicate that
+    /// this command has been completed.
     fn read_remote_version_information(
         &mut self,
         conn_handle: ::ConnectionHandle,
     ) -> nb::Result<(), E>;
 
-    /// The Set_Event_Mask command is used to control which events are generated by the HCI for the
-    /// Host. If the bit in the event mask is set to a one, then the event associated with that bit
-    /// will be enabled. For an LE Controller, the “LE Meta Event” bit in the Event_Mask shall
-    /// enable or disable all LE events in the LE Meta Event (see Section 7.7.65). The Host has to
-    /// deal with each event that occurs. The event mask allows the Host to control how much it is
-    /// interrupted.
+    /// Controls which events are generated by the HCI for the Host. If the flag in the mask is set,
+    /// then the event associated with that bit will be enabled. For an LE Controller, the [LE Meta
+    /// Event](EventFlags::LE_META_EVENT) flag shall enable or disable all LE events (see Section
+    /// 7.7.65). The Host has to deal with each event that occurs. The event mask allows the Host to
+    /// control how much it is interrupted.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.3.1.
     ///
@@ -133,17 +139,17 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated Events
     ///
-    /// Returns a status in a Command Complete event.
+    /// A [Command Complete](::event::command::ReturnParameters::SetEventMask) event is generated.
     fn set_event_mask(&mut self, mask: EventFlags) -> nb::Result<(), E>;
 
-    /// The Reset command will reset the Controller and the Link Manager on the BR/EDR Controller,
-    /// the PAL on an AMP Controller, or the Link Layer on an LE Controller. If the Controller
-    /// supports both BR/EDR and LE then the Reset command shall reset the Link Manager, Baseband
-    /// and Link Layer. The Reset command shall not affect the used HCI transport layer since the
-    /// HCI transport layers may have reset mechanisms of their own. After the reset is completed,
-    /// the current operational state will be lost, the Controller will enter standby mode and the
-    /// Controller will automatically revert to the default values for the parameters for which
-    /// default values are defined in the specification.
+    /// Resets the Controller and the Link Manager on the BR/EDR Controller, the PAL on an AMP
+    /// Controller, or the Link Layer on an LE Controller. If the Controller supports both BR/EDR
+    /// and LE then the Reset command shall reset the Link Manager, Baseband and Link Layer. The
+    /// Reset command shall not affect the used HCI transport layer since the HCI transport layers
+    /// may have reset mechanisms of their own. After the reset is completed, the current
+    /// operational state will be lost, the Controller will enter standby mode and the Controller
+    /// will automatically revert to the default values for the parameters for which default values
+    /// are defined in the specification.
     ///
     /// Note: The Reset command will not necessarily perform a hardware reset. This is
     /// implementation defined. On an AMP Controller, the Reset command shall reset the service
@@ -162,21 +168,22 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated Events
     ///
-    /// Returns a status in a Command Complete event.
+    /// A [Command Complete](::event::command::ReturnParameters::Reset) event is generated.
     fn reset(&mut self) -> nb::Result<(), E>;
 
-    /// This command reads the values for the Transmit_Power_Level parameter for the specified
+    /// Reads the values for the transmit power level for the specified
     /// `conn_handle`. `conn_handle` shall be a connection handle for an ACL connection.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.3.35.
     ///
     /// # Errors
     ///
-    /// Only underlying communication errors are reported
+    /// Only underlying communication errors are reported.
     ///
     /// # Generated Events
     ///
-    /// Returns the transmit power level in a Command Complete event.
+    /// A [Comand Complete](::event::command::ReturnParameters::ReadTxPowerLevel) event is
+    /// generated.
     fn read_tx_power_level(
         &mut self,
         conn_handle: ::ConnectionHandle,
@@ -193,12 +200,13 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// Returns the local version info in a Command complete event.
+    /// A [Comand Complete](::event::command::ReturnParameters::ReadLocalVersionInformation) event
+    /// is generated.
     fn read_local_version_information(&mut self) -> nb::Result<(), E>;
 
-    /// This command reads the list of HCI commands supported for the local Controller.
+    /// Reads the list of HCI commands supported for the local Controller.
     ///
-    /// This command shall return the Supported_Commands configuration parameter. It is implied that
+    /// This command shall return the supported commands configuration parameter. It is implied that
     /// if a command is listed as supported, the feature underlying that command is also supported.
     ///
     /// See the Bluetooth Spec, Vol 2, Part E, Section 6.27 for more information.
@@ -211,10 +219,11 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// Generates a command complete event with the local supported commands.
+    /// A [Command Complete](::event::command::ReturnParameters::ReadLocalSupportedCommands) event
+    /// is generated.
     fn read_local_supported_commands(&mut self) -> nb::Result<(), E>;
 
-    /// This command requests a list of the supported features for the local BR/EDR Controller.
+    /// Requests a list of the supported features for the local BR/EDR Controller.
     ///
     /// See the Bluetooth Spec, Vol 2, Part C, Section 3.3 for more information about the features.
     ///
@@ -226,7 +235,8 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// Generates a command complete event with the local supported features.
+    /// A [Command Complete](::event::command::ReturnParameters::ReadLocalSupportedFeatures) event
+    /// is generated.
     fn read_local_supported_features(&mut self) -> nb::Result<(), E>;
 
     /// On a BR/EDR Controller, this command reads the Bluetooth Controller address (BD_ADDR).
@@ -245,10 +255,10 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// Generates a command complete event with the BDADDR.
+    /// A [Command Complete](::event::command::ReturnParameters::ReadBdAddr) event is generated.
     fn read_bd_addr(&mut self) -> nb::Result<(), E>;
 
-    /// This command reads the Received Signal Strength Indication (RSSI) value from a Controller.
+    /// Reads the Received Signal Strength Indication (RSSI) value from a Controller.
     ///
     /// For a BR/EDR Controller, a connection handle is used as the Handle command parameter and
     /// return parameter. The RSSI parameter returns the difference between the measured Received
@@ -270,7 +280,7 @@ pub trait Hci<E, Header> {
     ///
     /// For an AMP Controller, a physical link handle is used for the Handle command parameter and
     /// return parameter. The meaning of the RSSI metric is AMP type specific and defined in the AMP
-    /// PALs (see Volume 5, Core System Package [AMP Controller volume]).
+    /// PALs (see Volume 5, Core System Package, AMP Controller volume).
     ///
     /// For an LE transport, a connection handle is used as the Handle command parameter and return
     /// parameter. The meaning of the RSSI metric is an absolute receiver signal strength value in
@@ -284,17 +294,17 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// Generates a command complete event with the RSSI value.
+    /// A [Command Complete](::event::command::ReturnParameters::ReadRssi) event is generated.
     fn read_rssi(&mut self, conn_handle: ::ConnectionHandle) -> nb::Result<(), E>;
 
-    /// The LE_Set_Event_Mask command is used to control which LE events are generated by the HCI
-    /// for the Host. If the bit in the LE_Event_Mask is set to a one, then the event associated
-    /// with that bit will be enabled. The Host has to deal with each event that is generated by an
-    /// LE Controller. The event mask allows the Host to control which events will interrupt it.
+    /// Controls which LE events are generated by the HCI for the Host. If the flag in `event_mask`
+    /// is set, then the event associated with that flag will be enabled. The Host has to deal with
+    /// each event that is generated by an LE Controller. The event mask allows the Host to control
+    /// which events will interrupt it.
     ///
-    /// For LE events to be generated, the LE Meta-Event bit in the Event_Mask shall also be set. If
-    /// that bit is not set, then LE events shall not be generated, regardless of how the
-    /// LE_Event_Mask is set.
+    /// For LE events to be generated, the [LE Meta-Event](EventFlags::LE_META_EVENT) flag in the
+    /// [Event Mask](Hci::set_event_mask) shall also be set. If that bit is not set, then LE events
+    /// shall not be generated, regardless of how the LE Event Mask is set.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.1.
     ///
@@ -304,24 +314,24 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// Generates a command complete event with the status.
+    /// A [Command Complete](::event::command::ReturnParameters::LeSetEventMask) event is
+    /// generated.
     fn le_set_event_mask(&mut self, event_mask: LeEventFlags) -> nb::Result<(), E>;
 
-    /// The LE_Read_Buffer_Size command is used to read the maximum size of the data portion of HCI
-    /// LE ACL Data Packets sent from the Host to the Controller.  The Host will segment the data
-    /// transmitted to the Controller according to these values, so that the HCI Data Packets will
-    /// contain data with up to this size. The LE_Read_Buffer_Size command also returns the total
-    /// number of HCI LE ACL Data Packets that can be stored in the data buffers of the
-    /// Controller. The LE_Read_Buffer_Size command must be issued by the Host before it sends any
+    /// Reads the maximum size of the data portion of HCI LE ACL Data Packets sent from the Host to
+    /// the Controller.  The Host will segment the data transmitted to the Controller according to
+    /// these values, so that the HCI Data Packets will contain data with up to this size. This
+    /// command also returns the total number of HCI LE ACL Data Packets that can be stored in the
+    /// data buffers of the Controller. This command must be issued by the Host before it sends any
     /// data to an LE Controller (see Section 4.1.1).
     ///
-    /// If the Controller returns a length value of zero, the Host shall use the Read_Buffer_Size
+    /// If the Controller returns a length value of zero, the Host shall use the `read_buffer_size`
     /// command to determine the size of the data buffers (shared between BR/EDR and LE
     /// transports).
     ///
-    /// Note: Both the Read_Buffer_Size and LE_Read_Buffer_Size commands may return buffer length
-    /// and number of packets parameter values that are nonzero. This allows a Controller to offer
-    /// different buffers and number of buffers for BR/EDR data packets and LE data packets.
+    /// Note: Both the `read_buffer_size` and `le_read_buffer_size` commands may return buffer
+    /// length and number of packets parameter values that are nonzero. This allows a Controller to
+    /// offer different buffers and number of buffers for BR/EDR data packets and LE data packets.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.2.
     ///
@@ -331,10 +341,11 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// Generates a command complete event with the buffer size and number of ACL data packets.
+    /// A [Command Complete](::event::command::ReturnParameters::LeReadBufferSize) event is
+    /// generated.
     fn le_read_buffer_size(&mut self) -> nb::Result<(), E>;
 
-    /// This command requests the list of the supported LE features for the Controller.
+    /// Requests the list of the supported LE features for the Controller.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.3.
     ///
@@ -344,30 +355,34 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// Generates a command complete event with the buffer size and number of ACL data packets.
+    /// A [Command Complete](::event::command::ReturnParameters::LeReadLocalSupportedFeatures) event
+    /// is generated.
     fn le_read_local_supported_features(&mut self) -> nb::Result<(), E>;
 
-    /// The LE_Set_Random_Address command is used by the Host to set the LE Random Device Address in
-    /// the Controller (see [Vol 6] Part B, Section 1.3).
+    /// Sets the LE Random Device Address in the Controller.
+    ///
+    /// See the Bluetooth spec, Vol 6, Part B, Section 1.3.
     ///
     /// Details added in v5.0:
     ///
     /// - If this command is used to change the address, the new random address shall take effect
-    ///   for advertising no later than the next successful LE Set Advertising Enable Command, for
-    ///   scanning no later than the next successful LE Set Scan Enable Command or LE Set Extended
-    ///   Scan Enable Command, and for initiating no later than the next successful LE Create
-    ///   Connection Command or LE Extended Create Connection Command.
+    ///   for advertising no later than the next successful
+    ///   [`le_set_advertising_enable`](Hci::le_set_advertising_enable) command, for scanning no
+    ///   later than the next successful [`le_set_scan_enable`](Hci::le_set_scan_enable) command or
+    ///   `le_set_extended_scan_enable` command, and for initiating no later than the next
+    ///   successful [`le_create_connection`](Hci::le_create_connection) command or
+    ///   `le_extended_create_connection` command.
     ///
     /// - Note: If Extended Advertising is in use, this command only affects the address used for
     ///   scanning and initiating. The addresses used for advertising are set by the
-    ///   LE_Set_Advertising_Set_Random_Address command (see Section 7.8.52).
+    ///   `le_set_advertising_set_random_address` command (see Section 7.8.52).
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.4.
     ///
     /// # Errors
     ///
     /// - If the given address does not meet the requirements from Vol 6, Part B, Section 1.3, a
-    ///   BadRandomAddress error is returned.
+    ///   [`BadRandomAddress`](Error::BadRandomAddress) error is returned.
     ///   - The 2 most significant bits of the (last byte of the) address must be 00 (non-resolvable
     ///     private address), 10 (resolvable private address), or 11 (static address).
     ///   - The random part of the address must contain at least one 0 and at least one 1.  For
@@ -379,10 +394,11 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated Events
     ///
-    /// A command complete event is generated.
+    /// A [Command Complete](::event::command::ReturnParameters::LeSetRandomAddress) event is
+    /// generated.
     ///
     /// (v5.0) If the Host issues this command when scanning or legacy advertising is enabled, the
-    /// Controller shall return the error code Command Disallowed (0x0C).
+    /// Controller shall return the error code [Command Disallowed](::Status::CommandDisallowed).
     fn le_set_random_address(&mut self, bd_addr: ::BdAddr) -> nb::Result<(), Error<E>>;
 
     /// Sets the advertising parameters on the Controller.
@@ -391,20 +407,24 @@ pub trait Hci<E, Header> {
     ///
     /// # Errors
     ///
-    /// - `Error::BadAdvertisingInterval` if the minimum is greater than the maximum, or if the
-    ///   minimum is less than 20 ms, or the maximum is greater than 10240 ms.
-    /// - `Error::BadChannelMap` if no channels are enabled in the channel map.
-    /// - `Error::BadAdvertisingIntervalMin` if the advertising type is
-    ///   `ScannableUndirected` or `NonconnectableUndirected` and the advertising interval minimum
-    ///   is less than 100 ms.  This restriction is removed in version 5.0.
+    /// - [`BadAdvertisingInterval`](Error::BadAdvertisingInterval) if the minimum is greater than
+    ///   the maximum, or if the minimum is less than 20 ms, or the maximum is greater than 10240
+    ///   ms.
+    /// - [`BadChannelMap`](Error::BadChannelMap) if no channels are enabled in the channel map.
+    /// - [`BadAdvertisingInterval`](Error::BadAdvertisingInterval) if the advertising type is
+    ///   [`ScannableUndirected`](AdvertisingType::ScannableUndirected) or
+    ///   [`NonConnectableUndirected`](AdvertisingType::NonConnectableUndirected) and the
+    ///   advertising interval minimum is less than 100 ms.  This restriction is removed in version
+    ///   5.0.
     /// - Underlying communication errors
     ///
     /// # Generated events
     ///
-    /// A command complete event is generated.
+    /// A [Command Complete](::event::command::ReturnParameters::LeSetAdvertisingParameters) event
+    /// is generated.
     ///
     /// The Host shall not issue this command when advertising is enabled in the Controller; if it
-    /// is the Command Disallowed error code shall be used.
+    /// is the [Command Disallowed](::Status::CommandDisallowed) error code shall be used.
     fn le_set_advertising_parameters(
         &mut self,
         params: &AdvertisingParameters,
@@ -420,13 +440,15 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// A command complete event is generated.
+    /// A [Command Complete](::event::command::ReturnParameters::LeReadAdvertisingChannelTxPower)
+    /// event is generated.
     fn le_read_advertising_channel_tx_power(&mut self) -> nb::Result<(), E>;
 
     /// Sets the data used in advertising packets that have a data field.
     ///
-    /// Only the significant part of the Advertising_Data should be transmitted in the advertising
-    /// packets, as defined in the Bluetooth spec, Vol 3, Part C, Section 11.
+    /// Only the significant part of the advertising data should be transmitted in the advertising
+    /// packets, as defined in the Bluetooth spec, Vol 3, Part C, Section 11. All bytes in `data`
+    /// are considered significant.
     ///
     /// If advertising is currently enabled, the Controller shall use the new data in subsequent
     /// advertising events. If an advertising event is in progress when this command is issued, the
@@ -437,18 +459,19 @@ pub trait Hci<E, Header> {
     ///
     /// # Errors
     ///
-    /// - `AdvertisingDataTooLong` if `data` is 32 bytes or more.
+    /// - [`AdvertisingDataTooLong`](Error::AdvertisingDataTooLong) if `data` is 32 bytes or more.
     /// - Underlying communication errors
     ///
     /// # Generated events
     ///
-    /// A command complete is generated.
+    /// A [Command Complete](::event::Event::CommandComplete) event is generated.
     fn le_set_advertising_data(&mut self, data: &[u8]) -> nb::Result<(), Error<E>>;
 
-    /// Provides data used in Scanning Packets that have a data field.
+    /// Provides data used in scanning packets that have a data field.
     ///
-    /// Only the significant part of the Scan_Response_Data should be transmitted in the Scanning
-    /// Packets, as defined in the Bluetooth spec, Vol 3, Part C, Section 11.
+    /// Only the significant part of the scan response data should be transmitted in the Scanning
+    /// Packets, as defined in the Bluetooth spec, Vol 3, Part C, Section 11.  All bytes in `data`
+    /// are considered significant.
     ///
     /// If advertising is currently enabled, the Controller shall use the new data in subsequent
     /// advertising events. If an advertising event is in progress when this command is issued, the
@@ -459,22 +482,23 @@ pub trait Hci<E, Header> {
     ///
     /// # Errors
     ///
-    /// - `AdvertisingDataTooLong` if `data` is 32 bytes or more.
+    /// - [`AdvertisingDataTooLong`](Error::AdvertisingDataTooLong) if `data` is 32 bytes or more.
     /// - Underlying communication errors
     ///
     /// # Generated events
     ///
-    /// A command complete is generated.
+    /// A [Command Complete](::event::command::ReturnParameters::LeSetScanResponseData) event is
+    /// generated.
     fn le_set_scan_response_data(&mut self, data: &[u8]) -> nb::Result<(), Error<E>>;
 
     /// Requests the Controller to start or stop advertising. The Controller manages the timing of
     /// advertisements as per the advertising parameters given in the
-    /// [`le_set_advertising_parameters`] command.
+    /// [`le_set_advertising_parameters`](Hci::le_set_advertising_parameters) command.
     ///
-    /// The Controller shall continue advertising until the Host issues an `le_set_advertise_enable`
-    /// command with enable set to `false` (Advertising is disabled) or until a connection is
-    /// created or until the Advertising is timed out due to high duty cycle Directed
-    /// Advertising. In these cases, advertising is then disabled.
+    /// The Controller shall continue advertising until the Host issues this command with enable set
+    /// to `false` (Advertising is disabled) or until a connection is created or until the
+    /// advertising is timed out due to high duty cycle directed advertising. In these cases,
+    /// advertising is then disabled.
     ///
     /// This function is renamed `le_set_advertising_enable` in Bluetooth v5.0.
     ///
@@ -486,42 +510,54 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// When the command has completed, a Command Complete event shall be generated.
+    /// When the command has completed, a [Command
+    /// Complete](::event::command::ReturnParameters::LeSetAdvertiseEnable) event shall be
+    /// generated.
     ///
-    /// If the `advertising_type` parameter is [`AdvertisingType::ConnectableDirectedHighDutyCycle`]
-    /// and the directed advertising fails to create a connection, an LE Connection Complete event
-    /// shall be generated with the Status code set to [`::Status::DirectedAdvertisingTimeout`].
+    /// If [`advertising_type`](AdvertisingParameters::advertising_type) is
+    /// [`ConnectableDirectedHighDutyCycle`](AdvertisingType::ConnectableDirectedHighDutyCycle) and
+    /// the directed advertising fails to create a connection, an [LE Connection
+    /// Complete](::event::Event::LeConnectionComplete) event shall be generated with the Status
+    /// code set to [`AdvertisingTimeout`](::Status::AdvertisingTimeout).
     ///
-    /// If the `advertising_type` parameter is [`ConnectableUndirected`],
-    /// [`ConnectableDirectedHighDutyCycle`], or [`ConnectableDirectedLowDutyCycle`] and a
-    /// connection is established, an LE Connection Complete event shall be generated.
+    /// If [`advertising_type`](AdvertisingParameters::advertising_type) is
+    /// [`ConnectableUndirected`](AdvertisingType::ConnectableUndirected),
+    /// [`ConnectableDirectedHighDutyCycle`](AdvertisingType::ConnectableDirectedHighDutyCycle), or
+    /// [`ConnectableDirectedLowDutyCycle`](AdvertisingType::ConnectableDirectedLowDutyCycle) and a
+    /// connection is established, an [LE Connection Complete](::event::Event::LeConnectionComplete)
+    /// event shall be generated.
     ///
-    /// Note: There is a possible race condition if `enable` is set to false (Disable) and the
-    /// `advertising_type` parameter is `ConnectableUndirected`, `ConnectableDirectedHighDutyCycle`,
-    /// or `ConnectableDirectedLowDutyCycle`. The advertisements might not be stopped before a
-    /// connection is created, and therefore both the Command Complete event and an LE Connection
-    /// Complete event could be generated. This can also occur when high duty cycle directed
-    /// advertising is timed out and this command disables advertising.
+    /// Note: There is a possible race condition if `enable` is set to false (Disable) and
+    /// [`advertising_type`](AdvertisingParameters::advertising_type) is
+    /// [`ConnectableUndirected`](AdvertisingType::ConnectableUndirected),
+    /// [`ConnectableDirectedHighDutyCycle`](AdvertisingType::ConnectableDirectedHighDutyCycle), or
+    /// [`ConnectableDirectedLowDutyCycle`](AdvertisingType::ConnectableDirectedLowDutyCycle). The
+    /// advertisements might not be stopped before a connection is created, and therefore both the
+    /// Command Complete event and an LE Connection Complete event could be generated. This can also
+    /// occur when high duty cycle directed advertising is timed out and this command disables
+    /// advertising.
     #[cfg(not(feature = "version-5-0"))]
     fn le_set_advertise_enable(&mut self, enable: bool) -> nb::Result<(), E>;
 
     /// Requests the Controller to start or stop advertising. The Controller manages the timing of
     /// advertisements as per the advertising parameters given in the
-    /// `le_set_advertising_parameters` command.
+    /// [`le_set_advertising_parameters`](Hci::le_set_advertising_parameters) command.
     ///
-    /// The Controller shall continue advertising until the Host issues an
-    /// `le_set_advertising_enable` command with `enable` set to false (Advertising is disabled) or
-    /// until a connection is created or until the Advertising is timed out due to high duty cycle
-    /// Directed Advertising. In these cases, advertising is then disabled.
+    /// The Controller shall continue advertising until the Host issues this command with `enable`
+    /// set to false (Advertising is disabled) or until a connection is created or until the
+    /// advertising is timed out due to high duty cycle directed advertising. In these cases,
+    /// advertising is then disabled.
     ///
-    /// If the advertising parameters' `own_address_type` parameter is set to 0x01 and the random
-    /// address for the device has not been initialized, the Controller shall return the error code
-    /// [`::Status::InvalidHciCommandParameters`].
+    /// If [`own_address_type`](AdvertisingParameters::own_address_type) is set to
+    /// [`Random`](OwnAddressType::Random) and the random address for the device has not been
+    /// initialized, the Controller shall return the error code
+    /// [`InvalidParameters`](::Status::InvalidParameters).
     ///
-    /// If the advertising parameters' `own_address_type` parameter is set to 0x03, the controller's
-    /// resolving list did not contain a matching entry, and the random address for the device has
-    /// not been initialized, the Controller shall return the error code
-    /// [`::Status::InvalidHciCommandParameters`].
+    /// If [`own_address_type`](AdvertisingParameters::own_address_type) is set to
+    /// [`PrivateFallbackRandom`](OwnAddressType::PrivateFallbackRandom), the controller's resolving
+    /// list did not contain a matching entry, and the random address for the device has not been
+    /// initialized, the Controller shall return the error code
+    /// [`InvalidParameters`](::Status::InvalidParameters).
     ///
     /// Note: Enabling advertising when it is already enabled can cause the random address to
     /// change. Disabling advertising when it is already disabled has no effect.
@@ -536,43 +572,53 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// When the command has completed, a Command Complete event shall be generated.
+    /// A [Command Complete](::event::command::ReturnParameters::LeSetAdvertisingEnable) event is
+    /// generated.
     ///
-    /// If the `advertising_type` parameter is [`AdvertisingType::ConnectableDirectedHighDutyCycle`]
-    /// and the directed advertising fails to create a connection, an LE Connection Complete event
-    /// shall be generated with the Status code set to [`::Status::DirectedAdvertisingTimeout`].
+    /// If [`advertising_type`](AdvertisingParameters::advertising_type) is
+    /// [`ConnectableDirectedHighDutyCycle`](AdvertisingType::ConnectableDirectedHighDutyCycle) and
+    /// the directed advertising fails to create a connection, an [LE Connection
+    /// Complete](::event::Event::LeConnectionComplete) event shall be generated with the Status
+    /// code set to [`AdvertisingTimeout`](::Status::AdvertisingTimeout).
     ///
-    /// If the `advertising_type` parameter is [`ConnectableUndirected`],
-    /// [`ConnectableDirectedHighDutyCycle`], or [`ConnectableDirectedLowDutyCycle`] and a
-    /// connection is created, an LE Connection Complete or LE Enhanced Connection Complete event
-    /// shall be generated.
+    /// If [`advertising_type`](AdvertisingParameters::advertising_type) is
+    /// [`ConnectableUndirected`](AdvertisingType::ConnectableUndirected),
+    /// [`ConnectableDirectedHighDutyCycle`](AdvertisingType::ConnectableDirectedHighDutyCycle), or
+    /// [`ConnectableDirectedLowDutyCycle`](AdvertisingType::ConnectableDirectedLowDutyCycle) and a
+    /// connection is created, an [LE Connection Complete](::event::Event::LeConnectionComplete) or
+    /// LE Enhanced Connection Complete event shall be generated.
     ///
-    /// Note: There is a possible race condition if `enable` is set to false (Disable) and the
-    /// `advertising_type` parameter is `ConnectableUndirected`, `ConnectableDirectedHighDutyCycle`,
-    /// or `ConnectableDirectedLowDutyCycle`. The advertisements might not be stopped before a
-    /// connection is created, and therefore both the Command Complete event and an LE Connection
-    /// Complete event or an LE Enhanced Connection Complete event could be generated. This can also
-    /// occur when high duty cycle directed advertising is timed out and this command disables
-    /// advertising.
+    /// Note: There is a possible race condition if `enable` is set to false (Disable) and
+    /// [`advertising_type`](AdvertisingParameters::advertising_type) is
+    /// [`ConnectableUndirected`](AdvertisingType::ConnectableUndirected),
+    /// [`ConnectableDirectedHighDutyCycle`](AdvertisingType::ConnectableDirectedHighDutyCycle), or
+    /// [`ConnectableDirectedLowDutyCycle`](AdvertisingType::ConnectableDirectedLowDutyCycle). The
+    /// advertisements might not be stopped before a connection is created, and therefore both the
+    /// Command Complete event and an LE Connection Complete event or an LE Enhanced Connection
+    /// Complete event could be generated. This can also occur when high duty cycle directed
+    /// advertising is timed out and this command disables advertising.
     #[cfg(feature = "version-5-0")]
     fn le_set_advertising_enable(&mut self, enable: bool) -> nb::Result<(), E>;
 
     /// Sets the scan parameters.
     ///
     /// The Host shall not issue this command when scanning is enabled in the Controller; if it is
-    /// the [`::Status::CommandDisallowed`] error code shall be used.
+    /// the [`CommandDisallowed`](::Status::CommandDisallowed) error code shall be used.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.10.
     ///
     /// # Errors
     ///
-    /// - `BadScanInterval` if either `scan_interval` or `scan_window` is too short (less than 2.5
-    ///   ms) or too long (more than 10.24 s), or if `scan_window` is longer than `scan_interval`,
+    /// - [`BadScanInterval`](Error::BadScanInterval) if either
+    ///   [`scan_interval`](ScanParameters::scan_interval) or
+    ///   [`scan_window`](ScanParameters::scan_window) is too short (less than 2.5 ms) or too long
+    ///   (more than 10.24 s), or if `scan_window` is longer than `scan_interval`.
     /// - Underlying communication errors
     ///
     /// # Generated events
     ///
-    /// A command complete event is generated
+    /// A [Command Complete](::event::command::ReturnParameters::LeSetScanParameters) event is
+    /// generated.
     fn le_set_scan_parameters(&mut self, params: &ScanParameters) -> nb::Result<(), Error<E>>;
 
     /// Starts scanning. Scanning is used to discover advertising devices nearby.
@@ -581,12 +627,14 @@ pub trait Hci<E, Header> {
     /// reports to the Host, or if the Link Layer should generate advertising reports for each
     /// packet received.
     ///
-    /// If the scanning parameters' Own_Address_Type parameter is set to 0x01 or 0x03 and the random
-    /// address for the device has not been initialized, the Controller shall return the error code
-    /// Invalid HCI Command Parameters (0x12).
+    /// If [`own_address_type`](ScanParameters::own_address_type) is set to
+    /// [`Random`](OwnAddressType::Random) or
+    /// [`PrivateFallbackRandom`](OwnAddressType::PrivateFallbackRandom) and the random address for
+    /// the device has not been initialized, the Controller shall return the error code
+    /// [`InvalidParameters`](::Status::InvalidParameters).
     ///
-    /// If the LE_Scan_Enable parameter is set to 0x01 and scanning is already enabled, any change
-    /// to the Filter_Duplicates setting shall take effect.
+    /// If `enable` is true and scanning is already enabled, any change to the `filter_duplicates`
+    /// setting shall take effect.
     ///
     /// Note: Disabling scanning when it is disabled has no effect.
     ///
@@ -598,50 +646,59 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// A command complete event is generated.
+    /// A [Command Complete](::event::command::ReturnParameters::LeSetScanEnable) event is
+    /// generated.
     ///
-    /// Zero or more LE Advertising Reports are generated by the Controller based on advertising
-    /// packets received and the duplicate filtering. More than one advertising packet may be
-    /// reported in each LE Advertising Report event.
+    /// Zero or more [LE Advertising Reports](::event::Event::LeAdvertisingReport) are generated by
+    /// the Controller based on advertising packets received and the duplicate filtering. More than
+    /// one advertising packet may be reported in each LE Advertising Report event.
     fn le_set_scan_enable(&mut self, enable: bool, filter_duplicates: bool) -> nb::Result<(), E>;
 
-    /// Create a Link Layer connection to a connectable advertiser.
+    /// Creates a Link Layer connection to a connectable advertiser.
     ///
-    /// The Host shall not issue this command when another LE_Create_Connection is pending in the
-    /// Controller; if this does occur the Controller shall return the `::Status::CommandDisallowed`
-    /// error code shall be used.
+    /// The Host shall not issue this command when another `le_create_connection` is pending in the
+    /// Controller; if this does occur the Controller shall return the
+    /// [`CommandDisallowed`](::Status::CommandDisallowed) error code.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.12.
     ///
     /// # Errors
     ///
-    /// - `BadScanInterval` if either `scan_interval` or `scan_window` are too short (less than 2.5
-    ///   msec) or too long (more than 10.24 s), or `scan_window` is longer than `scan_interval`.
-    /// - `BadConnectionInterval` if the connection interval is inverted, i.e. if the first value
-    ///   (min) is greater than the second (max), or if either value is out of range (7.5 ms to 4
-    ///   sec).
-    /// - `BadConnectionLatency` if `conn_latency` is greater than 514.
-    /// - `BadConnectionLengthRange` if the max expected connection length is less than the min
-    ///   expected connection length.
-    /// - `BadSupervisionTimeout` if `supervision_timeout` is too short (less than 100 ms) or too
-    ///   long (more than 32 s).
+    /// - [`BadScanInterval`](Error::BadScanInterval) if either
+    ///   [`scan_interval`](ConnectionParameters::scan_interval) or
+    ///   [`scan_window`](ConnectionParameters::scan_window) are too short (less than 2.5 msec) or
+    ///   too long (more than 10.24 s), or `scan_window` is longer than `scan_interval`.
+    /// - [`BadConnectionInterval`](Error::BadConnectionInterval) if the [connection
+    ///   interval](ConnectionParameters::conn_interval) is inverted, i.e. if the first value (min)
+    ///   is greater than the second (max), or if either value is out of range (7.5 ms to 4 sec).
+    /// - [`BadConnectionLatency`](Error::BadConnectionLatency) if
+    ///   [`conn_latency`](ConnectionParameters::conn_latency) is greater than 514.
+    /// - [`BadConnectionLengthRange`](Error::BadConnectionLengthRange) if the max expected
+    ///   [connection length](ConnectionParameters::expected_connection_length_range) is less than
+    ///   the min expected connection length.
+    /// - [`BadSupervisionTimeout`](Error::BadSupervisionTimeout) if
+    ///   [`supervision_timeout`](ConnectionParameters::supervision_timeout) is too short (less than
+    ///   100 ms) or too long (more than 32 s).
     /// - Underlying communication errors
     ///
     /// # Generated events
     ///
-    /// The Controller sends the Command Status event to the Host when the event is received.  An LE
-    /// Connection Complete event shall be generated when a connection is created or the connection
-    /// creation procedure is cancelled.
+    /// The Controller sends the [Command Status](::event::Event::CommandStatus) event to the Host
+    /// when the event is received.  An [LE Connection
+    /// Complete](::event::Event::LeConnectionComplete) event shall be generated when a connection
+    /// is created or the connection creation procedure is cancelled.
     ///
     /// Note: No Command Complete event is sent by the Controller to indicate that this command has
     /// been completed. Instead, the LE Connection Complete event indicates that this command has
     /// been completed.
     fn le_create_connection(&mut self, params: &ConnectionParameters) -> nb::Result<(), Error<E>>;
 
-    /// Cancels the `le_create_connection` or `le_extended_create_connection` (for v5.0)
-    /// command. This command shall only be issued after the `le_create_connection` command has been
-    /// issued, a `CommandStatus` event has been received for the `le_create_connection` command and
-    /// before the `LeConnectionComplete` event.
+    /// Cancels the [`le_create_connection`](Hci::le_create_connection) or
+    /// `le_extended_create_connection` (for v5.0) command. This command shall only be issued after
+    /// the [`le_create_connection`](Hci::le_create_connection) command has been issued, a
+    /// [`CommandStatus`](::event::Event::CommandStatus) event has been received for the
+    /// [`le_create_connection`](Hci::le_create_connection) command and before the
+    /// [`LeConnectionComplete`](::event::Event::LeConnectionComplete) event.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.13.
     ///
@@ -651,21 +708,24 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// A command complete event shall be generated.
+    /// A [Command Complete](::event::command::ReturnParameters::LeCreateConnectionCancel) event
+    /// shall be generated.
     ///
-    /// If the `le_create_connection_cancel` command is sent to the Controller without a preceding
-    /// `le_create_connection` command, the Controller shall return a Command Complete event with
-    /// the error code `::Status::CommandDisallowed`.
+    /// If this command is sent to the Controller without a preceding
+    /// [`le_create_connection`](Hci::le_create_connection) command, the Controller shall return a
+    /// [Command Complete](::event::command::ReturnParameters::LeCreateConnectionCancel) event with
+    /// the error code [`CommandDisallowed`](::Status::CommandDisallowed).
     ///
-    /// The LE Connection Complete event with the error code `::Status::UnknownConnectionIdentifier`
-    /// shall be sent after the Command Complete event for the `le_create_connection_cancel` command
-    /// if the cancellation was successful.
+    /// The [LE Connection Complete](::event::Event::LeConnectionComplete) event with the error code
+    /// [`UnknownConnectionId`](::Status::UnknownConnectionId) shall be sent after the Command
+    /// Complete event for this command if the cancellation was successful.
     fn le_create_connection_cancel(&mut self) -> nb::Result<(), E>;
 
-    /// The `le_read_white_list_size` command is used to read the total number of White List entries
-    /// that can be stored in the Controller. Note: The number of entries that can be stored is not
-    /// fixed and the Controller can change it at any time (e.g. because the memory used to store
-    /// the White List can also be used for other purposes).
+    /// Reads the total number of White List entries that can be stored in the Controller.
+    ///
+    /// Note: The number of entries that can be stored is not fixed and the Controller can change it
+    /// at any time (e.g. because the memory used to store the White List can also be used for other
+    /// purposes).
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.14.
     ///
@@ -675,7 +735,8 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// A command complete event is generated.
+    /// A [Command Complete](::event::command::ReturnParameters::LeReadWhiteListSize) event is
+    /// generated.
     fn le_read_white_list_size(&mut self) -> nb::Result<(), E>;
 
     /// Clears the white list stored in the Controller.
@@ -683,8 +744,8 @@ pub trait Hci<E, Header> {
     /// This command can be used at any time except when:
     /// - the advertising filter policy uses the white list and advertising is enabled.
     /// - the scanning filter policy uses the white list and scanning is enabled.
-    /// - the initiator filter policy uses the white list and an LE_Create_Connection command is
-    ///   outstanding.
+    /// - the initiator filter policy uses the white list and an
+    ///   [`le_create_connection`](Hci::le_create_connection) command is outstanding.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.15
     ///
@@ -694,7 +755,8 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// A command complete event is generated.
+    /// A [Command Complete](::event::command::ReturnParameters::LeClearWhiteList) event is
+    /// generated.
     fn le_clear_white_list(&mut self) -> nb::Result<(), E>;
 
     /// Adds a single device to the white list stored in the Controller.
@@ -702,8 +764,8 @@ pub trait Hci<E, Header> {
     /// This command can be used at any time except when:
     /// - the advertising filter policy uses the white list and advertising is enabled.
     /// - the scanning filter policy uses the white list and scanning is enabled.
-    /// - the initiator filter policy uses the white list and a create connection command is
-    ///   outstanding.
+    /// - the initiator filter policy uses the white list and a
+    ///   [`le_create_connection`](Hci::le_create_connection) command is outstanding.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.16.
     ///
@@ -713,9 +775,9 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// A command complete event is generated.  When a Controller cannot add a device to the White
-    /// List because there is no space available, it shall return the error code
-    /// `::Status::MemoryCapacityExceeded`.
+    /// A [Command Complete](::event::command::ReturnParameters::LeAddDeviceToWhiteList) event is
+    /// generated. When a Controller cannot add a device to the White List because there is no space
+    /// available, it shall return [`OutOfMemory`](::Status::OutOfMemory).
     fn le_add_device_to_white_list(&mut self, addr: ::BdAddrType) -> nb::Result<(), E>;
 
     /// Adds anonymous devices sending advertisements to the white list stored in the Controller.
@@ -723,8 +785,8 @@ pub trait Hci<E, Header> {
     /// This command can be used at any time except when:
     /// - the advertising filter policy uses the white list and advertising is enabled.
     /// - the scanning filter policy uses the white list and scanning is enabled.
-    /// - the initiator filter policy uses the white list and a create connection command is
-    ///   outstanding.
+    /// - the initiator filter policy uses the white list and a
+    ///   [`le_create_connection`](Hci::le_create_connection) command is outstanding.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.16.
     ///
@@ -734,9 +796,9 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// A command complete event with `ReturnParameters::LeAddDeviceToWhiteList` is generated.  When
-    /// a Controller cannot add a device to the White List because there is no space available, it
-    /// shall return the error code `::Status::MemoryCapacityExceeded`.
+    /// A [Command Complete](::event::command::ReturnParameters::LeAddDeviceToWhiteList) event is
+    /// generated.  When a Controller cannot add a device to the White List because there is no
+    /// space available, it shall return [`OutOfMemory`](::Status::OutOfMemory).
     #[cfg(feature = "version-5-0")]
     fn le_add_anon_advertising_devices_to_white_list(&mut self) -> nb::Result<(), E>;
 
@@ -745,8 +807,8 @@ pub trait Hci<E, Header> {
     /// This command can be used at any time except when:
     /// - the advertising filter policy uses the white list and advertising is enabled.
     /// - the scanning filter policy uses the white list and scanning is enabled.
-    /// - the initiator filter policy uses the white list and a create connection command is
-    ///   outstanding.
+    /// - the initiator filter policy uses the white list and a
+    ///   [`le_create_connection`](Hci::le_create_connection) command is outstanding.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.17.
     ///
@@ -756,7 +818,8 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// A command complete event is generated.
+    /// A [Command Complete](::event::command::ReturnParameters::LeRemoveDeviceFromWhiteList) event
+    /// is generated.
     fn le_remove_device_from_white_list(&mut self, addr: ::BdAddrType) -> nb::Result<(), E>;
 
     /// Removes anonymous devices sending advertisements from the white list stored in the
@@ -765,8 +828,8 @@ pub trait Hci<E, Header> {
     /// This command can be used at any time except when:
     /// - the advertising filter policy uses the white list and advertising is enabled.
     /// - the scanning filter policy uses the white list and scanning is enabled.
-    /// - the initiator filter policy uses the white list and a create connection command is
-    ///   outstanding.
+    /// - the initiator filter policy uses the white list and a
+    ///   [`le_create_connection`](Hci::le_create_connection) command is outstanding.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.17.
     ///
@@ -776,12 +839,13 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// A command complete event is generated.
+    /// A [Command Complete](::event::command::ReturnParameters::LeRemoveDeviceFromWhiteList) event
+    /// is generated.
     #[cfg(feature = "version-5-0")]
     fn le_remove_anon_advertising_devices_from_white_list(&mut self) -> nb::Result<(), E>;
 
     /// Changes the Link Layer connection parameters of a connection. This command may be issued on
-    /// both the master and slave.
+    /// both the central and peripheral devices.
     ///
     /// The actual parameter values selected by the Link Layer may be different from the parameter
     /// values provided by the Host through this command.
@@ -790,21 +854,26 @@ pub trait Hci<E, Header> {
     ///
     /// # Errors
     ///
-    /// - `BadConnectionInterval` if the connection interval is inverted, i.e. if the first value
+    /// - [`BadConnectionInterval`](Error::BadConnectionInterval) if the [connection
+    ///   interval](`ConnectionUpdateParameters::conn_interval) is inverted, i.e. if the first value
     ///   (min) is greater than the second (max), or if either value is out of range (7.5 ms to 4
     ///   sec).
-    /// - `BadConnectionLatency` if `conn_latency` is greater than 514.
-    /// - `BadConnectionLengthRange` if the max expected connection length is less than the min
-    ///   expected connection length.
-    /// - `BadSupervisionTimeout` if `supervision_timeout` is too short (less than 100 ms) or too
-    ///   long (more than 32 s).
+    /// - [`BadConnectionLatency`](Error::BadConnectionLatency) if
+    ///   [`conn_latency`](`ConnectionUpdateParameters::conn_latency) is greater than 514.
+    /// - [`BadConnectionLengthRange`](Error::BadConnectionLengthRange) if the max [expected
+    ///   connection length](ConnectionUpdateParameters::expected_connection_length_range) is less
+    ///   than the min expected connection length.
+    /// - [`BadSupervisionTimeout`](Error::BadSupervisionTimeout) if
+    ///   [`supervision_timeout`](ConnectionUpdateParameters::supervision_timeout) is too short
+    ///   (less than 100 ms) or too long (more than 32 s).
     /// - Underlying communication errors
     ///
     /// # Generated events
     ///
-    /// When the Controller receives the LE_Connection_Update command, the Controller sends the
-    /// Command Status event to the Host. The LE Connection Update Complete event shall be generated
-    /// after the connection parameters have been applied by the Controller.
+    /// When the Controller receives the command, the Controller sends the [Command
+    /// Status](::event::Event::CommandStatus) event to the Host. The [LE Connection Update
+    /// Complete](::event::Event::LeConnectionUpdateComplete) event shall be generated after the
+    /// connection parameters have been applied by the Controller.
     ///
     /// Note: a Command Complete event is not sent by the Controller to indicate that this command
     /// has been completed. Instead, the LE Connection Update Complete event indicates that this
@@ -814,27 +883,28 @@ pub trait Hci<E, Header> {
         params: &ConnectionUpdateParameters,
     ) -> nb::Result<(), Error<E>>;
 
-    /// The `le_set_host_channel_classification` command allows the Host to specify a channel
-    /// classification for data channels based on its "local information". This classification
-    /// persists until overwritten with a subsequent `le_set_host_channel_classification` command or
-    /// until the Controller is reset using the [`reset`] command.
+    /// This command allows the Host to specify a channel classification for data channels based on
+    /// its "local information". This classification persists until overwritten with a subsequent
+    /// `le_set_host_channel_classification` command or until the Controller is reset using the
+    /// [`reset`](Hci::reset) command.
     ///
     /// If this command is used, the Host should send it within 10 seconds of knowing that the
     /// channel classification has changed. The interval between two successive commands sent shall
     /// be at least one second.
     ///
-    /// This command shall only be used when the local device supports the Master role.
+    /// This command shall only be used when the local device supports the central role.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.19.
     ///
     /// # Errors
     ///
-    /// - `AllChannelsBad` if all channels are reported as bad.
+    /// - [`NoValidChannel`](Error::NoValidChannel) if all channels are reported as bad.
     /// - Underlying communication errors are reported.
     ///
     /// # Generated events
     ///
-    /// A command complete event is generated.
+    /// A [Command Complete](::event::command::ReturnParameters::LeSetHostChannelClassification)
+    /// event is generated.
     fn le_set_host_channel_classification(
         &mut self,
         channels: ::ChannelClassification,
@@ -853,7 +923,8 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// A command complete event is generated.
+    /// A [Command Complete](::event::command::ReturnParameters::LeReadChannelMap) event is
+    /// generated.
     fn le_read_channel_map(&mut self, conn_handle: ::ConnectionHandle) -> nb::Result<(), E>;
 
     /// Requests a list of the used LE features from the remote device.  This command shall return a
@@ -869,25 +940,26 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// When the Controller receives the LE_Read_Remote_Used_Features command, the Controller shall
-    /// send the Command Status event to the Host. When the Controller has completed the procedure
-    /// to determine the remote features, the Controller shall send a LE Read Remote Used Features
-    /// Complete event to the Host.
+    /// When the Controller receives this command, the Controller shall send the [Command
+    /// Status](`::event::Event::CommandStatus) event to the Host. When the Controller has completed
+    /// the procedure to determine the remote features, the Controller shall send a [LE Read Remote
+    /// Used Features Complete](::event::Event::LeReadRemoteUsedFeaturesComplete) event to the Host.
     ///
-    /// The LE Read Remote Used Features Complete event contains the status of this command, and the
-    /// parameter describing the used features of the remote device.
+    /// The [LE Read Remote Used Features
+    /// Complete](::event::Event::LeReadRemoteUsedFeaturesComplete) event contains the status of
+    /// this command, and the parameter describing the used features of the remote device.
     ///
     /// Note: A Command Complete event is not sent by the Controller to indicate that this command
-    /// has been completed. Instead, the LE Read Remote Used Fea- tures Complete event indicates
-    /// that this command has been completed.
+    /// has been completed. Instead, the LE Read Remote Used Features Complete event indicates that
+    /// this command has been completed.
     fn le_read_remote_used_features(
         &mut self,
         conn_handle: ::ConnectionHandle,
     ) -> nb::Result<(), E>;
 
-    /// The `le_encrypt` command is used to request the Controller to encrypt the plaintext data in
-    /// the command using the key given in the command and returns the encrypted data to the
-    /// Host. The AES-128 bit block cypher is defined in NIST Publication
+    /// Requests the Controller to encrypt the plaintext data in the command using the key given in
+    /// the command and returns the encrypted data to the Host. The AES-128 bit block cypher is
+    /// defined in NIST Publication
     /// [FIPS-197](http://csrc.nist.gov/publications/fips/fips197/fips-197.pdf).
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.22.
@@ -898,12 +970,12 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// A command complete is generated.
+    /// A [Command Complete](::event::command::ReturnParameters::LeEncrypt) event is generated.
     fn le_encrypt(&mut self, params: &AesParameters) -> nb::Result<(), E>;
 
     /// Requests the Controller to generate 8 octets of random data to be sent to the Host. The
     /// random number shall be generated according to the Bluetooth spec, Vol 2, Part H, Section 2
-    /// if the LE Feature (LL Encryption) is supported.
+    /// if the [LL Encryption](::event::command::LmpFeatures::ENCRYPTION) Feature is supported.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.23.
     ///
@@ -913,7 +985,7 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// A command complete is generated.
+    /// A [Command Complete](::event::command::ReturnParameters::LeRand) event is generated.
     fn le_rand(&mut self) -> nb::Result<(), E>;
 
     /// Authenticates the given encryption key associated with the remote device specified by the
@@ -927,7 +999,7 @@ pub trait Hci<E, Header> {
     /// On an authentication failure, the connection shall be automatically disconnected by the Link
     /// Layer. If this command succeeds, then the connection shall be encrypted.
     ///
-    /// This command shall only be used when the local device's role is Master.
+    /// This command shall only be used when the local device is the central device.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.24.
     ///
@@ -937,19 +1009,22 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// When the Controller receives the LE_Start_Encryption command it shall send the Command
-    /// Status event to the Host. If the connection is not encrypted when this command is issued, an
-    /// Encryption Change event shall occur when encryption has been started for the connection. If
-    /// the connection is encrypted when this command is issued, an Encryption Key Refresh Complete
-    /// event shall occur when encryption has been resumed.
+    /// When the Controller receives this command it shall send the [Command
+    /// Status](::event::Event::CommandStatus) event to the Host. If the connection is not encrypted
+    /// when this command is issued, an [Encryption Change](::event::Event::EncryptionChange) event
+    /// shall occur when encryption has been started for the connection. If the connection is
+    /// encrypted when this command is issued, an [Encryption Key Refresh
+    /// Complete](::event::Event::EncryptionKeyRefreshComplete) event shall occur when encryption
+    /// has been resumed.
     ///
     /// Note: A Command Complete event is not sent by the Controller to indicate that this command
     /// has been completed. Instead, the Encryption Change or Encryption Key Refresh Complete events
     /// indicate that this command has been completed.
     fn le_start_encryption(&mut self, params: &EncryptionParameters) -> nb::Result<(), E>;
 
-    /// Replies to an LE Long Term Key Request event from the Controller, and specifies the long
-    /// term key parameter that shall be used for this connection handle.
+    /// Replies to an [LE Long Term Key Request](::event::Event::LeLongTermKeyRequest) event from
+    /// the Controller, and specifies the long term key parameter that shall be used for this
+    /// connection handle.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.25.
     ///
@@ -959,15 +1034,16 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// A command complete event is generated.
+    /// A [Command Complete](::event::command::ReturnParameters::LeLongTermKeyRequestReply) event is
+    /// generated.
     fn le_long_term_key_request_reply(
         &mut self,
         conn_handle: ::ConnectionHandle,
         key: &EncryptionKey,
     ) -> nb::Result<(), E>;
 
-    /// Replies to an LE Long Term Key Request event from the Controller if the Host cannot provide
-    /// a Long Term Key for this connection handle.
+    /// Replies to an [LE Long Term Key Request](::event::Event::LeLongTermKeyRequest) event from
+    /// the Controller if the Host cannot provide a Long Term Key for this connection handle.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.26.
     ///
@@ -977,7 +1053,8 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// A command complete event is generated.
+    /// A [Command Complete](::event::command::ReturnParameters::LeLongTermKeyRequestNegativeReply)
+    /// event is generated.
     fn le_long_term_key_request_negative_reply(
         &mut self,
         conn_handle: ::ConnectionHandle,
@@ -993,7 +1070,8 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// A command complete event is generated.
+    /// A [Command Complete](::event::command::ReturnParameters::LeReadSupportedStates) event is
+    /// generated.
     fn le_read_supported_states(&mut self) -> nb::Result<(), E>;
 
     /// Starts a test where the DUT receives test reference packets at a fixed interval. The tester
@@ -1003,32 +1081,38 @@ pub trait Hci<E, Header> {
     ///
     /// # Errors
     ///
-    /// - InvalidTestChannel if the channel is out of range (greater than 39).
+    /// - [`InvalidTestChannel`](Error::InvalidTestChannel) if the channel is out of range (greater
+    ///   than 39).
     /// - Underlying communication errors
     ///
     /// # Generated events
     ///
-    /// A command complete event is generated.
+    /// A [Command Complete](::event::command::ReturnParameters::LeReceiverTest) event is
+    /// generated.
     fn le_receiver_test(&mut self, channel: u8) -> nb::Result<(), Error<E>>;
 
     /// Starts a test where the DUT generates test reference packets at a fixed interval. The
     /// Controller shall transmit at maximum power.
     ///
-    /// An LE Controller supporting the LE_Transmitter_Test command shall support `payload` values
-    /// `PrbS9`, `Nibbles10` and `Bits10`. An LE Controller may support other values of
+    /// An LE Controller supporting the `le_transmitter_test` command shall support `payload` values
+    /// [`PrbS9`](TestPacketPayload::PrbS9), [`Nibbles10`](TestPacketPayload::Nibbles10) and
+    /// [`Bits10`](TestPacketPayload::Bits10). An LE Controller may support other values of
     /// `payload`.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.29.
     ///
     /// # Errors
     ///
-    /// - InvalidTestChannel if the channel is out of range (greater than 39).
-    /// - InvalidTestPayloadLength if `payload_length` is out of range (greater than 37).
+    /// - [`InvalidTestChannel`](Error::InvalidTestChannel) if the channel is out of range (greater
+    ///   than 39).
+    /// - [`InvalidTestPayloadLength`](Error::InvalidTestPayloadLength) if `payload_length` is out
+    ///   of range (greater than 37).
     /// - Underlying communication errors.
     ///
     /// # Generated events
     ///
-    /// A command complete event is generated.
+    /// A [Command Complete](::event::command::ReturnParameters::LeTransmitterTest) event is
+    /// generated.
     fn le_transmitter_test(
         &mut self,
         channel: u8,
@@ -1046,7 +1130,7 @@ pub trait Hci<E, Header> {
     ///
     /// # Generated events
     ///
-    /// A command complete event is generated.
+    /// A [Command Complete](::event::command::ReturnParameters::LeTestEnd) event is generated.
     fn le_test_end(&mut self) -> nb::Result<(), E>;
 }
 
@@ -1054,17 +1138,17 @@ pub trait Hci<E, Header> {
 /// of communication errors.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Error<E> {
-    /// For the Disconnect command: The provided reason is not a valid disconnection reason.
-    /// Includes the reported reason.
+    /// For the [`disconnect`](Hci::disconnect) command: The provided reason is not a valid
+    /// disconnection reason. Includes the reported reason.
     BadDisconnectionReason(::Status),
 
-    /// For the LE Set Random Address command: The provided address does not meet the rules for
-    /// random addresses in the Bluetooth Spec, Vol 6, Part B, Section 1.3.  Includes the invalid
-    /// address.
+    /// For the [`le_set_random_address`](Hci::le_set_random_address) command: The provided address
+    /// does not meet the rules for random addresses in the Bluetooth Spec, Vol 6, Part B, Section
+    /// 1.3.  Includes the invalid address.
     BadRandomAddress(::BdAddr),
 
-    /// For the LE Set Advertising Parameters command: The advertising interval is invalid. This
-    /// means that either:
+    /// For the [`le_set_advertising_parameters`](Hci::le_set_advertising_parameters) command: The
+    /// advertising interval is invalid. This means that either:
     /// - The min is too low (less than 20 ms)
     /// - The max is too high (higher than 10.24 s)
     /// - The min is greater than the max.
@@ -1072,29 +1156,30 @@ pub enum Error<E> {
     /// Includes the provided interval as a pair. The first value is the min, second is max.
     BadAdvertisingInterval(Duration, Duration),
 
-    /// For the LE Set Advertising Parameters command: The channel map did not include any enabled
-    /// channels.  Includes the provided channel map.
+    /// For the [`le_set_advertising_parameters`](Hci::le_set_advertising_parameters) command: The
+    /// channel map did not include any enabled channels.  Includes the provided channel map.
     BadChannelMap(Channels),
 
-    /// For the LE Set Advertising Parameters command: The advertising interval minimum was too low
-    /// for the advertising type.  Includes the provided minimum and advertising type.  This
-    /// restriction is removed in version 5.0 of the spec.
+    /// For the [`le_set_advertising_parameters`](Hci::le_set_advertising_parameters) command: The
+    /// advertising interval minimum was too low for the advertising type.  Includes the provided
+    /// minimum and advertising type.  This restriction is removed in version 5.0 of the spec.
     #[cfg(not(feature = "version-5-0"))]
     BadAdvertisingIntervalMin(Duration, AdvertisingType),
 
-    /// For the LE Set Advertising Data or LE Set Scan Response Data commands: The provided data is
+    /// For the [`le_set_advertising_data`](Hci::le_set_advertising_data) or
+    /// [`le_set_scan_response_data`](Hci::le_set_scan_response_data) commands: The provided data is
     /// too long to fit in the command.  The maximum allowed length is 31.  The actual length is
     /// returned.
     AdvertisingDataTooLong(usize),
 
-    /// For the LE Set Scan Parameters or LE Create Connection command: The scan interval is too
-    /// short or too long, or the scan window is too short or too long, or the scan window is longer
-    /// than the scan interval.  The first value is the scan interval; the second is the scan
-    /// window.
+    /// For the [`le_set_scan_parameters`](Hci::le_set_scan_parameters) or
+    /// [`le_create_connection`](Hci::le_create_connection) command: The scan interval is too short
+    /// or too long, or the scan window is too short or too long, or the scan window is longer than
+    /// the scan interval.  The first value is the scan interval; the second is the scan window.
     BadScanInterval(Duration, Duration),
 
-    /// For the LE Create Connection command: The connection interval is invalid. This
-    /// means that either:
+    /// For the [`le_create_connection`](Hci::le_create_connection) command: The connection interval
+    /// is invalid. This means that either:
     /// - The min (or max) is too low (less than 7.5 ms)
     /// - The max (or min) is too high (higher than 4 s)
     /// - The min is greater than the max.
@@ -1102,29 +1187,34 @@ pub enum Error<E> {
     /// Includes the provided interval as a pair. The first value is the min, second is max.
     BadConnectionInterval(Duration, Duration),
 
-    /// For the LE Create Connection command: the connection latency is too large. The maximum
-    /// allowed value is 514 (defined by the spec).  The value is returned.
+    /// For the [`le_create_connection`](Hci::le_create_connection) command: the connection latency
+    /// is too large. The maximum allowed value is 514 (defined by the spec).  The value is
+    /// returned.
     BadConnectionLatency(u16),
 
-    /// For the LE Create Connection command: the supervision timeout is too small (less than 100
-    /// ms, or does not meet the requirement: `(1 + conn_latency) * conn_interval_max * 2`) or too
-    /// large (greater than 32 seconds).  The first value is the provided supervision timeout.  The
-    /// second value is the minimum as determined by the `conn_latency` and `conn_interval_max`.
+    /// For the [`le_create_connection`](Hci::le_create_connection) command: the supervision timeout
+    /// is too small (less than 100 ms, or does not meet the requirement: `(1 + conn_latency) *
+    /// conn_interval_max * 2`) or too large (greater than 32 seconds).  The first value is the
+    /// provided supervision timeout.  The second value is the minimum as determined by the
+    /// `conn_latency` and `conn_interval_max`.
     BadSupervisionTimeout(Duration, Duration),
 
-    /// For the LE Create Connection command: the connection length range is inverted (i.e, the
-    /// minimum is greater than the maximum). Returns the range, min first.
+    /// For the [`le_create_connection`](Hci::le_create_connection) command: the connection length
+    /// range is inverted (i.e, the minimum is greater than the maximum). Returns the range, min
+    /// first.
     BadConnectionLengthRange(Duration, Duration),
 
-    /// For the LE Set Host Channel Classification event: all channels were marked 'bad'.
+    /// For the [`le_set_host_channel_classification`](Hci::le_set_host_channel_classification)
+    /// command: all channels were marked 'bad'.
     NoValidChannel,
 
-    /// For the LE Receiver Test and LE Transmitter Test commands: the channel was out of range. The
-    /// maximum allowed channel is 39. Includes the invalid value.
+    /// For the [`le_receiver_test`](Hci::le_receiver_test) and
+    /// [`le_transmitter_test`](Hci::le_transmitter_test) commands: the channel was out of
+    /// range. The maximum allowed channel is 39. Includes the invalid value.
     InvalidTestChannel(u8),
 
-    /// For the LE Transmitter Test command: The payload length is invalid. The maximum value is
-    /// 37. Includes the invalid value.
+    /// For the [`le_transmitter_test`](Hci::le_transmitter_test) command: The payload length is
+    /// invalid. The maximum value is 37. Includes the invalid value.
     InvalidTestPayloadLength(usize),
 
     /// Underlying communication error.
@@ -1493,7 +1583,7 @@ where
 const MAX_TEST_CHANNEL: u8 = 0x27;
 
 bitflags! {
-    /// Event flags defined for the Set Event Mask command.
+    /// Event flags defined for the [`set_event_mask`](Hci::set_event_mask) command.
     #[derive(Default)]
     pub struct EventFlags : u64 {
         /// Inquiry complete event
@@ -1598,7 +1688,8 @@ bitflags! {
     }
 }
 
-/// For the Read Tx Power Level command, the allowed values for the type of power level to read.
+/// For the [`read_tx_power_level`](Hci::read_tx_power_level) command, the allowed values for the
+/// type of power level to read.
 ///
 /// See the Bluetooth spec, Vol 2, Part E, Section 7.3.35.
 #[repr(u8)]
@@ -1611,7 +1702,7 @@ pub enum TxPowerLevel {
 }
 
 bitflags! {
-    /// Event flags defined for the LE Set Event Mask command.
+    /// Event flags defined for the [`le_set_event_mask`](Hci::le_set_event_mask) command.
     #[derive(Default)]
     pub struct LeEventFlags : u64 {
         /// LE connection complete event
@@ -1699,7 +1790,8 @@ fn pop_count_of(byte: u8) -> u32 {
     byte.count_ones()
 }
 
-/// Parameters for the `le_set_advertising_parameters` command.
+/// Parameters for the [`le_set_advertising_parameters`](Hci::le_set_advertising_parameters)
+/// command.
 #[derive(Clone, Debug)]
 pub struct AdvertisingParameters {
     /// The advertising interval min shall be less than or equal to the advertising interval
@@ -1707,15 +1799,14 @@ pub struct AdvertisingParameters {
     /// to enable the Controller to determine the best advertising interval given other activities,
     /// though this implementation allows them to be equal.
     ///
-    /// For high duty cycle directed advertising,
-    /// i.e. `AdvertisingType::ConnectableDirectedHighDutyCycle`, the Advertising_Interval_Min and
-    /// advertising interval max parameters are not used and shall be ignored.  This implementation
-    /// sends 0 for both fields in that case.
+    /// For [high duty cycle directed
+    /// advertising](AdvertisingType::ConnectableDirectedHighDutyCycle), the advertising interval is
+    /// not used and shall be ignored.  This implementation sends 0 for both fields in that case.
     ///
     /// The advertising interval min and advertising interval max shall not be set to less than 100
-    /// ms if the advertising type is `AdvertisingType::ScannableUndirected` or
-    /// `AdvertisingType::NonconnectableUndirected`.  This restriction is removed in version 5.0 of
-    /// the spec.
+    /// ms if the advertising type is [`ScannableUndirected`](AdvertisingType::ScannableUndirected)
+    /// or [`NonConnectableUndirected`](AdvertisingType::NonConnectableUndirected).  This
+    /// restriction is removed in version 5.0 of the spec.
     ///
     /// The first field is the min; the second is the max
     pub advertising_interval: (Duration, Duration),
@@ -1726,19 +1817,22 @@ pub struct AdvertisingParameters {
 
     /// Indicates the type of address being used in the advertising packets.
     ///
-    /// If this is `PrivateFallbackPublic` or `PrivateFallbackRandom`, the `peer_address` parameter
-    /// contains the peer’s Identity Address and type. These parameters are used to locate the
-    /// corresponding local IRK in the resolving list; this IRK is used to generate the own address
-    /// used in the advertisement.
+    /// If this is [`PrivateFallbackPublic`](OwnAddressType::PrivateFallbackPublic) or
+    /// [`PrivateFallbackRandom`](OwnAddressType::PrivateFallbackRandom), the `peer_address`
+    /// parameter contains the peer’s Identity Address and type. These parameters are used to locate
+    /// the corresponding local IRK in the resolving list; this IRK is used to generate the own
+    /// address used in the advertisement.
     pub own_address_type: OwnAddressType,
 
     /// If directed advertising is performed, i.e. when `advertising_type` is set to
-    /// `ConnectableDirectedHighDutyCycle` or `ConnectableDirectedLowDutyCycle`, then the
-    /// Peer_Address_Type and Peer_Address shall be valid.
+    /// [`ConnectableDirectedHighDutyCycle`](AdvertisingType::ConnectableDirectedHighDutyCycle) or
+    /// [`ConnectableDirectedLowDutyCycle`](AdvertisingType::ConnectableDirectedLowDutyCycle), then
+    /// `peer_address` shall be valid.
     ///
-    /// If `own_address_type` is `PrivateFallbackPublic` or `PrivateFallbackRandom`, the Controller
-    /// generates the peer’s Resolvable Private Address using the peer’s IRK corresponding to the
-    /// peer’s Identity Address contained in `peer_address`
+    /// If `own_address_type` is [`PrivateFallbackPublic`](OwnAddressType::PrivateFallbackPublic) or
+    /// [`PrivateFallbackRandom`](OwnAddressType::PrivateFallbackRandom), the Controller generates
+    /// the peer’s Resolvable Private Address using the peer’s IRK corresponding to the peer’s
+    /// Identity Address contained in `peer_address`
     pub peer_address: ::BdAddrType,
 
     /// Bit field that indicates the advertising channels that shall be used when transmitting
@@ -1811,8 +1905,8 @@ fn to_interval_value(duration: Duration) -> u16 {
     (1600 * duration.as_secs() as u32 + (duration.subsec_micros() / 625)) as u16
 }
 
-/// The advertising type is used in the `AdvertisingParameters` to determine the packet type that is
-/// used for advertising when advertising is enabled.
+/// The advertising type is used in the [`AdvertisingParameters`] to determine the packet type that
+/// is used for advertising when advertising is enabled.
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum AdvertisingType {
@@ -1828,8 +1922,7 @@ pub enum AdvertisingType {
     ConnectableDirectedLowDutyCycle = 0x04,
 }
 
-/// Indicates the type of address being used in the advertising packets.  Set in the
-/// `AdvertisingParameters`.
+/// Indicates the type of address being used in the advertising packets.
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum OwnAddressType {
@@ -1843,7 +1936,7 @@ pub enum OwnAddressType {
     PrivateFallbackPublic = 0x02,
     /// Controller generates Resolvable Private Address based on the local IRK from resolving
     /// list. If resolving list contains no matching entry, use random address from
-    /// LE_Set_Random_Address.
+    /// [`le_set_random_address`](Hci::le_set_random_address).
     #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     PrivateFallbackRandom = 0x03,
 }
@@ -1867,6 +1960,8 @@ impl Default for Channels {
 }
 
 /// Possible filter policies used for undirected advertising.
+///
+/// See [`AdvertisingParameters`].
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum AdvertisingFilterPolicy {
@@ -1883,7 +1978,7 @@ pub enum AdvertisingFilterPolicy {
     WhiteListConnectionAndScan = 0x03,
 }
 
-/// Parameters for the `le_set_scan_parameters` command.
+/// Parameters for the [`le_set_scan_parameters`](Hci::le_set_scan_parameters) command.
 #[derive(Clone, Debug)]
 pub struct ScanParameters {
     /// The type of scan to perform
@@ -1944,6 +2039,8 @@ impl ScanParameters {
 }
 
 /// Types of scan to perform.
+///
+/// See [`ScanParameters`] and [`le_set_scan_parameters`](Hci::le_set_scan_parameters).
 #[derive(Copy, Clone, Debug)]
 #[repr(u8)]
 pub enum ScanType {
@@ -1954,6 +2051,8 @@ pub enum ScanType {
 }
 
 /// Which advertising packets to accept from a scan.
+///
+/// See [`ScanParameters`] and [`le_set_scan_parameters`](Hci::le_set_scan_parameters).
 #[derive(Copy, Clone, Debug)]
 #[repr(u8)]
 pub enum ScanFilterPolicy {
@@ -1981,7 +2080,7 @@ pub enum ScanFilterPolicy {
     WhiteListAddressedToThisDevice = 0x03,
 }
 
-/// Parameters for the LE Create Connection event.
+/// Parameters for the [`le_create_connection`](Hci::le_create_connection`) event.
 #[derive(Clone, Debug)]
 pub struct ConnectionParameters {
     /// Recommendation from the host on how frequently the Controller should scan.  `scan_window`
@@ -2005,29 +2104,33 @@ pub struct ConnectionParameters {
     pub initiator_filter_policy: ConnectionFilterPolicy,
 
     /// Indicates the type and value of the address used in the connectable advertisement sent by
-    /// the peer. The Host shall not use `PeerAddressType::PublicIdentityAddress` or
-    /// `PeerAddressType::RandomIdentityAddress` if both the Host and the Controller support the LE
-    /// Set Privacy Mode command. If a Controller that supports the LE Set Privacy Mode command
-    /// receives the LE Create Connection command with Peer_Address_Type set to either
-    /// `PeerAddressType::PublicIdentityAddress` or `PeerAddressType::RandomIdentityAddress`, it may
-    /// use either device privacy mode or network privacy mode for that peer device.
+    /// the peer. The Host shall not use
+    /// [`PublicIdentityAddress`](PeerAddrType::PublicIdentityAddress) or
+    /// [`RandomIdentityAddress`](PeerAddrType::RandomIdentityAddress) (both introduced in v4.2) if
+    /// both the Host and the Controller support the `le_set_privacy_mode` command (introduced in
+    /// v5.0). If a Controller that supports the LE Set Privacy Mode command receives the
+    /// [`le_create_connection`](Hci::le_create_connection) command with `peer_address` set to
+    /// either [`PublicIdentityAddress`](PeerAddrType::PublicIdentityAddress) or
+    /// [`RandomIdentityAddress`](PeerAddrType::RandomIdentityAddress), it may use either device
+    /// privacy mode or network privacy mode for that peer device.
     pub peer_address: PeerAddrType,
 
     /// The type of address being used in the connection request packets.
     ///
-    /// If this is `OwnAddressType::Random` and the random address for the device has not been
-    /// initialized, the Controller shall return the error code
-    /// `::Status::InvalidHciCommandParameters`.
+    /// If this is [`Random`](OwnAddressType::Random) and the random address for the device has not
+    /// been initialized, the Controller shall return the error code
+    /// [`::Status::InvalidParameters`].
     ///
-    /// If this is `OwnAddressType::PrivateFallbackRandom`, `initiator_filter_policy` is
-    /// `ConnectionFilterPolicy::NoWhiteList`, the controller's resolving list did not contain a
-    /// matching entry, and the random address for the device has not been initialized, the
-    /// Controller shall return the error code `::Status::InvalidHciCommandParameters`.
+    /// If this is [`PrivateFallbackRemote`](OwnAddressType::PrivateFallbackRandom),
+    /// `initiator_filter_policy` is [`UseAddress`](ConnectionFilterPolicy::UseAddress), the
+    /// controller's resolving list did not contain a matching entry, and the random address for the
+    /// device has not been initialized, the Controller shall return the error code
+    /// [`::Status::InvalidParameters`].
     ///
-    /// If this is set `OwnAddressType::PrivateFallbackRandom`, `initiator_filter_policy` is
-    /// `ConnectionFilterPolicy::WhiteList`, and the random address for the device has not been
-    /// initialized, the Controller shall return the error code
-    /// `::Status::InvalidHciCommandParameters`.
+    /// If this is set [`PrivateFallbackRandom`](`OwnAddressType::PrivateFallbackRandom`),
+    /// `initiator_filter_policy` is [`WhiteList`](ConnectionFilterPolicy::WhiteList), and the
+    /// random address for the device has not been initialized, the Controller shall return the
+    /// error code [`::Status::InvalidParameters`].
     pub own_address_type: OwnAddressType,
 
     /// Defines the minimum and maximum allowed connection interval. The first value (min) must be
@@ -2157,11 +2260,12 @@ fn to_supervision_timeout_value(d: Duration) -> u16 {
     (millis / 10) as u16
 }
 
-/// Possible values for the initiator filter policy in the Create Connection command.
+/// Possible values for the initiator filter policy in the
+/// [`le_create_connection`](Hci::le_create_connection) command.
 #[derive(Copy, Clone, Debug)]
 #[repr(u8)]
 pub enum ConnectionFilterPolicy {
-    /// White List is not used to determine which advertiser to connect to.  `peer_address shall be
+    /// White List is not used to determine which advertiser to connect to.  `peer_address` shall be
     /// used in the connection complete event.
     UseAddress = 0x00,
 
@@ -2170,24 +2274,43 @@ pub enum ConnectionFilterPolicy {
     WhiteList = 0x01,
 }
 
-/// Possible values for the peer address in the Create Connection event.
+/// Possible values for the peer address in the [`le_create_connection`](Hci::le_create_connection)
+/// command.
 #[derive(Clone, Debug)]
 pub enum PeerAddrType {
     /// Public Device Address
     PublicDeviceAddress(::BdAddr),
     /// Random Device Address
     RandomDeviceAddress(::BdAddr),
-    /// Public Identity Address (Corresponds to peer’s Resolvable Private Address). This value shall
+    /// Public Identity Address (Corresponds to peer's Resolvable Private Address). This value shall
     /// only be used by the Host if either the Host or the Controller does not support the LE Set
     /// Privacy Mode command.
+    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     PublicIdentityAddress(::BdAddr),
     /// Random (static) Identity Address (Corresponds to peer’s Resolvable Private Address). This
     /// value shall only be used by a Host if either the Host or the Controller does not support the
     /// LE Set Privacy Mode command.
+    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     RandomIdentityAddress(::BdAddr),
 }
 
 impl PeerAddrType {
+    #[cfg(not(any(feature = "version-4-2", feature = "version-5-0")))]
+    fn into_bytes(&self, bytes: &mut [u8]) {
+        assert_eq!(bytes.len(), 7);
+        match *self {
+            PeerAddrType::PublicDeviceAddress(bd_addr) => {
+                bytes[0] = 0x00;
+                bytes[1..7].copy_from_slice(&bd_addr.0);
+            }
+            PeerAddrType::RandomDeviceAddress(bd_addr) => {
+                bytes[0] = 0x01;
+                bytes[1..7].copy_from_slice(&bd_addr.0);
+            }
+        }
+    }
+
+    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     fn into_bytes(&self, bytes: &mut [u8]) {
         assert_eq!(bytes.len(), 7);
         match *self {
@@ -2211,7 +2334,7 @@ impl PeerAddrType {
     }
 }
 
-/// Parameters for the `le_connection_update` command.
+/// Parameters for the [`le_connection_update`](Hci::le_connection_update) command.
 ///
 /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.18.
 pub struct ConnectionUpdateParameters {
@@ -2281,23 +2404,25 @@ impl ConnectionUpdateParameters {
     }
 }
 
-/// Parameters for the LE Encrypt command.
+/// Parameters for the [`le_encrypt`](Hci::le_encrypt) command.
 #[derive(Clone, Debug)]
 pub struct AesParameters {
     /// Key for the encryption of the data given in the command.
     ///
-    /// The most significant (last) octet of the key corresponds to key[0] using the notation
+    /// The most significant (last) octet of the key corresponds to `key[0]` using the notation
     /// specified in FIPS 197.
     pub key: EncryptionKey,
 
     /// Data block that is requested to be encrypted.
     ///
-    /// The most significant (last) octet of the PlainText_Data corresponds to in[0] using the
+    /// The most significant (last) octet of the PlainText_Data corresponds to `in[0]` using the
     /// notation specified in FIPS 197.
     pub plaintext_data: PlaintextBlock,
 }
 
 /// Newtype for the encryption key.
+///
+/// See [`AesParameters`]
 #[derive(Clone)]
 pub struct EncryptionKey(pub [u8; 16]);
 
@@ -2308,6 +2433,8 @@ impl Debug for EncryptionKey {
 }
 
 /// Newtype for the plaintext data.
+///
+/// See [`AesParameters`].
 #[derive(Clone)]
 pub struct PlaintextBlock(pub [u8; 16]);
 
@@ -2317,7 +2444,7 @@ impl Debug for PlaintextBlock {
     }
 }
 
-/// Parameters for the LE Start Encryption command.
+/// Parameters for the [`le_start_encryption`](Hci::le_start_encryption) command.
 pub struct EncryptionParameters {
     /// ID for the connection.
     pub conn_handle: ::ConnectionHandle,
@@ -2332,7 +2459,8 @@ pub struct EncryptionParameters {
     pub long_term_key: EncryptionKey,
 }
 
-/// Possible values of the `payload` parameter for the `le_transmitter_test` command.
+/// Possible values of the `payload` parameter for the
+/// [`le_transmitter_test`](Hci::le_transmitter_test) command.
 #[derive(Copy, Clone, Debug)]
 #[repr(u8)]
 pub enum TestPacketPayload {

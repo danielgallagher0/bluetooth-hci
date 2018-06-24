@@ -29,9 +29,11 @@ for a specific BLE chip.  Any implementor can then be used as a
 
 ## Supported Events
 
-This crate contains only the bare minimum of support for commands and
-events right now.  Support for HCI ACL Data Packets and HCI
-Synchronous Data Packets still needs to be determined.
+This crate contains only the partial support for commands and events
+right now.  The only commands and events (as of June 2018) are those
+used by the [BlueNRG](https://github.com/danielgallagher0/bluenrg)
+chip.  Support for HCI ACL Data Packets and HCI Synchronous Data
+Packets still needs to be determined.
 
 See the [Bluetooth
 Specification](https://www.bluetooth.org/DocMan/handlers/DownloadDoc.ashx?doc_id=421043)

@@ -1,7 +1,7 @@
 //! Return parameters for HCI commands.
 //!
-//! This module defines the return parameters that can be returned in a Command Complete event for
-//! every HCI command.
+//! This module defines the return parameters that can be returned in a [Command
+//! Complete](super::Event::CommandComplete) event for every HCI command.
 //!
 //! For the Command Complete event, see the Bluetooth specification, v4.1 or later, Vol 2, Part E,
 //! Section 7.7.14.
@@ -14,24 +14,25 @@ use core::convert::{TryFrom, TryInto};
 use core::fmt::{Debug, Formatter, Result as FmtResult};
 use core::mem;
 
-/// The Command Complete event is used by the Controller for most commands to transmit return status
-/// of a command and the other event parameters that are specified for the issued HCI command.
+/// The [Command Complete](super::Event::CommandComplete) event is used by the Controller for most
+/// commands to transmit return status of a command and the other event parameters that are
+/// specified for the issued HCI command.
 ///
-/// Defined in the Bluetooth Spec, v4.1 or later, Vol 2, Part E, Section 7.7.14.
+/// Defined in the Bluetooth spec, Vol 2, Part E, Section 7.7.14.
 #[derive(Clone, Debug)]
 pub struct CommandComplete {
     /// Indicates the number of HCI command packets the Host can send to the Controller. If the
-    /// Controller requires the Host to stop sending commands, num_hci_command_packets will be set
+    /// Controller requires the Host to stop sending commands, `num_hci_command_packets` will be set
     /// to zero.  To indicate to the Host that the Controller is ready to receive HCI command
     /// packets, the Controller generates a Command Complete event with `return_params` set to
-    /// `Spontaneous` and `num_hci_command_packets` parameter set to 1 or more.  `Spontaneous`
-    /// return parameters indicates that this event is not associated with a command sent by the
-    /// Host. The Controller can send a Spontaneous Command Complete event at any time to change the
-    /// number of outstanding HCI command packets that the Host can send before waiting.
+    /// [`Spontaneous`](ReturnParameters::Spontaneous) and `num_hci_command_packets` parameter set
+    /// to 1 or more.  [`Spontaneous`](ReturnParameters::Spontaneous) return parameters indicates
+    /// that this event is not associated with a command sent by the Host. The Controller can send a
+    /// Spontaneous Command Complete event at any time to change the number of outstanding HCI
+    /// command packets that the Host can send before waiting.
     pub num_hci_command_packets: u8,
 
-    /// Parameters that are returned with the event. Also used to indicate the type of command that
-    /// has completed.
+    /// The type of command that has completed, and any parameters that it returns.
     pub return_params: ReturnParameters,
 }
 
@@ -40,13 +41,14 @@ impl CommandComplete {
     ///
     /// # Errors
     ///
-    /// - Returns BadLength if the buffer is not large enough to contain a parameter length (1 byte)
-    ///   and opcode (2 bytes)
-    ///
-    /// - Returns errors that may be generated when deserializing specific events. Typically, this
-    ///   will be BadLength, which indicates the buffer was not large enough to contain all of the
-    ///   required data for the event. The error type must be specialized on potential
-    ///   vendor-specific errors, though vendor-specific errors are never returned.
+    /// - [`BadLength`](::event::Error::BadLength) if the buffer is not large enough to contain a
+    ///   parameter length (1 byte) and opcode (2 bytes)
+    /// - Returns errors that may be generated when deserializing specific events. This may be
+    ///   [`BadLength`](::event::Error::BadLength), which indicates the buffer was not large enough
+    ///   to contain all of the required data for the event. Some commands define other errors that
+    ///   indicate parameter values are invalid. The error type must be specialized on potential
+    ///   vendor-specific errors, though vendor-specific errors are never returned by this
+    ///   function.
     pub fn new<VE>(bytes: &[u8]) -> Result<CommandComplete, ::event::Error<VE>> {
         require_len_at_least!(bytes, 3);
 
@@ -153,119 +155,138 @@ impl CommandComplete {
     }
 }
 
-/// Commands that may generate the Command Complete event.  If the commands have defined return
-/// parameters, they are included in this enum.
+/// Commands that may generate the [Command Complete](::event::Event::CommandComplete) event.  If
+/// the commands have defined return parameters, they are included in this enum.
 #[derive(Copy, Clone, Debug)]
 pub enum ReturnParameters {
     /// The controller sent an unsolicited command complete event in order to change the number of
     /// HCI command packets the Host is allowed to send.
     Spontaneous,
 
-    /// Status returned by the Set Event Mask command.
+    /// Status returned by the [Set Event Mask](::host::Hci::set_event_mask) command.
     SetEventMask(::Status),
 
-    /// Status returned by the Reset command.
+    /// Status returned by the [Reset](::host::Hci::reset) command.
     Reset(::Status),
 
-    /// Read Transmit Power Level return parameters.
+    /// [Read Transmit Power Level](::host::Hci::read_tx_power_level) return parameters.
     ReadTxPowerLevel(TxPowerLevel),
 
-    /// Local version info returned by the Read Local Version Information command.
+    /// Local version info returned by the [Read Local Version
+    /// Information](::host::Hci::read_local_version_information) command.
     ReadLocalVersionInformation(LocalVersionInfo),
 
-    /// Supported commands returned by the Read Local Supported Commands command.
+    /// Supported commands returned by the [Read Local Supported
+    /// Commands](::host::Hci::read_local_supported_commands) command.
     ReadLocalSupportedCommands(LocalSupportedCommands),
 
-    /// Supported features returned by the Read Local Supported Features command.
+    /// Supported features returned by the [Read Local Supported
+    /// Features](::host::Hci::read_local_supported_features) command.
     ReadLocalSupportedFeatures(LocalSupportedFeatures),
 
-    /// BD ADDR returned by the Read BD ADDR command.
+    /// BD ADDR returned by the [Read BD ADDR](::host::Hci::read_bd_addr) command.
     ReadBdAddr(ReadBdAddr),
 
-    /// RSSI returned by the Read RSSI command.
+    /// RSSI returned by the [Read RSSI](::host::Hci::read_rssi) command.
     ReadRssi(ReadRssi),
 
-    /// Status returned by the LE Set Event Mask command.
+    /// Status returned by the [LE Set Event Mask](::host::Hci::le_set_event_mask) command.
     LeSetEventMask(::Status),
 
-    /// Parameters returned by the LE Read Buffer Size command.
+    /// Parameters returned by the [LE Read Buffer Size](::host::Hci::le_read_buffer_size) command.
     LeReadBufferSize(LeReadBufferSize),
 
-    /// Parameters returned by the LE Read Local Supported Features command.
+    /// Parameters returned by the [LE Read Local Supported
+    /// Features](::host::Hci::le_read_local_supported_features) command.
     LeReadLocalSupportedFeatures(LeSupportedFeatures),
 
-    /// Status returned by the LE Set Random Address command.
+    /// Status returned by the [LE Set Random Address](::host::Hci::le_set_random_address) command.
     LeSetRandomAddress(::Status),
 
-    /// Status returned by the LE Set Advertising Parameters command.
+    /// Status returned by the [LE Set Advertising
+    /// Parameters](::host::Hci::le_set_advertising_parameters) command.
     LeSetAdvertisingParameters(::Status),
 
-    /// Parameters returned by the LE Read Advertising Channel TX Power command.
+    /// Parameters returned by the [LE Read Advertising Channel TX
+    /// Power](::host::Hci::le_read_advertising_channel_tx_power) command.
     LeReadAdvertisingChannelTxPower(LeAdvertisingChannelTxPower),
 
-    /// Status returned by the LE Set Advertising Data command.
+    /// Status returned by the [LE Set Advertising Data](::host::Hci::le_set_advertising_data)
+    /// command.
     LeSetAdvertisingData(::Status),
 
-    /// Status returned by the LE Set Scan Response Data command.
+    /// Status returned by the [LE Set Scan Response Data](::host::Hci::le_set_scan_response_data)
+    /// command.
     LeSetScanResponseData(::Status),
 
-    /// Status returned by the LE Set Advertise Enable command.
+    /// Status returned by the [LE Set Advertise Enable](::host::Hci::le_set_advertise_enable)
+    /// command.
     #[cfg(not(feature = "version-5-0"))]
     LeSetAdvertiseEnable(::Status),
 
-    /// Status returned by the LE Set Advertising Enable command.
+    /// Status returned by the [LE Set Advertising Enable](::host::Hci::le_set_advertising_enable)
+    /// command.
     #[cfg(feature = "version-5-0")]
     LeSetAdvertisingEnable(::Status),
 
-    /// Status returned by the LE Set Scan Parameters command.
+    /// Status returned by the [LE Set Scan Parameters](::host::Hci::le_set_scan_parameters)
+    /// command.
     LeSetScanParameters(::Status),
 
-    /// Status returned by the LE Set Scan Enable command.
+    /// Status returned by the [LE Set Scan Enable](::host::Hci::le_set_scan_enable) command.
     LeSetScanEnable(::Status),
 
-    /// Status returned by the LE Create Connection Cancel command.
+    /// Status returned by the [LE Create Connection
+    /// Cancel](::host::Hci::le_create_connection_cancel) command.
     LeCreateConnectionCancel(::Status),
 
-    /// Status and white list size returned by the LE Read White List Size command.
+    /// Status and white list size returned by the [LE Read White List
+    /// Size](::host::Hci::le_read_white_list_size) command.
     LeReadWhiteListSize(::Status, usize),
 
-    /// Status returned by the LE Clear White List command.
+    /// Status returned by the [LE Clear White List](::host::Hci::le_clear_white_list) command.
     LeClearWhiteList(::Status),
 
-    /// Status returned by the LE Add Device to White List command.
+    /// Status returned by the [LE Add Device to White
+    /// List](::host::Hci::le_add_device_to_white_list) command.
     LeAddDeviceToWhiteList(::Status),
 
-    /// Status returned by the LE Remove Device from White List command.
+    /// Status returned by the [LE Remove Device from White
+    /// List](::host::Hci::le_remove_device_from_white_list) command.
     LeRemoveDeviceFromWhiteList(::Status),
 
-    /// Status returned by the LE Set Host Channel Classification command.
+    /// Status returned by the [LE Set Host Channel
+    /// Classification](::host::Hci::le_set_host_channel_classification) command.
     LeSetHostChannelClassification(::Status),
 
-    /// Parameters returned by the LE Read Channel Map command.
+    /// Parameters returned by the [LE Read Channel Map](::host::Hci::le_read_channel_map) command.
     LeReadChannelMap(ChannelMapParameters),
 
-    /// Parameters returned by the LE Encrypt command.
+    /// Parameters returned by the [LE Encrypt](::host::Hci::le_encrypt) command.
     LeEncrypt(EncryptedReturnParameters),
 
-    /// Parameters returned by the LE Rand command.
+    /// Parameters returned by the [LE Rand](::host::Hci::le_rand) command.
     LeRand(LeRandom),
 
-    /// Parameters returned by the LE Long Term Key Request Reply command.
+    /// Parameters returned by the [LE Long Term Key Request
+    /// Reply](::host::Hci::le_long_term_key_request_reply) command.
     LeLongTermKeyRequestReply(LeLongTermRequestReply),
 
-    /// Parameters returned by the LE Long Term Key Request Negative Reply command.
+    /// Parameters returned by the [LE Long Term Key Request Negative
+    /// Reply](::host::Hci::le_long_term_key_request_negative_reply) command.
     LeLongTermKeyRequestNegativeReply(LeLongTermRequestReply),
 
-    /// Parameters returned by the LE Read States command.
+    /// Parameters returned by the [LE Read States](::host::Hci::le_read_supported_states))
+    /// command.
     LeReadSupportedStates(LeReadSupportedStates),
 
-    /// Status returned by the LE Receiver Test command.
+    /// Status returned by the [LE Receiver Test](::host::Hci::le_receiver_test) command.
     LeReceiverTest(::Status),
 
-    /// Status returned by the LE Transmitter Test command.
+    /// Status returned by the [LE Transmitter Test](::host::Hci::le_transmitter_test) command.
     LeTransmitterTest(::Status),
 
-    /// Parameters returned by the LE Test End command.
+    /// Parameters returned by the [LE Test End](::host::Hci::le_test_end) command.
     LeTestEnd(LeTestEnd),
 }
 
@@ -273,14 +294,13 @@ fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {
     bytes[0].try_into().map_err(super::rewrap_bad_status)
 }
 
-/// Values returned by the Read Transmit Power Level command.  See the Bluetooth spec, Vol 2, Part
-/// E, Section 7.3.35.
+/// Values returned by the [Read Transmit Power Level](::host::Hci::read_tx_power_level) command.
 #[derive(Copy, Clone, Debug)]
 pub struct TxPowerLevel {
     /// Did the command fail, and if so, how?
     pub status: ::Status,
 
-    /// Specifies which connection handle’s Transmit Power Level setting is returned
+    /// Specifies which connection handle's transmit power level setting is returned
     pub conn_handle: ::ConnectionHandle,
 
     /// Power level for the connection handle, in dBm.
@@ -298,11 +318,11 @@ fn to_tx_power_level<VE>(bytes: &[u8]) -> Result<TxPowerLevel, ::event::Error<VE
     })
 }
 
-/// Values returned by Read Local Version Information command.  See the Bluetooth Specification,
-/// v4.1 or later, Vol 2, Part E, Section 7.4.1.
+/// Values returned by [Read Local Version Information](::host::Hci::read_local_version_information)
+/// command.
 #[derive(Copy, Clone, Debug)]
 pub struct LocalVersionInfo {
-    /// Whether or not the command succeeded.
+    /// Did the command fail, and if so, how?
     pub status: ::Status,
 
     /// The version information of the HCI layer.
@@ -325,8 +345,11 @@ pub struct LocalVersionInfo {
     /// Numbers](https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers)
     pub manufacturer_name: u16,
 
-    /// Subversion of the Current LMP or PAL in the Controller. This value is implementation
+    /// Subversion of the Current [LMP] or [PAL] in the Controller. This value is implementation
     /// dependent.
+    ///
+    /// [LMP]: https://www.bluetooth.com/specifications/assigned-numbers/link-manager
+    /// [PAL]: https://www.bluetooth.com/specifications/assigned-numbers/protocol-adaptation-layer
     pub lmp_subversion: u16,
 }
 
@@ -343,8 +366,8 @@ fn to_local_version_info<VE>(bytes: &[u8]) -> Result<LocalVersionInfo, ::event::
     })
 }
 
-/// Values returned by the Read Local Supported Commands command.  See the Bluetooth Specifications,
-/// v 4.1 or later, Vol 2, Part E, Section 7.4.2.
+/// Values returned by the [Read Local Supported
+/// Commands](::host::Hci::read_local_supported_commands) command.
 #[derive(Copy, Clone, Debug)]
 pub struct LocalSupportedCommands {
     /// Did the command fail, and if so, how?
@@ -357,7 +380,8 @@ pub struct LocalSupportedCommands {
 const COMMAND_FLAGS_SIZE: usize = 64;
 
 bitflag_array! {
-    /// Extended bit field for the command flags of the LocalSupportedCommands return parameters.
+    /// Extended bit field for the command flags of the [`LocalSupportedCommands`] return
+    /// parameters.
     #[derive(Copy, Clone)]
     pub struct CommandFlags : COMMAND_FLAGS_SIZE;
     pub struct CommandFlag;
@@ -1004,8 +1028,8 @@ fn to_supported_commands<VE>(bytes: &[u8]) -> Result<LocalSupportedCommands, ::e
     })
 }
 
-/// Values returned by the Read Local Supported Features command.  See the Bluetooth Specifications,
-/// v 4.1 or later, Vol 2, Part E, Section 7.4.3.
+/// Values returned by the [Read Local Supported
+/// Features](::host::Hci::read_local_supported_features) command.
 #[derive(Copy, Clone, Debug)]
 pub struct LocalSupportedFeatures {
     /// Did the command fail, and if so, how?
@@ -1139,14 +1163,13 @@ fn to_supported_features<VE>(bytes: &[u8]) -> Result<LocalSupportedFeatures, ::e
     })
 }
 
-/// Values returned by the Read BD ADDR command.  See the Bluetooth Specifications,
-/// v 4.1 or later, Vol 2, Part E, Section 7.4.6.
+/// Values returned by the [Read BD ADDR](::host::Hci::read_bd_addr) command.
 #[derive(Copy, Clone, Debug)]
 pub struct ReadBdAddr {
     /// Did the command fail, and if so, how?
     pub status: ::Status,
 
-    /// Flags for supported features.
+    /// Address of the device.
     pub bd_addr: ::BdAddr,
 }
 
@@ -1160,8 +1183,7 @@ fn to_bd_addr<VE>(bytes: &[u8]) -> Result<ReadBdAddr, ::event::Error<VE>> {
     })
 }
 
-/// Values returned by the Read RSSI command.  See the Bluetooth Specifications,
-/// v 4.1 or later, Vol 2, Part E, Section 7.5.4.
+/// Values returned by the [Read RSSI](::host::Hci::read_rssi) command.
 #[derive(Copy, Clone, Debug)]
 pub struct ReadRssi {
     /// Did the command fail, and if so, how?
@@ -1195,8 +1217,7 @@ fn to_read_rssi<VE>(bytes: &[u8]) -> Result<ReadRssi, ::event::Error<VE>> {
     })
 }
 
-/// Values returned by the LE Read Buffer Size command.  See the Bluetooth specification, v4.1 or
-/// later, Vol 2, Part E, Section 7.8.2.
+/// Values returned by the [LE Read Buffer Size](::host::Hci::le_read_buffer_size) command.
 #[derive(Copy, Clone, Debug)]
 pub struct LeReadBufferSize {
     /// Did the command fail, and if so, how?
@@ -1209,7 +1230,7 @@ pub struct LeReadBufferSize {
     ///
     /// Note: Does not include the length of the HCI Data Packet header.
     ///
-    /// If `data_packet_length == 0`, then the controller has no dedicated LE read buffer, so the
+    /// If `data_packet_count` is 0, then the controller has no dedicated LE read buffer, so the
     /// caller should use the `read_buffer_size` command.
     pub data_packet_length: u16,
 
@@ -1217,7 +1238,7 @@ pub struct LeReadBufferSize {
     /// the Controller. The Host determines how the buffers are to be divided between different
     /// Connection Handles.
     ///
-    /// If `data_packet_count == 0`, then the controller has no dedicated LE read buffer, so the
+    /// If `data_packet_count` is 0, then the controller has no dedicated LE read buffer, so the
     /// caller should use the `read_buffer_size` command.
     pub data_packet_count: u8,
 }
@@ -1231,8 +1252,8 @@ fn to_le_read_buffer_status<VE>(bytes: &[u8]) -> Result<LeReadBufferSize, ::even
     })
 }
 
-/// Values returned by the LE Read Local Supported Features command.  See the Bluetooth
-/// specification, v4.1 or later, Vol 2, Part E, Section 7.8.3.
+/// Values returned by the [LE Read Local Supported
+/// Features](::host::Hci::le_read_local_supported_features) command.
 #[derive(Copy, Clone, Debug)]
 pub struct LeSupportedFeatures {
     /// Did the command fail, and if so, how?
@@ -1243,7 +1264,8 @@ pub struct LeSupportedFeatures {
 }
 
 bitflags! {
-    /// Possible LE features for the LE Read Local Supported Features command.  See the Bluetooth
+    /// Possible LE features for the [LE Read Local Supported
+    /// Features](::host::Hci::le_read_local_supported_features) command.  See the Bluetooth
     /// specification, Vol 6, Part B, Section 4.6.  See Table 4.3 (v4.1 of the spec), Table 4.4
     /// (v4.2 and v5.0).
     pub struct LeFeatures : u64 {
@@ -1306,8 +1328,8 @@ fn to_le_local_supported_features<VE>(
     })
 }
 
-/// Values returned by the LE Read Advertising Channel TX Power command.  See the Bluetooth
-/// specification, v4.1 or later, Vol 2, Part E, Section 7.8.6.
+/// Values returned by the [LE Read Advertising Channel TX
+/// Power](::host::Hci::le_read_advertising_channel_tx_power) command.
 #[derive(Copy, Clone, Debug)]
 pub struct LeAdvertisingChannelTxPower {
     /// Did the command fail, and if so, how?
@@ -1315,7 +1337,7 @@ pub struct LeAdvertisingChannelTxPower {
     /// The transmit power of the advertising channel.
     ///   - Range: -20 ≤ N ≤ 10 (this is not enforced in this implementation)
     ///   - Units: dBm
-    ///   - Accuracy: +/- 4 dB
+    ///   - Accuracy: ±4 dB
     pub power: i8,
 }
 
@@ -1339,13 +1361,13 @@ fn to_le_set_advertise_enable(status: ::Status) -> ReturnParameters {
     ReturnParameters::LeSetAdvertisingEnable(status)
 }
 
-/// Parameters returned by the LE Read Channel Map command.
+/// Parameters returned by the [LE Read Channel Map](::host::Hci::le_read_channel_map) command.
 #[derive(Copy, Clone, Debug)]
 pub struct ChannelMapParameters {
     /// Did the command fail, and if so, how?
     pub status: ::Status,
 
-    /// Connection handle whose channel map is returned
+    /// Connection handle whose channel map is returned.
     pub conn_handle: ::ConnectionHandle,
 
     /// Channels that may be used for this connection.
@@ -1368,7 +1390,7 @@ fn to_le_channel_map_parameters<VE>(
     })
 }
 
-/// Parameters returned by the LE Encrypt command.
+/// Parameters returned by the [LE Encrypt](::host::Hci::le_encrypt) command.
 #[derive(Copy, Clone, Debug)]
 pub struct EncryptedReturnParameters {
     /// Did the command fail, and if so, how?
@@ -1376,12 +1398,14 @@ pub struct EncryptedReturnParameters {
 
     /// Encrypted data block.
     ///
-    /// The most significant octet (last) of the block corresponds to out[0] using the notation
+    /// The most significant octet (last) of the block corresponds to `out[0]` using the notation
     /// specified in FIPS 197.
     pub encrypted_data: EncryptedBlock,
 }
 
 /// Newtype for a 128-bit encrypted block of data.
+///
+/// See [`EncryptedReturnParameters`].
 #[derive(Copy, Clone)]
 pub struct EncryptedBlock(pub [u8; 16]);
 
@@ -1402,7 +1426,7 @@ fn to_le_encrypted_data<VE>(bytes: &[u8]) -> Result<EncryptedReturnParameters, :
     })
 }
 
-/// Return parameters for the LE Rand command.
+/// Return parameters for the [LE Rand](::host::Hci::le_rand) command.
 #[derive(Copy, Clone, Debug)]
 pub struct LeRandom {
     /// Did the command fail, and if so, how?
@@ -1421,7 +1445,8 @@ fn to_random_number<VE>(bytes: &[u8]) -> Result<LeRandom, ::event::Error<VE>> {
     })
 }
 
-/// Parameters returned by the LE LTK Request Reply command.
+/// Parameters returned by the [LE LTK Request Reply](::host::Hci::le_long_term_key_request_reply)
+/// command.
 #[derive(Copy, Clone, Debug)]
 pub struct LeLongTermRequestReply {
     /// Did the command fail, and if so, how?
@@ -1440,20 +1465,21 @@ fn to_le_ltk_request_reply<VE>(bytes: &[u8]) -> Result<LeLongTermRequestReply, :
     })
 }
 
-/// Parameters returned by the LE Read States command.
+/// Parameters returned by the [LE Read Supported States](::host::Hci::le_read_supported_states)
+/// command.
 #[derive(Copy, Clone, Debug)]
 pub struct LeReadSupportedStates {
     /// Did the command fail, and if so, how?
     pub status: ::Status,
 
-    /// States or state combinations supported by the Controller. Multipl state and state
+    /// States or state combinations supported by the Controller. Multiple state and state
     /// combinations may be supported.
     pub supported_states: LeStates,
 }
 
 bitflags! {
-    /// Possible LE states or state combinations for the LE Read States command.  See the Bluetooth
-    /// specification, Vol 2, Part E, Section 7.8.27.
+    /// Possible LE states or state combinations for the [LE Read Supported
+    /// States](::host::Hci::le_read_supported_states) command.
     pub struct LeStates : u64 {
         /// Non-connectable advertising state alone.
         const NON_CONNECTABLE_ADVERTISING = 1 << 0;
@@ -1553,7 +1579,7 @@ fn to_le_read_states<VE>(bytes: &[u8]) -> Result<LeReadSupportedStates, ::event:
     })
 }
 
-/// Parameters returned by the LE Test End command.
+/// Parameters returned by the [LE Test End](::host::Hci::le_test_end) command.
 #[derive(Copy, Clone, Debug)]
 pub struct LeTestEnd {
     /// Did the command fail, and if so, how?

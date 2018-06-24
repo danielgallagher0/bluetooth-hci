@@ -35,28 +35,25 @@ pub struct NoCommands;
 ///
 /// # Errors
 ///
-/// - Returns `nb::Error::WouldBlock` if the controller does not have enough bytes to read an
+/// - Returns [`nb::Error::WouldBlock`] if the controller does not have enough bytes to read an
 ///   event.
-///
-/// - Returns `nb::Error::Other(Error::BLE(e))` if there is an error deserializing the packet (such
-///   as a mismatch between the packet length and the expected length of the event). See
+/// - Returns [`nb::Error::Other`]`(`[`Error::BLE`]`)` if there is an error deserializing the packet
+///   (such as a mismatch between the packet length and the expected length of the event). See
 ///   [`::event::Error`] for possible values of `e`.
-///
-/// - Returns `nb::Error::Other(Error::Comm(e))` if there is an error reading from the controller.
+/// - Returns [`nb::Error::Other`]`(`[`Error::Comm`]`)` if there is an error reading from the
+///   controller.
 pub trait Hci<E, Vendor, VE> {
     /// Reads and returns an event from the controller. Consumes exactly enough bytes to read the
     /// next event including its header.
     ///
     /// # Errors
     ///
-    /// - Returns `nb::Error::WouldBlock` if the controller does not have enough bytes available to
-    ///   read the full event right now.
-    ///
-    /// - Returns `nb::Error::Other(Error::BLE(e))` if there is an error deserializing the packet
-    ///   (such as a mismatch between the packet length and the expected length of the event). See
-    ///   [`::event::Error`] for possible values of `e`.
-    ///
-    /// - Returns `nb::Error::Other(Error::Comm(e))` if there is an error reading from the
+    /// - Returns [`nb::Error::WouldBlock`] if the controller does not have enough bytes available
+    ///   to read the full event right now.
+    /// - Returns [`nb::Error::Other`]`(`[`Error::BLE`]`)` if there is an error deserializing the
+    ///   packet (such as a mismatch between the packet length and the expected length of the
+    ///   event). See [`::event::Error`] for possible values of `e`.
+    /// - Returns [`nb::Error::Other`]`(`[`Error::Comm`]`)` if there is an error reading from the
     ///   controller.
     fn read(&mut self) -> nb::Result<::Event<Vendor>, Error<E, VE>>
     where
