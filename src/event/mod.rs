@@ -53,7 +53,10 @@ use core::time::Duration;
 /// The spec defines an "LE Meta-Event" event. This event is not exposed directly. Instead,
 /// individual LE events are included in this enum.
 #[derive(Clone, Debug)]
-pub enum Event<V> {
+pub enum Event<V>
+where
+    V: VendorEvent,
+{
     /// Vol 2, Part E, Section 7.7.3
     ConnectionComplete(ConnectionComplete),
 
@@ -67,7 +70,7 @@ pub enum Event<V> {
     ReadRemoteVersionInformationComplete(RemoteVersionInformation),
 
     /// Vol 2, Part E, Section 7.7.14
-    CommandComplete(command::CommandComplete),
+    CommandComplete(command::CommandComplete<V>),
 
     /// Vol 2, Part E, Section 7.7.15
     CommandStatus(CommandStatus),
@@ -109,6 +112,9 @@ pub trait VendorEvent {
     /// this means some values in the buffer are out of range for the event.
     type Error;
 
+    /// Enumeration of return parameters for vendor-specific commands.
+    type ReturnParameters: VendorReturnParameters<Error = Self::Error> + Clone + Debug;
+
     /// Creates a new vendor-specific event from the contents of buffer. The buffer contains only
     /// the payload of the event, which does not include the BLE event type (which must be 0xFF) or
     /// the parameter length (which is provided by `buffer.len()`).
@@ -118,6 +124,20 @@ pub trait VendorEvent {
     /// - Shall return one of the appropriate error types (potentially including vendor-specific
     ///   errors) if the buffer does not describe a valid event.
     fn new(buffer: &[u8]) -> Result<Self, Error<Self::Error>>
+    where
+        Self: Sized;
+}
+
+/// Trait for return parameters for vendor-specific commands.
+pub trait VendorReturnParameters {
+    /// Enumeration of vendor-specific errors that may occur when deserializing return parameters
+    /// for vendor-specific commands.
+    type Error;
+
+    /// Deserializes vendor-specific return parameters from the contents of the buffer.  The buffer
+    /// is the full payload of the command complete event, starting with the length (1 byte) and
+    /// opcode (2 bytes).
+    fn new(buffer: &[u8]) -> Result<Self, Self::Error>
     where
         Self: Sized;
 }
@@ -281,7 +301,10 @@ where
     }
 }
 
-fn to_le_meta_event<VEvent, VError>(payload: &[u8]) -> Result<Event<VEvent>, Error<VError>> {
+fn to_le_meta_event<VEvent>(payload: &[u8]) -> Result<Event<VEvent>, Error<VEvent::Error>>
+where
+    VEvent: VendorEvent,
+{
     require_len_at_least!(payload, 1);
     match payload[0] {
         0x01 => Ok(Event::LeConnectionComplete(to_le_connection_complete(

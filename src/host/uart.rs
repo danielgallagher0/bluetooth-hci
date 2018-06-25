@@ -25,7 +25,10 @@ pub enum Error<E, VE> {
 
 /// Packet types that may be read from the controller.
 #[derive(Clone, Debug)]
-pub enum Packet<Vendor> {
+pub enum Packet<Vendor>
+where
+    Vendor: ::event::VendorEvent,
+{
     // AclData(AclData),
     // SyncData(SyncData),
     /// The HCI Event Packet is used by the Controller to notify the Host when events

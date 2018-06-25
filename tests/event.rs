@@ -7,12 +7,23 @@ use std::time::Duration;
 struct VendorEvent;
 #[derive(Debug)]
 struct VendorError;
+#[derive(Clone, Debug)]
+struct VendorReturnParameters;
 
 impl hci::event::VendorEvent for VendorEvent {
     type Error = VendorError;
+    type ReturnParameters = VendorReturnParameters;
 
     fn new(_buffer: &[u8]) -> Result<Self, hci::event::Error<Self::Error>> {
         Err(hci::event::Error::Vendor(VendorError))
+    }
+}
+
+impl hci::event::VendorReturnParameters for VendorReturnParameters {
+    type Error = VendorError;
+
+    fn new(_buffer: &[u8]) -> Result<Self, Self::Error> {
+        Err(VendorError)
     }
 }
 

@@ -9,6 +9,7 @@
 //! For the return parameters of the commands, see the description of each command in sections 7.1 -
 //! 7.6 of the same part of the spec.
 
+use super::VendorReturnParameters;
 use byteorder::{ByteOrder, LittleEndian};
 use core::convert::{TryFrom, TryInto};
 use core::fmt::{Debug, Formatter, Result as FmtResult};
@@ -18,9 +19,14 @@ use core::mem;
 /// commands to transmit return status of a command and the other event parameters that are
 /// specified for the issued HCI command.
 ///
+/// Must be specialized on the return parameters that may be returned by vendor-specific commands.
+///
 /// Defined in the Bluetooth spec, Vol 2, Part E, Section 7.7.14.
 #[derive(Clone, Debug)]
-pub struct CommandComplete {
+pub struct CommandComplete<V>
+where
+    V: super::VendorEvent,
+{
     /// Indicates the number of HCI command packets the Host can send to the Controller. If the
     /// Controller requires the Host to stop sending commands, `num_hci_command_packets` will be set
     /// to zero.  To indicate to the Host that the Controller is ready to receive HCI command
@@ -33,10 +39,13 @@ pub struct CommandComplete {
     pub num_hci_command_packets: u8,
 
     /// The type of command that has completed, and any parameters that it returns.
-    pub return_params: ReturnParameters,
+    pub return_params: ReturnParameters<V>,
 }
 
-impl CommandComplete {
+impl<V> CommandComplete<V>
+where
+    V: super::VendorEvent,
+{
     /// Deserializes a buffer into a CommandComplete event.
     ///
     /// # Errors
@@ -49,7 +58,7 @@ impl CommandComplete {
     ///   indicate parameter values are invalid. The error type must be specialized on potential
     ///   vendor-specific errors, though vendor-specific errors are never returned by this
     ///   function.
-    pub fn new<VE>(bytes: &[u8]) -> Result<CommandComplete, ::event::Error<VE>> {
+    pub fn new(bytes: &[u8]) -> Result<CommandComplete<V>, ::event::Error<V::Error>> {
         require_len_at_least!(bytes, 3);
 
         let params = match ::opcode::Opcode(LittleEndian::read_u16(&bytes[1..])) {
@@ -146,9 +155,18 @@ impl CommandComplete {
                 ReturnParameters::LeTransmitterTest(to_status(&bytes[3..])?)
             }
             ::opcode::LE_TEST_END => ReturnParameters::LeTestEnd(to_le_test_end(&bytes[3..])?),
-            other => return Err(::event::Error::UnknownOpcode(other)),
+            other => {
+                const VENDOR_OGF: u16 = 0x3F;
+                if other.ogf() != VENDOR_OGF {
+                    return Err(::event::Error::UnknownOpcode(other));
+                }
+
+                ReturnParameters::Vendor(
+                    V::ReturnParameters::new(&bytes).map_err(::event::Error::Vendor)?,
+                )
+            }
         };
-        Ok(CommandComplete {
+        Ok(CommandComplete::<V> {
             num_hci_command_packets: bytes[0],
             return_params: params,
         })
@@ -158,7 +176,10 @@ impl CommandComplete {
 /// Commands that may generate the [Command Complete](::event::Event::CommandComplete) event.  If
 /// the commands have defined return parameters, they are included in this enum.
 #[derive(Copy, Clone, Debug)]
-pub enum ReturnParameters {
+pub enum ReturnParameters<V>
+where
+    V: super::VendorEvent,
+{
     /// The controller sent an unsolicited command complete event in order to change the number of
     /// HCI command packets the Host is allowed to send.
     Spontaneous,
@@ -288,6 +309,9 @@ pub enum ReturnParameters {
 
     /// Parameters returned by the [LE Test End](::host::Hci::le_test_end) command.
     LeTestEnd(LeTestEnd),
+
+    /// Parameters returned by vendor-specific commands.
+    Vendor(V::ReturnParameters),
 }
 
 fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {
@@ -1352,12 +1376,18 @@ fn to_le_advertising_channel_tx_power<VE>(
 }
 
 #[cfg(not(feature = "version-5-0"))]
-fn to_le_set_advertise_enable(status: ::Status) -> ReturnParameters {
+fn to_le_set_advertise_enable<V>(status: ::Status) -> ReturnParameters<V>
+where
+    V: super::VendorEvent,
+{
     ReturnParameters::LeSetAdvertiseEnable(status)
 }
 
 #[cfg(feature = "version-5-0")]
-fn to_le_set_advertise_enable(status: ::Status) -> ReturnParameters {
+fn to_le_set_advertise_enable<V>(status: ::Status) -> ReturnParameters<V>
+where
+    V: super::VendorEvent,
+{
     ReturnParameters::LeSetAdvertisingEnable(status)
 }
 

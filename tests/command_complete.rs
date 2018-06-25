@@ -1,18 +1,43 @@
+#![feature(try_from)]
+
 extern crate bluetooth_hci as hci;
 
 use hci::event::command::*;
 use hci::event::*;
+use std::convert::TryInto;
 
 #[derive(Debug)]
 struct VendorEvent;
 #[derive(Debug)]
 struct VendorError;
+#[derive(Clone, Debug)]
+enum VendorReturnParameters {
+    Opcode10 { status: hci::Status },
+}
 
 impl hci::event::VendorEvent for VendorEvent {
     type Error = VendorError;
+    type ReturnParameters = VendorReturnParameters;
 
     fn new(_buffer: &[u8]) -> Result<Self, hci::event::Error<Self::Error>> {
         Err(hci::event::Error::Vendor(VendorError))
+    }
+}
+
+impl hci::event::VendorReturnParameters for VendorReturnParameters {
+    type Error = VendorError;
+
+    fn new(buffer: &[u8]) -> Result<Self, Self::Error> {
+        if buffer.len() < 4 {
+            return Err(VendorError);
+        }
+        if buffer[1] != 10 {
+            return Err(VendorError);
+        }
+
+        Ok(VendorReturnParameters::Opcode10 {
+            status: buffer[3].try_into().map_err(|_e| VendorError)?,
+        })
     }
 }
 
@@ -798,6 +823,25 @@ fn le_test_end() {
                     assert_eq!(params.number_of_packets, 0x0201);
                 }
                 other => panic!("Did not get LE Test End return params: {:?}", other),
+            }
+        }
+        other => panic!("Did not get command complete event: {:?}", other),
+    }
+}
+
+#[test]
+fn vendor_command() {
+    let buffer = [0x0E, 4, 1, 0x0A, 0xFC, 0x00];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::CommandComplete(event)) => {
+            assert_eq!(event.num_hci_command_packets, 1);
+            match event.return_params {
+                ReturnParameters::Vendor(params) => match params {
+                    VendorReturnParameters::Opcode10 { status } => {
+                        assert_eq!(status, hci::Status::Success);
+                    }
+                },
+                other => panic!("Did not get Vendor command return params: {:?}", other),
             }
         }
         other => panic!("Did not get command complete event: {:?}", other),
