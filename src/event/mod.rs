@@ -250,9 +250,9 @@ const PACKET_HEADER_LENGTH: usize = 2;
 const EVENT_TYPE_BYTE: usize = 0;
 const PARAM_LEN_BYTE: usize = 1;
 
-impl<VEvent, VError> Event<VEvent>
+impl<V> Event<V>
 where
-    VEvent: VendorEvent<Error = VError>,
+    V: VendorEvent,
 {
     /// Deserializes an event from the given packet. The packet should contain all of the data
     /// needed to deserialize the event.
@@ -267,7 +267,7 @@ where
     ///   header.
     /// - Other errors if the particular event cannot be correctly deserialized from the
     ///   packet. This includes vendor-specific errors for vendor events.
-    pub fn new(packet: Packet) -> Result<Event<VEvent>, Error<VError>> {
+    pub fn new(packet: Packet) -> Result<Event<V>, Error<V::Error>> {
         require_len_at_least!(packet.0, PACKET_HEADER_LENGTH);
         require_len!(packet.0, packet.full_length());
 
@@ -295,15 +295,15 @@ where
                 to_encryption_key_refresh_complete(payload)?,
             )),
             0x3E => to_le_meta_event(payload),
-            0xFF => Ok(Event::Vendor(VEvent::new(payload)?)),
+            0xFF => Ok(Event::Vendor(V::new(payload)?)),
             _ => Err(Error::UnknownEvent(event_type)),
         }
     }
 }
 
-fn to_le_meta_event<VEvent>(payload: &[u8]) -> Result<Event<VEvent>, Error<VEvent::Error>>
+fn to_le_meta_event<V>(payload: &[u8]) -> Result<Event<V>, Error<V::Error>>
 where
-    VEvent: VendorEvent,
+    V: VendorEvent,
 {
     require_len_at_least!(payload, 1);
     match payload[0] {
