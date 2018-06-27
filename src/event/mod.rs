@@ -137,7 +137,7 @@ pub trait VendorReturnParameters {
     /// Deserializes vendor-specific return parameters from the contents of the buffer.  The buffer
     /// is the full payload of the command complete event, starting with the length (1 byte) and
     /// opcode (2 bytes).
-    fn new(buffer: &[u8]) -> Result<Self, Self::Error>
+    fn new(buffer: &[u8]) -> Result<Self, Error<Self::Error>>
     where
         Self: Sized;
 }

@@ -22,8 +22,8 @@ impl hci::event::VendorEvent for VendorEvent {
 impl hci::event::VendorReturnParameters for VendorReturnParameters {
     type Error = VendorError;
 
-    fn new(_buffer: &[u8]) -> Result<Self, Self::Error> {
-        Err(VendorError)
+    fn new(_buffer: &[u8]) -> Result<Self, hci::event::Error<Self::Error>> {
+        Err(hci::event::Error::Vendor(VendorError))
     }
 }
 

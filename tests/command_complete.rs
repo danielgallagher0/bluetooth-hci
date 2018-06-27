@@ -27,16 +27,18 @@ impl hci::event::VendorEvent for VendorEvent {
 impl hci::event::VendorReturnParameters for VendorReturnParameters {
     type Error = VendorError;
 
-    fn new(buffer: &[u8]) -> Result<Self, Self::Error> {
+    fn new(buffer: &[u8]) -> Result<Self, hci::event::Error<Self::Error>> {
         if buffer.len() < 4 {
-            return Err(VendorError);
+            return Err(hci::event::Error::Vendor(VendorError));
         }
         if buffer[1] != 10 {
-            return Err(VendorError);
+            return Err(hci::event::Error::Vendor(VendorError));
         }
 
         Ok(VendorReturnParameters::Opcode10 {
-            status: buffer[3].try_into().map_err(|_e| VendorError)?,
+            status: buffer[3]
+                .try_into()
+                .map_err(|_e| hci::event::Error::Vendor(VendorError))?,
         })
     }
 }

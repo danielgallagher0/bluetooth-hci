@@ -161,9 +161,7 @@ where
                     return Err(::event::Error::UnknownOpcode(other));
                 }
 
-                ReturnParameters::Vendor(
-                    V::ReturnParameters::new(&bytes).map_err(::event::Error::Vendor)?,
-                )
+                ReturnParameters::Vendor(V::ReturnParameters::new(&bytes)?)
             }
         };
         Ok(CommandComplete::<V> {
