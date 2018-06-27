@@ -223,7 +223,9 @@ pub enum Error<V> {
     Vendor(V),
 }
 
-fn rewrap_bad_status<VE>(bad_status: ::BadStatusError) -> Error<VE> {
+/// Extracts the value from a [`BadStatusError`](::BadStatusError) and returns it as a
+/// [`BadStatus`](Error::BadStatus) error.
+pub fn rewrap_bad_status<VE>(bad_status: ::BadStatusError) -> Error<VE> {
     let ::BadStatusError::BadValue(v) = bad_status;
     Error::BadStatus(v)
 }
