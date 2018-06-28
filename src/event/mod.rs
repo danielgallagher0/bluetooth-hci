@@ -144,7 +144,7 @@ pub trait VendorReturnParameters {
 
 /// Errors that may occur when deserializing an event. Must be specialized by the vendor crate to
 /// allow for vendor-specific event errors.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Error<V> {
     /// The event type byte was unknown. The byte is provided.
     UnknownEvent(u8),
