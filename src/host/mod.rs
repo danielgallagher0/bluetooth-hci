@@ -366,9 +366,9 @@ pub trait Hci<E, Header> {
     /// Details added in v5.0:
     ///
     /// - If this command is used to change the address, the new random address shall take effect
-    ///   for advertising no later than the next successful
-    ///   [`le_set_advertising_enable`](Hci::le_set_advertising_enable) command, for scanning no
-    ///   later than the next successful [`le_set_scan_enable`](Hci::le_set_scan_enable) command or
+    ///   for advertising no later than the next successful [`le_set_advertise_enable`](Hci) command
+    ///   (v4.x, renamed to [`le_set_advertising_enable`](Hci) in v5.0), for scanning no later than
+    ///   the next successful [`le_set_scan_enable`](Hci::le_set_scan_enable) command or
     ///   `le_set_extended_scan_enable` command, and for initiating no later than the next
     ///   successful [`le_create_connection`](Hci::le_create_connection) command or
     ///   `le_extended_create_connection` command.
@@ -628,10 +628,9 @@ pub trait Hci<E, Header> {
     /// packet received.
     ///
     /// If [`own_address_type`](ScanParameters::own_address_type) is set to
-    /// [`Random`](OwnAddressType::Random) or
-    /// [`PrivateFallbackRandom`](OwnAddressType::PrivateFallbackRandom) and the random address for
-    /// the device has not been initialized, the Controller shall return the error code
-    /// [`InvalidParameters`](::Status::InvalidParameters).
+    /// [`Random`](OwnAddressType::Random) or [`PrivateFallbackRandom`](OwnAddressType) and the
+    /// random address for the device has not been initialized, the Controller shall return the
+    /// error code [`InvalidParameters`](::Status::InvalidParameters).
     ///
     /// If `enable` is true and scanning is already enabled, any change to the `filter_duplicates`
     /// setting shall take effect.
@@ -1817,11 +1816,11 @@ pub struct AdvertisingParameters {
 
     /// Indicates the type of address being used in the advertising packets.
     ///
-    /// If this is [`PrivateFallbackPublic`](OwnAddressType::PrivateFallbackPublic) or
-    /// [`PrivateFallbackRandom`](OwnAddressType::PrivateFallbackRandom), the `peer_address`
-    /// parameter contains the peer’s Identity Address and type. These parameters are used to locate
-    /// the corresponding local IRK in the resolving list; this IRK is used to generate the own
-    /// address used in the advertisement.
+    /// If this is [`PrivateFallbackPublic`](OwnAddressType) or
+    /// [`PrivateFallbackRandom`](OwnAddressType), the
+    /// [`peer_address`](AdvertisingParameters::peer_address) parameter contains the peer's identity
+    /// address and type. These parameters are used to locate the corresponding local IRK in the
+    /// resolving list; this IRK is used to generate the own address used in the advertisement.
     pub own_address_type: OwnAddressType,
 
     /// If directed advertising is performed, i.e. when `advertising_type` is set to
@@ -1829,10 +1828,10 @@ pub struct AdvertisingParameters {
     /// [`ConnectableDirectedLowDutyCycle`](AdvertisingType::ConnectableDirectedLowDutyCycle), then
     /// `peer_address` shall be valid.
     ///
-    /// If `own_address_type` is [`PrivateFallbackPublic`](OwnAddressType::PrivateFallbackPublic) or
-    /// [`PrivateFallbackRandom`](OwnAddressType::PrivateFallbackRandom), the Controller generates
-    /// the peer’s Resolvable Private Address using the peer’s IRK corresponding to the peer’s
-    /// Identity Address contained in `peer_address`
+    /// If `own_address_type` is [`PrivateFallbackPublic`](OwnAddressType) or
+    /// [`PrivateFallbackRandom`](OwnAddressType), the Controller generates
+    /// the peer's Resolvable Private Address using the peer's IRK corresponding to the peer's
+    /// Identity Address contained in `peer_address`.
     pub peer_address: ::BdAddrType,
 
     /// Bit field that indicates the advertising channels that shall be used when transmitting
@@ -1905,7 +1904,8 @@ fn to_interval_value(duration: Duration) -> u16 {
     (1600 * duration.as_secs() as u32 + (duration.subsec_micros() / 625)) as u16
 }
 
-/// The advertising type is used in the [`AdvertisingParameters`] to determine the packet type that
+/// The advertising type is used in the
+/// [`AdvertisingParameters`]($crate::host::AdvertisingParameters) to determine the packet type that
 /// is used for advertising when advertising is enabled.
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -1961,7 +1961,7 @@ impl Default for Channels {
 
 /// Possible filter policies used for undirected advertising.
 ///
-/// See [`AdvertisingParameters`].
+/// See [`AdvertisingParameters`]($crate::host::AdvertisingParameters).
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum AdvertisingFilterPolicy {
@@ -2104,15 +2104,13 @@ pub struct ConnectionParameters {
     pub initiator_filter_policy: ConnectionFilterPolicy,
 
     /// Indicates the type and value of the address used in the connectable advertisement sent by
-    /// the peer. The Host shall not use
-    /// [`PublicIdentityAddress`](PeerAddrType::PublicIdentityAddress) or
-    /// [`RandomIdentityAddress`](PeerAddrType::RandomIdentityAddress) (both introduced in v4.2) if
-    /// both the Host and the Controller support the `le_set_privacy_mode` command (introduced in
-    /// v5.0). If a Controller that supports the LE Set Privacy Mode command receives the
+    /// the peer. The Host shall not use [`PublicIdentityAddress`](PeerAddrType) or
+    /// [`RandomIdentityAddress`](PeerAddrType) (both introduced in v4.2) if both the Host and the
+    /// Controller support the `le_set_privacy_mode` command (introduced in v5.0). If a Controller
+    /// that supports the LE Set Privacy Mode command receives the
     /// [`le_create_connection`](Hci::le_create_connection) command with `peer_address` set to
-    /// either [`PublicIdentityAddress`](PeerAddrType::PublicIdentityAddress) or
-    /// [`RandomIdentityAddress`](PeerAddrType::RandomIdentityAddress), it may use either device
-    /// privacy mode or network privacy mode for that peer device.
+    /// either [`PublicIdentityAddress`](PeerAddrType) or [`RandomIdentityAddress`](PeerAddrType),
+    /// it may use either device privacy mode or network privacy mode for that peer device.
     pub peer_address: PeerAddrType,
 
     /// The type of address being used in the connection request packets.
@@ -2121,16 +2119,15 @@ pub struct ConnectionParameters {
     /// been initialized, the Controller shall return the error code
     /// [`::Status::InvalidParameters`].
     ///
-    /// If this is [`PrivateFallbackRemote`](OwnAddressType::PrivateFallbackRandom),
-    /// `initiator_filter_policy` is [`UseAddress`](ConnectionFilterPolicy::UseAddress), the
-    /// controller's resolving list did not contain a matching entry, and the random address for the
-    /// device has not been initialized, the Controller shall return the error code
-    /// [`::Status::InvalidParameters`].
+    /// If this is [`PrivateFallbackRemote`](OwnAddressType), `initiator_filter_policy` is
+    /// [`UseAddress`](ConnectionFilterPolicy::UseAddress), the controller's resolving list did not
+    /// contain a matching entry, and the random address for the device has not been initialized,
+    /// the Controller shall return the error code [`::Status::InvalidParameters`].
     ///
-    /// If this is set [`PrivateFallbackRandom`](`OwnAddressType::PrivateFallbackRandom`),
-    /// `initiator_filter_policy` is [`WhiteList`](ConnectionFilterPolicy::WhiteList), and the
-    /// random address for the device has not been initialized, the Controller shall return the
-    /// error code [`::Status::InvalidParameters`].
+    /// If this is set [`PrivateFallbackRandom`](`OwnAddressType`), `initiator_filter_policy` is
+    /// [`WhiteList`](ConnectionFilterPolicy::WhiteList), and the random address for the device has
+    /// not been initialized, the Controller shall return the error code
+    /// [`::Status::InvalidParameters`].
     pub own_address_type: OwnAddressType,
 
     /// Defines the minimum and maximum allowed connection interval. The first value (min) must be

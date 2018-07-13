@@ -1002,7 +1002,7 @@ pub struct LeAdvertisement<'a> {
 
 /// Types of advertisement reports.
 ///
-/// See [`LeAdvertisement`].
+/// See [`LeAdvertisement`]($crate::event::LeAdvertisement).
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum AdvertisementEvent {
     /// Connectable undirected advertising
