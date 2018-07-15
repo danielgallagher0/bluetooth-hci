@@ -6,18 +6,20 @@
 
 #![macro_use]
 
+#[macro_export]
 macro_rules! require_len {
     ($left:expr, $right:expr) => {
         if $left.len() != $right {
-            return Err(::event::Error::BadLength($left.len(), $right));
+            return Err($crate::event::Error::BadLength($left.len(), $right));
         }
     };
 }
 
+#[macro_export]
 macro_rules! require_len_at_least {
     ($left:expr, $right:expr) => {
         if $left.len() < $right {
-            return Err(::event::Error::BadLength($left.len(), $right));
+            return Err($crate::event::Error::BadLength($left.len(), $right));
         }
     };
 }
