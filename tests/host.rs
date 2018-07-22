@@ -218,8 +218,13 @@ fn le_set_advertising_parameters() {
     let mut sink = RecordingSink::new();
     sink.as_controller()
         .le_set_advertising_parameters(&AdvertisingParameters {
-            advertising_interval: (Duration::from_millis(21), Duration::from_millis(1000)),
-            advertising_type: AdvertisingType::ConnectableUndirected,
+            advertising_interval: AdvertisingInterval::for_type(
+                AdvertisingType::ConnectableUndirected,
+            ).with_range(
+                Duration::from_millis(21),
+                Duration::from_millis(1000),
+            )
+                .unwrap(),
             own_address_type: OwnAddressType::Public,
             peer_address: hci::BdAddrType::Random(hci::BdAddr([
                 0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
@@ -255,44 +260,18 @@ fn le_set_advertising_parameters() {
 }
 
 #[test]
-fn le_set_advertising_parameters_bad_range() {
-    let mut sink = RecordingSink::new();
-    for (min, max) in [
-        (Duration::from_millis(19), Duration::from_millis(1000)),
-        (Duration::from_millis(100), Duration::from_millis(10241)),
-        (Duration::from_millis(500), Duration::from_millis(499)),
-    ].iter()
-    {
-        let err = sink
-            .as_controller()
-            .le_set_advertising_parameters(&AdvertisingParameters {
-                advertising_interval: (*min, *max),
-                advertising_type: AdvertisingType::ConnectableUndirected,
-                own_address_type: OwnAddressType::Random,
-                peer_address: hci::BdAddrType::Random(hci::BdAddr([
-                    0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
-                ])),
-                advertising_channel_map: Channels::CH_37 | Channels::CH_39,
-                advertising_filter_policy: AdvertisingFilterPolicy::AllowConnectionAndScan,
-            })
-            .err()
-            .unwrap();
-        assert_eq!(
-            err,
-            nb::Error::Other(Error::BadAdvertisingInterval(*min, *max))
-        );
-    }
-    assert_eq!(sink.written_data, []);
-}
-
-#[test]
 fn le_set_advertising_parameters_bad_channel_map() {
     let mut sink = RecordingSink::new();
     let err = sink
         .as_controller()
         .le_set_advertising_parameters(&AdvertisingParameters {
-            advertising_interval: (Duration::from_millis(20), Duration::from_millis(1000)),
-            advertising_type: AdvertisingType::ConnectableUndirected,
+            advertising_interval: AdvertisingInterval::for_type(
+                AdvertisingType::ConnectableUndirected,
+            ).with_range(
+                Duration::from_millis(20),
+                Duration::from_millis(1000),
+            )
+                .unwrap(),
             own_address_type: OwnAddressType::Public,
             peer_address: hci::BdAddrType::Random(hci::BdAddr([
                 0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
@@ -307,118 +286,6 @@ fn le_set_advertising_parameters_bad_channel_map() {
         nb::Error::Other(Error::BadChannelMap(Channels::empty()))
     );
     assert_eq!(sink.written_data, []);
-}
-
-#[cfg(not(feature = "version-5-0"))]
-#[test]
-fn le_set_advertising_parameters_bad_higher_min() {
-    let mut sink = RecordingSink::new();
-    let err = sink
-        .as_controller()
-        .le_set_advertising_parameters(&AdvertisingParameters {
-            advertising_interval: (Duration::from_millis(99), Duration::from_millis(1000)),
-            advertising_type: AdvertisingType::ScannableUndirected,
-            own_address_type: OwnAddressType::Random,
-            peer_address: hci::BdAddrType::Random(hci::BdAddr([
-                0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
-            ])),
-            advertising_channel_map: Channels::all(),
-            advertising_filter_policy: AdvertisingFilterPolicy::AllowConnectionAndScan,
-        })
-        .err()
-        .unwrap();
-    assert_eq!(
-        err,
-        nb::Error::Other(Error::BadAdvertisingIntervalMin(
-            Duration::from_millis(99),
-            AdvertisingType::ScannableUndirected
-        ))
-    );
-    assert_eq!(sink.written_data, []);
-}
-
-#[cfg(feature = "version-5-0")]
-#[test]
-fn le_set_advertising_parameters_ok_no_higher_min() {
-    let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_set_advertising_parameters(&AdvertisingParameters {
-            advertising_interval: (Duration::from_millis(99), Duration::from_millis(1000)),
-            advertising_type: AdvertisingType::ScannableUndirected,
-            own_address_type: OwnAddressType::PrivateFallbackPublic,
-            peer_address: hci::BdAddrType::Random(hci::BdAddr([
-                0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
-            ])),
-            advertising_channel_map: Channels::default(),
-            advertising_filter_policy: AdvertisingFilterPolicy::AllowConnectionAndScan,
-        })
-        .unwrap();
-    assert_eq!(
-        sink.written_data,
-        [
-            1,
-            0x06,
-            0x20,
-            15,
-            0x9E,
-            0x00,
-            0x40,
-            0x06,
-            0x02,
-            0x02,
-            0x01,
-            0x01,
-            0x02,
-            0x03,
-            0x04,
-            0x05,
-            0x06,
-            0b0000_0111,
-            0x00
-        ]
-    );
-}
-
-#[test]
-fn le_set_advertising_parameters_ignore_interval_for_high_duty_cycle() {
-    let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_set_advertising_parameters(&AdvertisingParameters {
-            // Bad interval in every way, but it is ignored for this advertising type
-            advertising_interval: (Duration::from_millis(20000), Duration::from_millis(2)),
-            advertising_type: AdvertisingType::ConnectableDirectedHighDutyCycle,
-            own_address_type: OwnAddressType::Random,
-            peer_address: hci::BdAddrType::Random(hci::BdAddr([
-                0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
-            ])),
-            advertising_channel_map: Channels::CH_37 | Channels::CH_39,
-            advertising_filter_policy: AdvertisingFilterPolicy::AllowConnectionAndScan,
-        })
-        .unwrap();
-    assert_eq!(
-        sink.written_data,
-        [
-            1,
-            0x06,
-            0x20,
-            15,
-            0x00, // advertising_interval is not used for ConnectableDirectedHighDutyCycle
-            0x00,
-            0x00,
-            0x00,
-            0x01, // advertising type
-            0x01,
-            0x01,
-            0x01,
-            0x02,
-            0x03,
-            0x04,
-            0x05,
-            0x06,
-            0b0000_0101,
-            0x00
-        ]
-    );
 }
 
 #[test]

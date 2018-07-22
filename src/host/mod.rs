@@ -18,7 +18,7 @@ pub mod cmd_link;
 pub mod event_link;
 pub mod uart;
 
-pub use super::types::ScanWindow;
+pub use super::types::{AdvertisingInterval, AdvertisingType, ScanWindow};
 
 const MAX_HEADER_LENGTH: usize = 5;
 
@@ -409,15 +409,7 @@ pub trait Hci<E, Header> {
     ///
     /// # Errors
     ///
-    /// - [`BadAdvertisingInterval`](Error::BadAdvertisingInterval) if the minimum is greater than
-    ///   the maximum, or if the minimum is less than 20 ms, or the maximum is greater than 10240
-    ///   ms.
     /// - [`BadChannelMap`](Error::BadChannelMap) if no channels are enabled in the channel map.
-    /// - [`BadAdvertisingInterval`](Error::BadAdvertisingInterval) if the advertising type is
-    ///   [`ScannableUndirected`](AdvertisingType::ScannableUndirected) or
-    ///   [`NonConnectableUndirected`](AdvertisingType::NonConnectableUndirected) and the
-    ///   advertising interval minimum is less than 100 ms.  This restriction is removed in version
-    ///   5.0.
     /// - Underlying communication errors
     ///
     /// # Generated events
@@ -1141,23 +1133,8 @@ pub enum Error<E> {
     BadRandomAddress(::BdAddr),
 
     /// For the [`le_set_advertising_parameters`](Hci::le_set_advertising_parameters) command: The
-    /// advertising interval is invalid. This means that either:
-    /// - The min is too low (less than 20 ms)
-    /// - The max is too high (higher than 10.24 s)
-    /// - The min is greater than the max.
-    ///
-    /// Includes the provided interval as a pair. The first value is the min, second is max.
-    BadAdvertisingInterval(Duration, Duration),
-
-    /// For the [`le_set_advertising_parameters`](Hci::le_set_advertising_parameters) command: The
     /// channel map did not include any enabled channels.  Includes the provided channel map.
     BadChannelMap(Channels),
-
-    /// For the [`le_set_advertising_parameters`](Hci::le_set_advertising_parameters) command: The
-    /// advertising interval minimum was too low for the advertising type.  Includes the provided
-    /// minimum and advertising type.  This restriction is removed in version 5.0 of the spec.
-    #[cfg(not(feature = "version-5-0"))]
-    BadAdvertisingIntervalMin(Duration, AdvertisingType),
 
     /// For the [`le_set_advertising_data`](Hci::le_set_advertising_data) or
     /// [`le_set_scan_response_data`](Hci::le_set_scan_response_data) commands: The provided data is
@@ -1780,26 +1757,8 @@ fn pop_count_of(byte: u8) -> u32 {
 /// command.
 #[derive(Clone, Debug)]
 pub struct AdvertisingParameters {
-    /// The advertising interval min shall be less than or equal to the advertising interval
-    /// max. The advertising interval min and advertising interval max should not be the same value
-    /// to enable the Controller to determine the best advertising interval given other activities,
-    /// though this implementation allows them to be equal.
-    ///
-    /// For [high duty cycle directed
-    /// advertising](AdvertisingType::ConnectableDirectedHighDutyCycle), the advertising interval is
-    /// not used and shall be ignored.  This implementation sends 0 for both fields in that case.
-    ///
-    /// The advertising interval min and advertising interval max shall not be set to less than 100
-    /// ms if the advertising type is [`ScannableUndirected`](AdvertisingType::ScannableUndirected)
-    /// or [`NonConnectableUndirected`](AdvertisingType::NonConnectableUndirected).  This
-    /// restriction is removed in version 5.0 of the spec.
-    ///
-    /// The first field is the min; the second is the max
-    pub advertising_interval: (Duration, Duration),
-
-    /// The advertising type is used to determine the packet type that is used for advertising when
-    /// advertising is enabled.
-    pub advertising_type: AdvertisingType,
+    /// Type and allowable duration of advertising.
+    pub advertising_interval: AdvertisingInterval,
 
     /// Indicates the type of address being used in the advertising packets.
     ///
@@ -1837,46 +1796,7 @@ impl AdvertisingParameters {
             return Err(Error::BadChannelMap(self.advertising_channel_map));
         }
 
-        if self.advertising_type == AdvertisingType::ConnectableDirectedHighDutyCycle {
-            LittleEndian::write_u16(&mut bytes[0..], 0);
-            LittleEndian::write_u16(&mut bytes[2..], 0);
-        } else {
-            const MIN_ADVERTISING_INTERVAL: Duration = Duration::from_millis(20);
-            const MAX_ADVERTISING_INTERVAL: Duration = Duration::from_millis(10240);
-            if self.advertising_interval.0 < MIN_ADVERTISING_INTERVAL
-                || self.advertising_interval.1 > MAX_ADVERTISING_INTERVAL
-                || self.advertising_interval.0 > self.advertising_interval.1
-            {
-                return Err(Error::BadAdvertisingInterval(
-                    self.advertising_interval.0,
-                    self.advertising_interval.1,
-                ));
-            }
-
-            #[cfg(not(feature = "version-5-0"))]
-            {
-                const MIN_UNDIRECTED_ADVERTISING_INTERVAL: Duration = Duration::from_millis(100);
-                if (self.advertising_type == AdvertisingType::ScannableUndirected
-                    || self.advertising_type == AdvertisingType::NonConnectableUndirected)
-                    && self.advertising_interval.0 < MIN_UNDIRECTED_ADVERTISING_INTERVAL
-                {
-                    return Err(Error::BadAdvertisingIntervalMin(
-                        self.advertising_interval.0,
-                        self.advertising_type,
-                    ));
-                }
-            }
-
-            LittleEndian::write_u16(
-                &mut bytes[0..],
-                to_interval_value(self.advertising_interval.0),
-            );
-            LittleEndian::write_u16(
-                &mut bytes[2..],
-                to_interval_value(self.advertising_interval.1),
-            );
-        }
-        bytes[4] = self.advertising_type as u8;
+        self.advertising_interval.into_bytes(&mut bytes[0..5]);
         bytes[5] = self.own_address_type as u8;
         self.peer_address.into_bytes(&mut bytes[6..13]);
         bytes[13] = self.advertising_channel_map.bits();
@@ -1889,24 +1809,6 @@ impl AdvertisingParameters {
 fn to_interval_value(duration: Duration) -> u16 {
     // 1600 = 1_000_000 / 625
     (1600 * duration.as_secs() as u32 + (duration.subsec_micros() / 625)) as u16
-}
-
-/// The advertising type is used in the
-/// [`AdvertisingParameters`]($crate::host::AdvertisingParameters) to determine the packet type that
-/// is used for advertising when advertising is enabled.
-#[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum AdvertisingType {
-    /// Connectable undirected advertising (ADV_IND) (default)
-    ConnectableUndirected = 0x00,
-    /// Connectable high duty cycle directed advertising (ADV_DIRECT_IND, high duty cycle)
-    ConnectableDirectedHighDutyCycle = 0x01,
-    /// Scannable undirected advertising (ADV_SCAN_IND)
-    ScannableUndirected = 0x02,
-    /// Non connectable undirected advertising (ADV_NONCONN_IND)
-    NonConnectableUndirected = 0x03,
-    /// Connectable low duty cycle directed advertising (ADV_DIRECT_IND, low duty cycle)
-    ConnectableDirectedLowDutyCycle = 0x04,
 }
 
 /// Indicates the type of address being used in the advertising packets.
