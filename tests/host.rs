@@ -559,8 +559,9 @@ fn le_set_scan_parameters() {
     sink.as_controller()
         .le_set_scan_parameters(&ScanParameters {
             scan_type: ScanType::Passive,
-            scan_interval: Duration::from_millis(21),
-            scan_window: Duration::from_millis(10),
+            scan_window: ScanWindow::start_every(Duration::from_millis(21))
+                .and_then(|b| b.open_for(Duration::from_millis(10)))
+                .unwrap(),
             own_address_type: OwnAddressType::Public,
             filter_policy: ScanFilterPolicy::AcceptAll,
         })
@@ -572,37 +573,6 @@ fn le_set_scan_parameters() {
         sink.written_data,
         [1, 0x0B, 0x20, 7, 0x00, 0x21, 0x00, 0x10, 0x00, 0x00, 0x00]
     );
-}
-
-#[test]
-fn le_set_scan_parameters_bad_window() {
-    let mut sink = RecordingSink::new();
-    for (interval, window) in [
-        (Duration::from_millis(19), Duration::from_millis(20)),
-        (Duration::from_millis(2), Duration::from_millis(1)),
-        (Duration::from_millis(12), Duration::from_millis(2)),
-        (Duration::from_millis(10241), Duration::from_millis(100)),
-        (Duration::from_millis(102), Duration::from_millis(10241)),
-    ].iter()
-    {
-        let err = sink
-            .as_controller()
-            .le_set_scan_parameters(&ScanParameters {
-                scan_type: ScanType::Passive,
-                scan_interval: *interval,
-                scan_window: *window,
-                own_address_type: OwnAddressType::Public,
-                filter_policy: ScanFilterPolicy::AcceptAll,
-            })
-            .err()
-            .unwrap();
-
-        assert_eq!(
-            err,
-            nb::Error::Other(Error::BadScanInterval(*interval, *window))
-        );
-    }
-    assert_eq!(sink.written_data, []);
 }
 
 #[test]

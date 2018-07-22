@@ -18,6 +18,8 @@ pub mod cmd_link;
 pub mod event_link;
 pub mod uart;
 
+pub use super::types::ScanWindow;
+
 const MAX_HEADER_LENGTH: usize = 5;
 
 /// Trait to define a command packet header.
@@ -609,17 +611,13 @@ pub trait Hci<E, Header> {
     ///
     /// # Errors
     ///
-    /// - [`BadScanInterval`](Error::BadScanInterval) if either
-    ///   [`scan_interval`](ScanParameters::scan_interval) or
-    ///   [`scan_window`](ScanParameters::scan_window) is too short (less than 2.5 ms) or too long
-    ///   (more than 10.24 s), or if `scan_window` is longer than `scan_interval`.
-    /// - Underlying communication errors
+    /// Only underlying communication errors are reported.
     ///
     /// # Generated events
     ///
     /// A [Command Complete](::event::command::ReturnParameters::LeSetScanParameters) event is
     /// generated.
-    fn le_set_scan_parameters(&mut self, params: &ScanParameters) -> nb::Result<(), Error<E>>;
+    fn le_set_scan_parameters(&mut self, params: &ScanParameters) -> nb::Result<(), E>;
 
     /// Starts scanning. Scanning is used to discover advertising devices nearby.
     ///
@@ -1171,10 +1169,10 @@ pub enum Error<E> {
     /// returned.
     AdvertisingDataTooLong(usize),
 
-    /// For the [`le_set_scan_parameters`](Hci::le_set_scan_parameters) or
-    /// [`le_create_connection`](Hci::le_create_connection) command: The scan interval is too short
-    /// or too long, or the scan window is too short or too long, or the scan window is longer than
-    /// the scan interval.  The first value is the scan interval; the second is the scan window.
+    /// For the [`le_create_connection`](Hci::le_create_connection) command: The scan interval is
+    /// too short or too long, or the scan window is too short or too long, or the scan window is
+    /// longer than the scan interval.  The first value is the scan interval; the second is the scan
+    /// window.
     BadScanInterval(Duration, Duration),
 
     /// For the [`le_create_connection`](Hci::le_create_connection) command: The connection interval
@@ -1394,11 +1392,10 @@ where
         write_command::<Header, T, E>(self, ::opcode::LE_SET_ADVERTISE_ENABLE, &[enable as u8])
     }
 
-    fn le_set_scan_parameters(&mut self, params: &ScanParameters) -> nb::Result<(), Error<E>> {
+    fn le_set_scan_parameters(&mut self, params: &ScanParameters) -> nb::Result<(), E> {
         let mut bytes = [0; 7];
-        params.into_bytes(&mut bytes).map_err(nb::Error::Other)?;
+        params.into_bytes(&mut bytes);
         write_command::<Header, T, E>(self, ::opcode::LE_SET_SCAN_PARAMETERS, &bytes)
-            .map_err(rewrap_as_comm)
     }
 
     fn le_set_scan_enable(&mut self, enable: bool, filter_duplicates: bool) -> nb::Result<(), E> {
@@ -1985,22 +1982,8 @@ pub struct ScanParameters {
     pub scan_type: ScanType,
 
     /// Recommendation from the host on how frequently the controller should scan.  See the
-    /// Bluetooth spec, Vol 6, Part B, Section 4.5.3.  `scan_window` shall always be set to a value
-    /// smaller or equal to `scan_interval`. If they are set to the same value scanning should be
-    /// run continuously.
-    ///
-    /// This is defined as the time interval from when the Controller started its last LE scan until
-    /// it begins the subsequent LE scan.
-    ///
-    /// Range: 2.5 msec to 10.24 seconds
-    pub scan_interval: Duration,
-
-    /// Recommendation from the host on how long the controller should scan.  See the Bluetooth
-    /// spec, Vol 6, Part B, Section 4.5.3. `scan_window` shall be less than or equal to
-    /// `scan_interval`.
-    ///
-    /// Range: 2.5 msec to 10.24 seconds
-    pub scan_window: Duration,
+    /// Bluetooth spec, Vol 6, Part B, Section 4.5.3.
+    pub scan_window: ScanWindow,
 
     /// Indicates the type of address being used in the scan request packets.
     pub own_address_type: OwnAddressType,
@@ -2024,17 +2007,13 @@ fn verify_scan_interval<E>(scan_interval: Duration, scan_window: Duration) -> Re
 }
 
 impl ScanParameters {
-    fn into_bytes<E>(&self, bytes: &mut [u8]) -> Result<(), Error<E>> {
+    fn into_bytes(&self, bytes: &mut [u8]) {
         assert_eq!(bytes.len(), 7);
-        verify_scan_interval(self.scan_interval, self.scan_window)?;
 
         bytes[0] = self.scan_type as u8;
-        LittleEndian::write_u16(&mut bytes[1..], to_interval_value(self.scan_interval));
-        LittleEndian::write_u16(&mut bytes[3..], to_interval_value(self.scan_window));
+        self.scan_window.into_bytes(&mut bytes[1..5]);
         bytes[5] = self.own_address_type as u8;
         bytes[6] = self.filter_policy as u8;
-
-        Ok(())
     }
 }
 
