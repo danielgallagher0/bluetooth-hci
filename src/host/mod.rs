@@ -661,10 +661,6 @@ pub trait Hci<E, Header> {
     ///
     /// # Errors
     ///
-    /// - [`BadScanInterval`](Error::BadScanInterval) if either
-    ///   [`scan_interval`](ConnectionParameters::scan_interval) or
-    ///   [`scan_window`](ConnectionParameters::scan_window) are too short (less than 2.5 msec) or
-    ///   too long (more than 10.24 s), or `scan_window` is longer than `scan_interval`.
     /// - [`BadConnectionInterval`](Error::BadConnectionInterval) if the [connection
     ///   interval](ConnectionParameters::conn_interval) is inverted, i.e. if the first value (min)
     ///   is greater than the second (max), or if either value is out of range (7.5 ms to 4 sec).
@@ -1168,12 +1164,6 @@ pub enum Error<E> {
     /// too long to fit in the command.  The maximum allowed length is 31.  The actual length is
     /// returned.
     AdvertisingDataTooLong(usize),
-
-    /// For the [`le_create_connection`](Hci::le_create_connection) command: The scan interval is
-    /// too short or too long, or the scan window is too short or too long, or the scan window is
-    /// longer than the scan interval.  The first value is the scan interval; the second is the scan
-    /// window.
-    BadScanInterval(Duration, Duration),
 
     /// For the [`le_create_connection`](Hci::le_create_connection) command: The connection interval
     /// is invalid. This means that either:
@@ -1992,20 +1982,6 @@ pub struct ScanParameters {
     pub filter_policy: ScanFilterPolicy,
 }
 
-fn verify_scan_interval<E>(scan_interval: Duration, scan_window: Duration) -> Result<(), Error<E>> {
-    const MIN_SCAN_INTERVAL: Duration = Duration::from_micros(2500);
-    const MAX_SCAN_INTERVAL: Duration = Duration::from_millis(10240);
-    if scan_interval < MIN_SCAN_INTERVAL
-        || scan_interval > MAX_SCAN_INTERVAL
-        || scan_window < MIN_SCAN_INTERVAL
-        || scan_window > scan_interval
-    {
-        Err(Error::BadScanInterval(scan_interval, scan_window))
-    } else {
-        Ok(())
-    }
-}
-
 impl ScanParameters {
     fn into_bytes(&self, bytes: &mut [u8]) {
         assert_eq!(bytes.len(), 7);
@@ -2062,21 +2038,8 @@ pub enum ScanFilterPolicy {
 /// Parameters for the [`le_create_connection`](Hci::le_create_connection`) event.
 #[derive(Clone, Debug)]
 pub struct ConnectionParameters {
-    /// Recommendation from the host on how frequently the Controller should scan.  `scan_window`
-    /// shall always be set to a value smaller or equal to `scan_interval`.  If they are set to the
-    /// same value, scanning should run continuously.
-    ///
-    /// This is defined as the time interval from when the Controller started its last LE scan until
-    /// it begins the subsequent LE scan.
-    ///
-    /// Range: 2.5 msec to 10.24 seconds
-    pub scan_interval: Duration,
-
-    /// Recommendation from the host on how long the controller should scan.  `scan_window` shall be
-    /// less than or equal to `scan_interval`.
-    ///
-    /// Range: 2.5 msec to 10.24 seconds
-    pub scan_window: Duration,
+    /// Recommendation from the host on how frequently the Controller should scan.
+    pub scan_window: ScanWindow,
 
     /// Determines whether the White List is used.  If the White List is not used, `peer_address`
     /// specifies the address type and address of the advertising device to connect to.
@@ -2132,7 +2095,6 @@ impl ConnectionParameters {
     fn into_bytes<E>(&self, bytes: &mut [u8]) -> Result<(), Error<E>> {
         assert_eq!(bytes.len(), 25);
 
-        verify_scan_interval(self.scan_interval, self.scan_window)?;
         verify_conn_interval(self.conn_interval.0, self.conn_interval.1)?;
         verify_conn_latency(self.conn_latency)?;
         verify_supervision_timeout(
@@ -2141,8 +2103,7 @@ impl ConnectionParameters {
             self.conn_latency,
         )?;
 
-        LittleEndian::write_u16(&mut bytes[0..], to_interval_value(self.scan_interval));
-        LittleEndian::write_u16(&mut bytes[2..], to_interval_value(self.scan_window));
+        self.scan_window.into_bytes(&mut bytes[0..4]);
         bytes[4] = self.initiator_filter_policy as u8;
         match self.initiator_filter_policy {
             ConnectionFilterPolicy::UseAddress => {

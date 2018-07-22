@@ -589,8 +589,9 @@ fn le_create_connection_no_whitelist() {
     let mut sink = RecordingSink::new();
     sink.as_controller()
         .le_create_connection(&ConnectionParameters {
-            scan_interval: Duration::from_millis(50),
-            scan_window: Duration::from_millis(25),
+            scan_window: ScanWindow::start_every(Duration::from_millis(50))
+                .and_then(|b| b.open_for(Duration::from_millis(25)))
+                .unwrap(),
             initiator_filter_policy: ConnectionFilterPolicy::UseAddress,
             peer_address: PeerAddrType::PublicDeviceAddress(hci::BdAddr([1, 2, 3, 4, 5, 6])),
             own_address_type: OwnAddressType::Public,
@@ -617,8 +618,9 @@ fn le_create_connection_use_whitelist() {
     let mut sink = RecordingSink::new();
     sink.as_controller()
         .le_create_connection(&ConnectionParameters {
-            scan_interval: Duration::from_millis(50),
-            scan_window: Duration::from_millis(25),
+            scan_window: ScanWindow::start_every(Duration::from_millis(50))
+                .and_then(|b| b.open_for(Duration::from_millis(25)))
+                .unwrap(),
             initiator_filter_policy: ConnectionFilterPolicy::WhiteList,
             peer_address: PeerAddrType::PublicDeviceAddress(hci::BdAddr([1, 2, 3, 4, 5, 6])),
             own_address_type: OwnAddressType::Public,
@@ -641,44 +643,6 @@ fn le_create_connection_use_whitelist() {
 }
 
 #[test]
-fn le_create_connection_bad_window() {
-    let mut sink = RecordingSink::new();
-    for (interval, window) in [
-        (Duration::from_millis(19), Duration::from_millis(20)),
-        (Duration::from_millis(2), Duration::from_millis(1)),
-        (Duration::from_millis(12), Duration::from_millis(2)),
-        (Duration::from_millis(10241), Duration::from_millis(100)),
-        (Duration::from_millis(102), Duration::from_millis(10241)),
-    ].iter()
-    {
-        let err = sink
-            .as_controller()
-            .le_create_connection(&ConnectionParameters {
-                scan_interval: *interval,
-                scan_window: *window,
-                initiator_filter_policy: ConnectionFilterPolicy::WhiteList,
-                peer_address: PeerAddrType::PublicDeviceAddress(hci::BdAddr([1, 2, 3, 4, 5, 6])),
-                own_address_type: OwnAddressType::Public,
-                conn_interval: (Duration::from_millis(50), Duration::from_millis(500)),
-                conn_latency: 10,
-                supervision_timeout: Duration::from_millis(50),
-                expected_connection_length_range: (
-                    Duration::from_millis(200),
-                    Duration::from_millis(500),
-                ),
-            })
-            .err()
-            .unwrap();
-
-        assert_eq!(
-            err,
-            nb::Error::Other(Error::BadScanInterval(*interval, *window))
-        );
-    }
-    assert_eq!(sink.written_data, []);
-}
-
-#[test]
 fn le_create_connection_bad_connection_interval() {
     let mut sink = RecordingSink::new();
     for (min, max) in [
@@ -690,8 +654,9 @@ fn le_create_connection_bad_connection_interval() {
         let err = sink
             .as_controller()
             .le_create_connection(&ConnectionParameters {
-                scan_interval: Duration::from_millis(100),
-                scan_window: Duration::from_millis(50),
+                scan_window: ScanWindow::start_every(Duration::from_millis(100))
+                    .and_then(|b| b.open_for(Duration::from_millis(50)))
+                    .unwrap(),
                 initiator_filter_policy: ConnectionFilterPolicy::WhiteList,
                 peer_address: PeerAddrType::PublicDeviceAddress(hci::BdAddr([1, 2, 3, 4, 5, 6])),
                 own_address_type: OwnAddressType::Public,
@@ -720,8 +685,9 @@ fn le_create_connection_bad_connection_latency() {
     let err = sink
         .as_controller()
         .le_create_connection(&ConnectionParameters {
-            scan_interval: Duration::from_millis(100),
-            scan_window: Duration::from_millis(50),
+            scan_window: ScanWindow::start_every(Duration::from_millis(100))
+                .and_then(|b| b.open_for(Duration::from_millis(50)))
+                .unwrap(),
             initiator_filter_policy: ConnectionFilterPolicy::WhiteList,
             peer_address: PeerAddrType::PublicDeviceAddress(hci::BdAddr([1, 2, 3, 4, 5, 6])),
             own_address_type: OwnAddressType::Public,
@@ -752,8 +718,9 @@ fn le_create_connection_bad_supervision_timeout() {
         let err = sink
             .as_controller()
             .le_create_connection(&ConnectionParameters {
-                scan_interval: Duration::from_millis(100),
-                scan_window: Duration::from_millis(50),
+                scan_window: ScanWindow::start_every(Duration::from_millis(100))
+                    .and_then(|b| b.open_for(Duration::from_millis(50)))
+                    .unwrap(),
                 initiator_filter_policy: ConnectionFilterPolicy::WhiteList,
                 peer_address: PeerAddrType::PublicDeviceAddress(hci::BdAddr([1, 2, 3, 4, 5, 6])),
                 own_address_type: OwnAddressType::Public,
