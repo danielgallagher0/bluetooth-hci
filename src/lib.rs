@@ -92,6 +92,7 @@ mod bitflag_array;
 pub mod event;
 pub mod host;
 mod opcode;
+pub mod types;
 
 pub use event::Event;
 pub use opcode::Opcode;
