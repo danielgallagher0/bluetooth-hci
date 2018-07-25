@@ -18,7 +18,10 @@ pub mod cmd_link;
 pub mod event_link;
 pub mod uart;
 
-pub use super::types::{AdvertisingInterval, AdvertisingType, ScanWindow};
+pub use super::types::{
+    AdvertisingInterval, AdvertisingIntervalError, AdvertisingType, ConnectionInterval,
+    ConnectionIntervalBuilder, ConnectionIntervalError, ScanWindow,
+};
 
 const MAX_HEADER_LENGTH: usize = 5;
 
@@ -653,17 +656,9 @@ pub trait Hci<E, Header> {
     ///
     /// # Errors
     ///
-    /// - [`BadConnectionInterval`](Error::BadConnectionInterval) if the [connection
-    ///   interval](ConnectionParameters::conn_interval) is inverted, i.e. if the first value (min)
-    ///   is greater than the second (max), or if either value is out of range (7.5 ms to 4 sec).
-    /// - [`BadConnectionLatency`](Error::BadConnectionLatency) if
-    ///   [`conn_latency`](ConnectionParameters::conn_latency) is greater than 514.
     /// - [`BadConnectionLengthRange`](Error::BadConnectionLengthRange) if the max expected
     ///   [connection length](ConnectionParameters::expected_connection_length_range) is less than
     ///   the min expected connection length.
-    /// - [`BadSupervisionTimeout`](Error::BadSupervisionTimeout) if
-    ///   [`supervision_timeout`](ConnectionParameters::supervision_timeout) is too short (less than
-    ///   100 ms) or too long (more than 32 s).
     /// - Underlying communication errors
     ///
     /// # Generated events
@@ -839,18 +834,9 @@ pub trait Hci<E, Header> {
     ///
     /// # Errors
     ///
-    /// - [`BadConnectionInterval`](Error::BadConnectionInterval) if the [connection
-    ///   interval](`ConnectionUpdateParameters::conn_interval) is inverted, i.e. if the first value
-    ///   (min) is greater than the second (max), or if either value is out of range (7.5 ms to 4
-    ///   sec).
-    /// - [`BadConnectionLatency`](Error::BadConnectionLatency) if
-    ///   [`conn_latency`](`ConnectionUpdateParameters::conn_latency) is greater than 514.
     /// - [`BadConnectionLengthRange`](Error::BadConnectionLengthRange) if the max [expected
     ///   connection length](ConnectionUpdateParameters::expected_connection_length_range) is less
     ///   than the min expected connection length.
-    /// - [`BadSupervisionTimeout`](Error::BadSupervisionTimeout) if
-    ///   [`supervision_timeout`](ConnectionUpdateParameters::supervision_timeout) is too short
-    ///   (less than 100 ms) or too long (more than 32 s).
     /// - Underlying communication errors
     ///
     /// # Generated events
@@ -1141,27 +1127,6 @@ pub enum Error<E> {
     /// too long to fit in the command.  The maximum allowed length is 31.  The actual length is
     /// returned.
     AdvertisingDataTooLong(usize),
-
-    /// For the [`le_create_connection`](Hci::le_create_connection) command: The connection interval
-    /// is invalid. This means that either:
-    /// - The min (or max) is too low (less than 7.5 ms)
-    /// - The max (or min) is too high (higher than 4 s)
-    /// - The min is greater than the max.
-    ///
-    /// Includes the provided interval as a pair. The first value is the min, second is max.
-    BadConnectionInterval(Duration, Duration),
-
-    /// For the [`le_create_connection`](Hci::le_create_connection) command: the connection latency
-    /// is too large. The maximum allowed value is 514 (defined by the spec).  The value is
-    /// returned.
-    BadConnectionLatency(u16),
-
-    /// For the [`le_create_connection`](Hci::le_create_connection) command: the supervision timeout
-    /// is too small (less than 100 ms, or does not meet the requirement: `(1 + conn_latency) *
-    /// conn_interval_max * 2`) or too large (greater than 32 seconds).  The first value is the
-    /// provided supervision timeout.  The second value is the minimum as determined by the
-    /// `conn_latency` and `conn_interval_max`.
-    BadSupervisionTimeout(Duration, Duration),
 
     /// For the [`le_create_connection`](Hci::le_create_connection) command: the connection length
     /// range is inverted (i.e, the minimum is greater than the maximum). Returns the range, min
@@ -1974,18 +1939,9 @@ pub struct ConnectionParameters {
     /// [`::Status::InvalidParameters`].
     pub own_address_type: OwnAddressType,
 
-    /// Defines the minimum and maximum allowed connection interval. The first value (min) must be
-    /// less than the second (max).
-    pub conn_interval: (Duration, Duration),
-
-    /// Defines the maximum allowed connection latency. (see the Bluetooth Spec, Vol 6, Part B,
-    /// Section 4.5.1).
-    pub conn_latency: u16,
-
-    /// Defines the link supervision timeout for the connection. This shall be larger than
-    /// `(1 + conn_latency) * conn_interval.1 * 2`.  See the Bluetooth spec, Vol 6, Part B, Section
-    /// 4.5.2.
-    pub supervision_timeout: Duration,
+    /// Defines the minimum and maximum allowed connection interval, latency, and supervision
+    /// timeout.
+    pub conn_interval: ConnectionInterval,
 
     /// Informative parameters providing the Controller with the expected minimum and maximum length
     /// of the connection events.  The first value (min) shall be less than or equal to the second
@@ -1996,14 +1952,6 @@ pub struct ConnectionParameters {
 impl ConnectionParameters {
     fn into_bytes<E>(&self, bytes: &mut [u8]) -> Result<(), Error<E>> {
         assert_eq!(bytes.len(), 25);
-
-        verify_conn_interval(self.conn_interval.0, self.conn_interval.1)?;
-        verify_conn_latency(self.conn_latency)?;
-        verify_supervision_timeout(
-            self.supervision_timeout,
-            self.conn_interval.1,
-            self.conn_latency,
-        )?;
 
         self.scan_window.into_bytes(&mut bytes[0..4]);
         bytes[4] = self.initiator_filter_policy as u8;
@@ -2016,19 +1964,7 @@ impl ConnectionParameters {
             }
         }
         bytes[12] = self.own_address_type as u8;
-        LittleEndian::write_u16(
-            &mut bytes[13..],
-            to_conn_interval_value(self.conn_interval.0),
-        );
-        LittleEndian::write_u16(
-            &mut bytes[15..],
-            to_conn_interval_value(self.conn_interval.1),
-        );
-        LittleEndian::write_u16(&mut bytes[17..], self.conn_latency);
-        LittleEndian::write_u16(
-            &mut bytes[19..],
-            to_supervision_timeout_value(self.supervision_timeout),
-        );
+        self.conn_interval.into_bytes(&mut bytes[13..21]);
         LittleEndian::write_u16(
             &mut bytes[21..],
             to_interval_value(self.expected_connection_length_range.0),
@@ -2040,63 +1976,6 @@ impl ConnectionParameters {
 
         Ok(())
     }
-}
-
-fn verify_conn_interval<E>(min: Duration, max: Duration) -> Result<(), Error<E>> {
-    const CONN_INTERVAL_MIN: Duration = Duration::from_micros(7500);
-    const CONN_INTERVAL_MAX: Duration = Duration::from_secs(4);
-    if min < CONN_INTERVAL_MIN || max > CONN_INTERVAL_MAX || min > max {
-        return Err(Error::BadConnectionInterval(min, max));
-    }
-
-    Ok(())
-}
-
-fn verify_conn_latency<E>(latency: u16) -> Result<(), Error<E>> {
-    const CONN_LATENCY_MAX: u16 = 0x01F3;
-    if latency > CONN_LATENCY_MAX {
-        return Err(Error::BadConnectionLatency(latency));
-    }
-
-    Ok(())
-}
-
-fn verify_supervision_timeout<E>(
-    supervision_timeout: Duration,
-    conn_interval_max: Duration,
-    conn_latency: u16,
-) -> Result<(), Error<E>> {
-    const SUPERVISION_TIMEOUT_ABS_MIN: Duration = Duration::from_millis(100);
-    const SUPERVISION_TIMEOUT_MAX: Duration = Duration::from_secs(32);
-    let min_supervision_timeout = conn_interval_max * (1 + conn_latency as u32) * 2;
-    if supervision_timeout < min_supervision_timeout
-        || supervision_timeout < SUPERVISION_TIMEOUT_ABS_MIN
-        || supervision_timeout > SUPERVISION_TIMEOUT_MAX
-    {
-        return Err(Error::BadSupervisionTimeout(
-            supervision_timeout,
-            min_supervision_timeout,
-        ));
-    }
-
-    Ok(())
-}
-
-fn to_conn_interval_value(d: Duration) -> u16 {
-    // Connection interval value: T = N * 1.25 ms
-    // We have T, we need to return N.
-    // N = T / 1.25 ms
-    //   = 4 * T / 5 ms
-    let millis = (d.as_secs() * 1000) as u32 + d.subsec_millis();
-    (4 * millis / 5) as u16
-}
-
-fn to_supervision_timeout_value(d: Duration) -> u16 {
-    // Supervision timeout value: T = N * 10 ms
-    // We have T, we need to return N.
-    // N = T / 10 ms
-    let millis = (d.as_secs() * 1000) as u32 + d.subsec_millis();
-    (millis / 10) as u16
 }
 
 /// Possible values for the initiator filter policy in the
@@ -2180,22 +2059,8 @@ pub struct ConnectionUpdateParameters {
     /// Handle for identifying a connection.
     pub conn_handle: ::ConnectionHandle,
 
-    /// Defines the minimum and maximum allowed connection interval. The first value shall not be
-    /// greater than the second.
-    ///
-    /// Range: 7.5 msec to 4 seconds.
-    pub conn_interval: (Duration, Duration),
-
-    /// Defines the maximum allowed connection latency, in number of connection events.
-    ///
-    /// Range: 0x0000 to 0x01F3
-    pub conn_latency: u16,
-
-    /// Defines the link supervision timeout for the connection. This shall be larger than
-    /// `(1 + conn_latency) * conn_interval.1 * 2`.
-    ///
-    /// Absolute range: 100 msec to 32 seconds
-    pub supervision_timeout: Duration,
+    /// Defines the connection interval, latency, and supervision timeout.
+    pub conn_interval: ConnectionInterval,
 
     /// Information parameters providing the Controller with a hint about the expected minimum and
     /// maximum length of the connection events. The first value shall be less than the second.
@@ -2208,28 +2073,8 @@ impl ConnectionUpdateParameters {
     fn into_bytes<E>(&self, bytes: &mut [u8]) -> Result<(), Error<E>> {
         assert_eq!(bytes.len(), 14);
 
-        verify_conn_interval(self.conn_interval.0, self.conn_interval.1)?;
-        verify_conn_latency(self.conn_latency)?;
-        verify_supervision_timeout(
-            self.supervision_timeout,
-            self.conn_interval.1,
-            self.conn_latency,
-        )?;
-
         LittleEndian::write_u16(&mut bytes[0..], self.conn_handle.0);
-        LittleEndian::write_u16(
-            &mut bytes[2..],
-            to_conn_interval_value(self.conn_interval.0),
-        );
-        LittleEndian::write_u16(
-            &mut bytes[4..],
-            to_conn_interval_value(self.conn_interval.1),
-        );
-        LittleEndian::write_u16(&mut bytes[6..], self.conn_latency);
-        LittleEndian::write_u16(
-            &mut bytes[8..],
-            to_supervision_timeout_value(self.supervision_timeout),
-        );
+        self.conn_interval.into_bytes(&mut bytes[2..10]);
         LittleEndian::write_u16(
             &mut bytes[10..],
             to_interval_value(self.expected_connection_length_range.0),
