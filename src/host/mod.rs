@@ -19,8 +19,8 @@ pub mod event_link;
 pub mod uart;
 
 pub use super::types::{
-    AdvertisingInterval, AdvertisingIntervalError, AdvertisingType, ConnectionInterval,
-    ConnectionIntervalBuilder, ConnectionIntervalError, ScanWindow,
+    AdvertisingInterval, AdvertisingType, ConnectionInterval, ConnectionIntervalBuilder,
+    ExpectedConnectionLength, ScanWindow,
 };
 
 const MAX_HEADER_LENGTH: usize = 5;
@@ -656,10 +656,7 @@ pub trait Hci<E, Header> {
     ///
     /// # Errors
     ///
-    /// - [`BadConnectionLengthRange`](Error::BadConnectionLengthRange) if the max expected
-    ///   [connection length](ConnectionParameters::expected_connection_length_range) is less than
-    ///   the min expected connection length.
-    /// - Underlying communication errors
+    /// Only underlying communication errors are reported.
     ///
     /// # Generated events
     ///
@@ -671,7 +668,7 @@ pub trait Hci<E, Header> {
     /// Note: No Command Complete event is sent by the Controller to indicate that this command has
     /// been completed. Instead, the LE Connection Complete event indicates that this command has
     /// been completed.
-    fn le_create_connection(&mut self, params: &ConnectionParameters) -> nb::Result<(), Error<E>>;
+    fn le_create_connection(&mut self, params: &ConnectionParameters) -> nb::Result<(), E>;
 
     /// Cancels the [`le_create_connection`](Hci::le_create_connection) or
     /// `le_extended_create_connection` (for v5.0) command. This command shall only be issued after
@@ -834,10 +831,7 @@ pub trait Hci<E, Header> {
     ///
     /// # Errors
     ///
-    /// - [`BadConnectionLengthRange`](Error::BadConnectionLengthRange) if the max [expected
-    ///   connection length](ConnectionUpdateParameters::expected_connection_length_range) is less
-    ///   than the min expected connection length.
-    /// - Underlying communication errors
+    /// Only underlying communication errors are reported.
     ///
     /// # Generated events
     ///
@@ -849,10 +843,7 @@ pub trait Hci<E, Header> {
     /// Note: a Command Complete event is not sent by the Controller to indicate that this command
     /// has been completed. Instead, the LE Connection Update Complete event indicates that this
     /// command has been completed.
-    fn le_connection_update(
-        &mut self,
-        params: &ConnectionUpdateParameters,
-    ) -> nb::Result<(), Error<E>>;
+    fn le_connection_update(&mut self, params: &ConnectionUpdateParameters) -> nb::Result<(), E>;
 
     /// This command allows the Host to specify a channel classification for data channels based on
     /// its "local information". This classification persists until overwritten with a subsequent
@@ -1338,11 +1329,10 @@ where
         )
     }
 
-    fn le_create_connection(&mut self, params: &ConnectionParameters) -> nb::Result<(), Error<E>> {
+    fn le_create_connection(&mut self, params: &ConnectionParameters) -> nb::Result<(), E> {
         let mut bytes = [0; 25];
-        params.into_bytes(&mut bytes).map_err(nb::Error::Other)?;
+        params.into_bytes(&mut bytes);
         write_command::<Header, T, E>(self, ::opcode::LE_CREATE_CONNECTION, &bytes)
-            .map_err(rewrap_as_comm)
     }
 
     fn le_create_connection_cancel(&mut self) -> nb::Result<(), E> {
@@ -1387,14 +1377,10 @@ where
         )
     }
 
-    fn le_connection_update(
-        &mut self,
-        params: &ConnectionUpdateParameters,
-    ) -> nb::Result<(), Error<E>> {
+    fn le_connection_update(&mut self, params: &ConnectionUpdateParameters) -> nb::Result<(), E> {
         let mut bytes = [0; 14];
-        params.into_bytes(&mut bytes).map_err(nb::Error::Other)?;
+        params.into_bytes(&mut bytes);
         write_command::<Header, T, E>(self, ::opcode::LE_CONNECTION_UPDATE, &bytes)
-            .map_err(rewrap_as_comm)
     }
 
     fn le_set_host_channel_classification(
@@ -1771,11 +1757,6 @@ impl AdvertisingParameters {
     }
 }
 
-fn to_interval_value(duration: Duration) -> u16 {
-    // 1600 = 1_000_000 / 625
-    (1600 * duration.as_secs() as u32 + (duration.subsec_micros() / 625)) as u16
-}
-
 /// Indicates the type of address being used in the advertising packets.
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -1944,13 +1925,12 @@ pub struct ConnectionParameters {
     pub conn_interval: ConnectionInterval,
 
     /// Informative parameters providing the Controller with the expected minimum and maximum length
-    /// of the connection events.  The first value (min) shall be less than or equal to the second
-    /// (max).
-    pub expected_connection_length_range: (Duration, Duration),
+    /// of the connection events.
+    pub expected_connection_length: ExpectedConnectionLength,
 }
 
 impl ConnectionParameters {
-    fn into_bytes<E>(&self, bytes: &mut [u8]) -> Result<(), Error<E>> {
+    fn into_bytes(&self, bytes: &mut [u8]) {
         assert_eq!(bytes.len(), 25);
 
         self.scan_window.into_bytes(&mut bytes[0..4]);
@@ -1965,16 +1945,8 @@ impl ConnectionParameters {
         }
         bytes[12] = self.own_address_type as u8;
         self.conn_interval.into_bytes(&mut bytes[13..21]);
-        LittleEndian::write_u16(
-            &mut bytes[21..],
-            to_interval_value(self.expected_connection_length_range.0),
-        );
-        LittleEndian::write_u16(
-            &mut bytes[23..],
-            to_interval_value(self.expected_connection_length_range.1),
-        );
-
-        Ok(())
+        self.expected_connection_length
+            .into_bytes(&mut bytes[21..25]);
     }
 }
 
@@ -2063,28 +2035,18 @@ pub struct ConnectionUpdateParameters {
     pub conn_interval: ConnectionInterval,
 
     /// Information parameters providing the Controller with a hint about the expected minimum and
-    /// maximum length of the connection events. The first value shall be less than the second.
-    ///
-    /// Range: 0 to 40.959375 seconds.
-    pub expected_connection_length_range: (Duration, Duration),
+    /// maximum length of the connection events.
+    pub expected_connection_length: ExpectedConnectionLength,
 }
 
 impl ConnectionUpdateParameters {
-    fn into_bytes<E>(&self, bytes: &mut [u8]) -> Result<(), Error<E>> {
+    fn into_bytes(&self, bytes: &mut [u8]) {
         assert_eq!(bytes.len(), 14);
 
         LittleEndian::write_u16(&mut bytes[0..], self.conn_handle.0);
         self.conn_interval.into_bytes(&mut bytes[2..10]);
-        LittleEndian::write_u16(
-            &mut bytes[10..],
-            to_interval_value(self.expected_connection_length_range.0),
-        );
-        LittleEndian::write_u16(
-            &mut bytes[12..],
-            to_interval_value(self.expected_connection_length_range.1),
-        );
-
-        Ok(())
+        self.expected_connection_length
+            .into_bytes(&mut bytes[10..14]);
     }
 }
 

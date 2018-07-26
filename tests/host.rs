@@ -468,10 +468,10 @@ fn le_create_connection_no_whitelist() {
                 .with_supervision_timeout(Duration::from_secs(15))
                 .build()
                 .unwrap(),
-            expected_connection_length_range: (
+            expected_connection_length: ExpectedConnectionLength::new(
                 Duration::from_millis(200),
                 Duration::from_millis(500),
-            ),
+            ).unwrap(),
         })
         .unwrap();
     assert_eq!(
@@ -500,10 +500,10 @@ fn le_create_connection_use_whitelist() {
                 .with_supervision_timeout(Duration::from_secs(15))
                 .build()
                 .unwrap(),
-            expected_connection_length_range: (
+            expected_connection_length: ExpectedConnectionLength::new(
                 Duration::from_millis(200),
                 Duration::from_millis(500),
-            ),
+            ).unwrap(),
         })
         .unwrap();
     assert_eq!(
@@ -577,10 +577,10 @@ fn le_connection_update() {
                 .with_supervision_timeout(Duration::from_secs(15))
                 .build()
                 .unwrap(),
-            expected_connection_length_range: (
+            expected_connection_length: ExpectedConnectionLength::new(
                 Duration::from_millis(200),
                 Duration::from_millis(500),
-            ),
+            ).unwrap(),
         })
         .unwrap();
     assert_eq!(
