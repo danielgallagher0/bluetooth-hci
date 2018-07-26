@@ -120,22 +120,22 @@ impl ConnectionIntervalBuilder {
     /// - [Incomplete](ConnectionIntervalError::Incomplete) if any of
     ///   [`with_range`](ConnectionIntervalBuilder::with_range),
     ///   [`with_latency`](ConnectionIntervalBuilder::with_latency), or
-    ///   [`with_supervision_timeout`])ConnectionIntervalBuilder::with_supervision_timeout) have not
+    ///   [`with_supervision_timeout`](ConnectionIntervalBuilder::with_supervision_timeout) have not
     ///   been called.
-    /// - [IntervalTooShort](ConnectionIntervalBuilder::IntervalTooShort) if the minimum range value
+    /// - [IntervalTooShort](ConnectionIntervalError::IntervalTooShort) if the minimum range value
     ///   is less than 7.5 ms.
-    /// - [IntervalTooLong](ConnectionIntervalBuilder::IntervalTooLong) if the maximum range value
+    /// - [IntervalTooLong](ConnectionIntervalError::IntervalTooLong) if the maximum range value
     ///   is greater than 4 seconds.
-    /// - [IntervalInverted](ConnectionIntervalBuilder::IntervalInverted) if the minimum range value
+    /// - [IntervalInverted](ConnectionIntervalError::IntervalInverted) if the minimum range value
     ///   is greater than the maximum.
-    /// - [BadConnectionLatency](ConnectionIntervalBuilder::BadConnectionLatency) if the connection
+    /// - [BadConnectionLatency](ConnectionIntervalError::BadConnectionLatency) if the connection
     ///   latency is 500 or more.
-    /// - [SupervisionTimeoutTooShort](ConnectionIntervalBuilder::SupervisionTimeoutTooShort) if the
+    /// - [SupervisionTimeoutTooShort](ConnectionIntervalError::SupervisionTimeoutTooShort) if the
     ///   supervision timeout is less than 100 ms, or if it is less than the computed minimum: (1 +
     ///   latency) * interval max * 2.
-    /// - [SupervisionTimeoutTooLong](ConnectionIntervalBuilder::SupervisionTimeoutTooLong) if the
+    /// - [SupervisionTimeoutTooLong](ConnectionIntervalError::SupervisionTimeoutTooLong) if the
     ///   supervision timeout is more than 32 seconds.
-    /// - [ImpossibleSupervisionTimeout](ConnectionIntervalBuilder::ImpossibleSupervisionTimeout) if
+    /// - [ImpossibleSupervisionTimeout](ConnectionIntervalError::ImpossibleSupervisionTimeout) if
     ///   the computed minimum supervision timeout ((1 + latency) * interval max * 2) is 32 seconds
     ///   or more.
     pub fn build(&self) -> Result<ConnectionInterval, ConnectionIntervalError> {
@@ -206,7 +206,7 @@ impl ConnectionIntervalBuilder {
 pub enum ConnectionIntervalError {
     /// At least one of any of [`with_range`](ConnectionIntervalBuilder::with_range),
     /// [`with_latency`](ConnectionIntervalBuilder::with_latency), or
-    /// [`with_supervision_timeout`])ConnectionIntervalBuilder::with_supervision_timeout) was not
+    /// [`with_supervision_timeout`](ConnectionIntervalBuilder::with_supervision_timeout) has not
     /// been called.
     Incomplete,
     /// The minimum range value is less than 7.5 ms. Includes the invalid value.

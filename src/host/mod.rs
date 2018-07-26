@@ -511,21 +511,21 @@ pub trait Hci<E, Header> {
     /// Complete](::event::command::ReturnParameters::LeSetAdvertiseEnable) event shall be
     /// generated.
     ///
-    /// If [`advertising_type`](AdvertisingParameters::advertising_type) is
+    /// If the [advertising type](AdvertisingInterval::for_type) is
     /// [`ConnectableDirectedHighDutyCycle`](AdvertisingType::ConnectableDirectedHighDutyCycle) and
     /// the directed advertising fails to create a connection, an [LE Connection
     /// Complete](::event::Event::LeConnectionComplete) event shall be generated with the Status
     /// code set to [`AdvertisingTimeout`](::Status::AdvertisingTimeout).
     ///
-    /// If [`advertising_type`](AdvertisingParameters::advertising_type) is
+    /// If the [advertising type](AdvertisingInterval::for_type) is
     /// [`ConnectableUndirected`](AdvertisingType::ConnectableUndirected),
     /// [`ConnectableDirectedHighDutyCycle`](AdvertisingType::ConnectableDirectedHighDutyCycle), or
     /// [`ConnectableDirectedLowDutyCycle`](AdvertisingType::ConnectableDirectedLowDutyCycle) and a
     /// connection is established, an [LE Connection Complete](::event::Event::LeConnectionComplete)
     /// event shall be generated.
     ///
-    /// Note: There is a possible race condition if `enable` is set to false (Disable) and
-    /// [`advertising_type`](AdvertisingParameters::advertising_type) is
+    /// Note: There is a possible race condition if `enable` is set to false (Disable) and the
+    /// [advertising type](AdvertisingInterval::for_type) is
     /// [`ConnectableUndirected`](AdvertisingType::ConnectableUndirected),
     /// [`ConnectableDirectedHighDutyCycle`](AdvertisingType::ConnectableDirectedHighDutyCycle), or
     /// [`ConnectableDirectedLowDutyCycle`](AdvertisingType::ConnectableDirectedLowDutyCycle). The
