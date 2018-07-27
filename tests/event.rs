@@ -251,7 +251,7 @@ fn encryption_key_refresh_complete() {
 fn le_connection_complete() {
     let buffer = [
         0x3E, 19, 0x01, 0x00, 0x01, 0x02, 0x00, 0x00, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
-        0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x00,
+        0x00, 0x0B, 0x00, 0x0D, 0x0A, 0x00,
     ];
     match TestEvent::new(Packet(&buffer)) {
         Ok(Event::LeConnectionComplete(event)) => {
@@ -264,13 +264,16 @@ fn le_connection_complete() {
             );
 
             // Connection interval time = value * 1.25 ms
-            assert_eq!(event.conn_interval, Duration::from_millis(0x0A09 * 5 / 4));
-            assert_eq!(event.conn_latency, 0x0C0B);
+            assert_eq!(
+                event.conn_interval.interval(),
+                Duration::from_micros(0x0009 * 1_250)
+            );
+            assert_eq!(event.conn_interval.conn_latency(), 0x000B);
 
             // Supervision timeout = value * 10 ms
             assert_eq!(
-                event.supervision_timeout,
-                Duration::from_millis(0x0E0D * 10)
+                event.conn_interval.supervision_timeout(),
+                Duration::from_millis(0x0A0D * 10)
             );
             assert_eq!(event.central_clock_accuracy, CentralClockAccuracy::Ppm500);
         }
@@ -305,8 +308,8 @@ fn le_connection_complete_failed_bad_address_type() {
 #[test]
 fn le_connection_complete_failed_bad_central_clock_accuracy() {
     let buffer = [
-        0x3E, 19, 0x01, 0x00, 0x01, 0x02, 0x00, 0x00, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
-        0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x08,
+        0x3E, 19, 0x01, 0x00, 0x01, 0x02, 0x00, 0x00, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x07,
+        0x00, 0x0B, 0x00, 0x0D, 0x0B, 0x08,
     ];
     match TestEvent::new(Packet(&buffer)) {
         Err(Error::BadLeCentralClockAccuracy(code)) => assert_eq!(code, 0x08),
@@ -382,16 +385,19 @@ fn le_advertising_report_failed_bad_addr_type() {
 #[test]
 fn le_connection_update_complete() {
     let buffer = [
-        0x3E, 10, 0x03, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+        0x3E, 10, 0x03, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x00, 0x07, 0x08,
     ];
     match TestEvent::new(Packet(&buffer)) {
         Ok(Event::LeConnectionUpdateComplete(event)) => {
             assert_eq!(event.status, hci::Status::Success);
             assert_eq!(event.conn_handle, hci::ConnectionHandle(0x0201));
-            assert_eq!(event.conn_interval, Duration::from_millis(5 * 0x0403 / 4));
-            assert_eq!(event.conn_latency, 0x0605);
             assert_eq!(
-                event.supervision_timeout,
+                event.conn_interval.interval(),
+                Duration::from_micros(0x0403 * 1_250)
+            );
+            assert_eq!(event.conn_interval.conn_latency(), 0x0005);
+            assert_eq!(
+                event.conn_interval.supervision_timeout(),
                 Duration::from_millis(10 * 0x0807)
             );
         }
