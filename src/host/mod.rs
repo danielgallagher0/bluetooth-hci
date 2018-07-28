@@ -1985,8 +1985,13 @@ pub enum PeerAddrType {
 }
 
 impl PeerAddrType {
+    /// Serialize the peer address into the given byte buffer.
+    ///
+    /// # Panics
+    ///
+    /// `bytes` must be 7 bytes long.
     #[cfg(not(any(feature = "version-4-2", feature = "version-5-0")))]
-    fn into_bytes(&self, bytes: &mut [u8]) {
+    pub fn into_bytes(&self, bytes: &mut [u8]) {
         assert_eq!(bytes.len(), 7);
         match *self {
             PeerAddrType::PublicDeviceAddress(bd_addr) => {
@@ -2000,8 +2005,13 @@ impl PeerAddrType {
         }
     }
 
+    /// Serialize the peer address into the given byte buffer.
+    ///
+    /// # Panics
+    ///
+    /// `bytes` must be 7 bytes long.
     #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
-    fn into_bytes(&self, bytes: &mut [u8]) {
+    pub fn into_bytes(&self, bytes: &mut [u8]) {
         assert_eq!(bytes.len(), 7);
         match *self {
             PeerAddrType::PublicDeviceAddress(bd_addr) => {
