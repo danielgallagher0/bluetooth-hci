@@ -38,6 +38,39 @@ impl ConnectionInterval {
         );
     }
 
+    /// Deserializes the connection interval from the given byte buffer.
+    ///
+    /// - The minimum interval value, appropriately converted (2 bytes)
+    /// - The maximum interval value, appropriately converted (2 bytes)
+    /// - The connection latency (2 bytes)
+    /// - The supervision timeout, appropriately converted (2 bytes)
+    ///
+    /// # Panics
+    ///
+    /// The provided buffer must be at least 8 bytes long.
+    ///
+    /// # Errors
+    ///
+    /// Any of the errors from the [builder](ConnectionIntervalBuilder::build) except for
+    /// Incomplete.
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, ConnectionIntervalError> {
+        assert!(bytes.len() >= 8);
+
+        // Do the error checking with the standard connection interval builder. The min and max of
+        // the interval range are allowed to be equal.
+        let interval_min =
+            Duration::from_micros(1_250) * LittleEndian::read_u16(&bytes[0..2]) as u32;
+        let interval_max =
+            Duration::from_micros(1_250) * LittleEndian::read_u16(&bytes[2..4]) as u32;
+        let latency = LittleEndian::read_u16(&bytes[4..6]);
+        let timeout = Duration::from_millis(10) * LittleEndian::read_u16(&bytes[6..8]) as u32;
+        ConnectionIntervalBuilder::new()
+            .with_range(interval_min, interval_max)
+            .with_latency(latency)
+            .with_supervision_timeout(timeout)
+            .build()
+    }
+
     fn interval_as_u16(d: Duration) -> u16 {
         // T ms = N * 1.25 ms
         // N = T / 1.25 ms
