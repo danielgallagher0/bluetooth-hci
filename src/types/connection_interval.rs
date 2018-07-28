@@ -15,6 +15,21 @@ pub struct ConnectionInterval {
 }
 
 impl ConnectionInterval {
+    /// Returns the connection interval.
+    pub fn interval(&self) -> (Duration, Duration) {
+        self.interval_
+    }
+
+    /// Returns the connection latency, in number of events.
+    pub fn conn_latency(&self) -> u16 {
+        self.conn_latency_
+    }
+
+    /// Returns the supervision timeout.
+    pub fn supervision_timeout(&self) -> Duration {
+        self.supervision_timeout_
+    }
+
     /// Serializes the connection interval into the given byte buffer.
     ///
     /// The interval is serialized as:
