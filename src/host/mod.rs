@@ -1966,7 +1966,7 @@ pub enum ConnectionFilterPolicy {
 
 /// Possible values for the peer address in the [`le_create_connection`](Hci::le_create_connection)
 /// command.
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub enum PeerAddrType {
     /// Public Device Address
     PublicDeviceAddress(::BdAddr),
