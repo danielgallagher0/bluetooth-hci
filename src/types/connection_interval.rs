@@ -6,7 +6,7 @@ use core::time::Duration;
 
 /// Define a connection interval range with its latency and supervision timeout. This value is
 /// passed to the controller, which determines the [actual connection
-/// interval](FixedConnectionInterval).
+/// interval](::types::FixedConnectionInterval).
 #[derive(Copy, Clone, Debug)]
 pub struct ConnectionInterval {
     interval_: (Duration, Duration),
