@@ -22,7 +22,7 @@ use core::time::Duration;
 pub struct AdvertisingInterval {
     // The first field is the min; the second is the max
     interval: (Duration, Duration),
-    advertising_type: AdvertisingType,
+    _advertising_type: AdvertisingType,
 }
 
 impl AdvertisingInterval {
@@ -46,13 +46,13 @@ impl AdvertisingInterval {
     ///
     /// - If the provided buffer is not at least 5 bytes long.
     pub fn into_bytes(&self, bytes: &mut [u8]) {
-        if self.advertising_type == AdvertisingType::ConnectableDirectedHighDutyCycle {
+        if self._advertising_type == AdvertisingType::ConnectableDirectedHighDutyCycle {
             bytes[0..4].copy_from_slice(&[0; 4]);
         } else {
             LittleEndian::write_u16(&mut bytes[0..2], Self::as_u16(self.interval.0));
             LittleEndian::write_u16(&mut bytes[2..4], Self::as_u16(self.interval.1));
         }
-        bytes[4] = self.advertising_type as u8;
+        bytes[4] = self._advertising_type as u8;
     }
 
     fn as_u16(d: Duration) -> u16 {
@@ -62,6 +62,11 @@ impl AdvertisingInterval {
         //
         // Note: 1600 = 1_000_000 / 625
         (1600 * d.as_secs() as u32 + (d.subsec_micros() / 625)) as u16
+    }
+
+    /// Returns the advertising type.
+    pub fn advertising_type(&self) -> AdvertisingType {
+        self._advertising_type
     }
 }
 
@@ -114,7 +119,7 @@ impl AdvertisingIntervalBuilder {
 
         Ok(AdvertisingInterval {
             interval: (min, max),
-            advertising_type: self.advertising_type,
+            _advertising_type: self.advertising_type,
         })
     }
 
@@ -131,7 +136,7 @@ impl AdvertisingIntervalBuilder {
         if self.advertising_type == AdvertisingType::ConnectableDirectedHighDutyCycle {
             Ok(AdvertisingInterval {
                 interval: (Duration::from_secs(0), Duration::from_secs(0)),
-                advertising_type: self.advertising_type,
+                _advertising_type: self.advertising_type,
             })
         } else {
             Err(AdvertisingIntervalError::NoRange)
