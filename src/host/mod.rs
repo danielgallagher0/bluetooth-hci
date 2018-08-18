@@ -2079,7 +2079,7 @@ pub struct AesParameters {
 /// Newtype for the encryption key.
 ///
 /// See [`AesParameters`]
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct EncryptionKey(pub [u8; 16]);
 
 impl Debug for EncryptionKey {
