@@ -115,6 +115,11 @@ pub trait Controller {
     /// [`std::io::Error`]: https://doc.rust-lang.org/nightly/std/io/struct.Error.html
     type Error;
 
+    /// The type of header sent to the controller for HCI commands.  Should be either
+    /// [`uart::CommandHeader`], [`cmd_link::Header`], or [`event_link::NoCommands`], depending on
+    /// the controller implementation.
+    type Header;
+
     /// Writes the bytes to the controller, in a single transaction if possible. All of `header`
     /// shall be written, followed by all of `payload`. `write` is allowed to block internally, but
     /// should return [`nb::Error::WouldBlock`] if the controller is not ready to receive the data.
@@ -141,8 +146,10 @@ pub trait Controller {
     /// # use bluetooth_hci::Controller as HciController;
     /// # struct Controller;
     /// # struct Error;
+    /// # struct Header;
     /// # impl HciController for Controller {
     /// #     type Error = Error;
+    /// #     type Header = Header;
     /// #     fn write(&mut self, _header: &[u8], _payload: &[u8]) -> nb::Result<(), Self::Error> {
     /// #         Ok(())
     /// #     }
@@ -191,8 +198,10 @@ pub trait Controller {
     /// # use bluetooth_hci::Controller as HciController;
     /// # struct Controller;
     /// # struct Error;
+    /// # struct Header;
     /// # impl HciController for Controller {
     /// #     type Error = Error;
+    /// #     type Header = Header;
     /// #     fn write(&mut self, _header: &[u8], _payload: &[u8]) -> nb::Result<(), Self::Error> {
     /// #         Ok(())
     /// #     }

@@ -50,7 +50,7 @@ pub struct CommandHeader {
 ///
 /// Must be specialized for communication errors (`E`), vendor-specific events (`Vendor`), and
 /// vendor-specific errors (`VE`).
-pub trait Hci<E, Vendor, VE>: super::Hci<E, CommandHeader> {
+pub trait Hci<E, Vendor, VE>: super::Hci<E> {
     /// Reads and returns a packet from the controller. Consumes exactly enough bytes to read the
     /// next packet including its header.
     ///
@@ -118,7 +118,7 @@ where
 
 impl<E, Vendor, VE, T> Hci<E, Vendor, VE> for T
 where
-    T: ::Controller<Error = E>,
+    T: ::Controller<Error = E, Header = CommandHeader>,
 {
     fn read(&mut self) -> nb::Result<Packet<Vendor>, Error<E, VE>>
     where

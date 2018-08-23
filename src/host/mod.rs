@@ -56,12 +56,10 @@ pub trait HciHeader {
 /// Defines one function for each command in the Bluetooth Specification Vol 2, Part E, Sections
 /// 7.1-7.6.
 ///
-/// Specializations must define the error type `E`, used for communication errors, and the header
-/// type `Header`, which should be either [`uart::CommandHeader`], [`cmd_link::Header`], or
-/// [`event_link::NoCommands`], depending on the controller implementation.
+/// Specializations must define the error type `E`, used for communication errors.
 ///
 /// An implementation is defined or all types that implement [`Controller`](super::Controller).
-pub trait Hci<E, Header> {
+pub trait Hci<E> {
     /// Terminates an existing connection.  All synchronous connections on a physical link should be
     /// disconnected before the ACL connection on the same physical connection is disconnected.
     ///
@@ -1182,9 +1180,9 @@ where
     write_command::<Header, T, E>(controller, opcode, &params).map_err(rewrap_as_comm)
 }
 
-impl<E, T, Header> Hci<E, Header> for T
+impl<E, T, Header> Hci<E> for T
 where
-    T: ::Controller<Error = E>,
+    T: ::Controller<Error = E, Header = Header>,
     Header: HciHeader,
 {
     fn disconnect(

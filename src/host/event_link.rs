@@ -79,7 +79,7 @@ fn rewrap_error<E, VE>(e: nb::Error<E>) -> nb::Error<Error<E, VE>> {
 
 impl<E, Vendor, VE, T> Hci<E, Vendor, VE> for T
 where
-    T: ::Controller<Error = E>,
+    T: ::Controller<Error = E, Header = NoCommands>,
 {
     fn read(&mut self) -> nb::Result<::Event<Vendor>, Error<E, VE>>
     where
