@@ -79,7 +79,6 @@
 #![feature(try_from)]
 #![feature(never_type)]
 #![deny(missing_docs)]
-#![deny(warnings)]
 
 #[macro_use]
 extern crate bitflags;
@@ -236,159 +235,162 @@ pub trait Controller {
 }
 
 /// List of possible error codes, Bluetooth Spec, Vol 2, Part D, Section 2.
-#[repr(u8)]
+///
+/// Includes an extension point for vendor-specific status codes.
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum Status {
+pub enum Status<V> {
     /// Success
-    Success = 0x00,
+    Success,
     /// Unknown HCI Command
-    UnknownCommand = 0x01,
+    UnknownCommand,
     /// Unknown Connection Identifier
-    UnknownConnectionId = 0x02,
+    UnknownConnectionId,
     /// Hardware Failure
-    HardwareFailure = 0x03,
+    HardwareFailure,
     /// Page Timeout
-    PageTimeout = 0x04,
+    PageTimeout,
     /// Authentication Failure
-    AuthFailure = 0x05,
+    AuthFailure,
     /// PIN or Key Missing
-    PinOrKeyMissing = 0x06,
+    PinOrKeyMissing,
     /// Memory Capacity Exceeded
-    OutOfMemory = 0x07,
+    OutOfMemory,
     /// Connection Timeout
-    ConnectionTimeout = 0x08,
+    ConnectionTimeout,
     /// Connection Limit Exceeded
-    ConnectionLimitExceeeded = 0x09,
+    ConnectionLimitExceeeded,
     /// Synchronous Connection Limit To A Device Exceeded
-    SyncConnectionLimitExceeded = 0x0A,
+    SyncConnectionLimitExceeded,
     /// Connection Already Exists
-    ConnectionAlreadyExists = 0x0B,
+    ConnectionAlreadyExists,
     /// Command Disallowed
-    CommandDisallowed = 0x0C,
+    CommandDisallowed,
     /// Connection Rejected due to Limited Resources
-    LimitedResources = 0x0D,
+    LimitedResources,
     /// Connection Rejected Due To Security Reasons
-    ConnectionRejectedSecurity = 0x0E,
+    ConnectionRejectedSecurity,
     /// Connection Rejected due to Unacceptable BD_ADDR
-    UnacceptableBdAddr = 0x0F,
+    UnacceptableBdAddr,
     /// Connection Accept Timeout Exceeded
-    AcceptTimeoutExceeded = 0x10,
+    AcceptTimeoutExceeded,
     /// Unsupported Feature or Parameter Value
-    UnsupportedFeature = 0x11,
+    UnsupportedFeature,
     /// Invalid HCI Command Parameters
-    InvalidParameters = 0x12,
+    InvalidParameters,
     /// Remote User Terminated Connection
-    RemoteTerminationByUser = 0x13,
+    RemoteTerminationByUser,
     /// Remote Device Terminated Connection due to Low Resources
-    RemoteTerminationLowResources = 0x14,
+    RemoteTerminationLowResources,
     /// Remote Device Terminated Connection due to Power Off
-    RemoteTerminationPowerOff = 0x15,
+    RemoteTerminationPowerOff,
     /// Connection Terminated By Local Host
-    ConnectionTerminatedByHost = 0x16,
+    ConnectionTerminatedByHost,
     /// Repeated Attempts
-    RepeatedAttempts = 0x17,
+    RepeatedAttempts,
     /// Pairing Not Allowed
-    PairingNotAllowed = 0x18,
+    PairingNotAllowed,
     /// Unknown LMP PDU
-    UnknownLmpPdu = 0x19,
+    UnknownLmpPdu,
     /// Unsupported Remote Feature / Unsupported LMP Feature
-    UnsupportedRemoteFeature = 0x1A,
+    UnsupportedRemoteFeature,
     /// SCO Offset Rejected
-    ScoOffsetRejected = 0x1B,
+    ScoOffsetRejected,
     /// SCO Interval Rejected
-    ScoIntervalRejected = 0x1C,
+    ScoIntervalRejected,
     /// SCO Air Mode Rejected
-    ScoAirModeRejected = 0x1D,
+    ScoAirModeRejected,
     /// Invalid LMP Parameters / Invalid LL Parameters
-    InvalidLmpParameters = 0x1E,
+    InvalidLmpParameters,
     /// Unspecified Error
-    UnspecifiedError = 0x1F,
+    UnspecifiedError,
     /// Unsupported LMP Parameter Value / Unsupported LL Parameter Value
-    UnsupportedLmpParameterValue = 0x20,
+    UnsupportedLmpParameterValue,
     /// Role Change Not Allowed
-    RoleChangeNotAllowed = 0x21,
+    RoleChangeNotAllowed,
     /// LMP Response Timeout / LL Response Timeout
-    LmpResponseTimeout = 0x22,
+    LmpResponseTimeout,
     /// LMP Error Transaction Collision / LL Procedure Collision
-    LmpTransactionCollision = 0x23,
+    LmpTransactionCollision,
     /// LMP PDU Not Allowed
-    LmpPduNotAllowed = 0x24,
+    LmpPduNotAllowed,
     /// Encryption Mode Not Acceptable
-    EncryptionModeNotAcceptable = 0x25,
+    EncryptionModeNotAcceptable,
     /// Link Key cannot be Changed
-    LinkKeyCannotBeChanged = 0x26,
+    LinkKeyCannotBeChanged,
     /// Requested QoS Not Supported
-    RequestedQosNotSupported = 0x27,
+    RequestedQosNotSupported,
     /// Instant Passed
-    InstantPassed = 0x28,
+    InstantPassed,
     /// Pairing With Unit Key Not Supported
-    PairingWithUnitKeyNotSupported = 0x29,
+    PairingWithUnitKeyNotSupported,
     /// Different Transaction Collision
-    DifferentTransactionCollision = 0x2A,
+    DifferentTransactionCollision,
     /// Reserved for Future Use
-    ReservedforFutureUse = 0x2B,
+    ReservedforFutureUse,
     /// QoS Unacceptable Parameter
-    QosUnacceptableParameter = 0x2C,
+    QosUnacceptableParameter,
     /// QoS Rejected
-    QosRejected = 0x2D,
+    QosRejected,
     /// Channel Classification Not Supported
-    ChannelClassificationNotSupported = 0x2E,
+    ChannelClassificationNotSupported,
     /// Insufficient Security
-    InsufficientSecurity = 0x2F,
+    InsufficientSecurity,
     /// Parameter Out Of Mandatory Range
-    ParameterOutOfMandatoryRange = 0x30,
+    ParameterOutOfMandatoryRange,
     /// Reserved for Future Use
-    ReservedForFutureUse49 = 0x31,
+    ReservedForFutureUse49,
     /// Role Switch Pending
-    RoleSwitchPending = 0x32,
+    RoleSwitchPending,
     /// Reserved for Future Use
-    ReservedForFutureUse51 = 0x33,
+    ReservedForFutureUse51,
     /// Reserved Slot Violation
-    ReservedSlotViolation = 0x34,
+    ReservedSlotViolation,
     /// Role Switch Failed
-    RoleSwitchFailed = 0x35,
+    RoleSwitchFailed,
     /// Extended Inquiry Response Too Large
-    ExtendedInquiryResponseTooLarge = 0x36,
+    ExtendedInquiryResponseTooLarge,
     /// Secure Simple Pairing Not Supported By Host
-    SecureSimplePairingNotSupportedByHost = 0x37,
+    SecureSimplePairingNotSupportedByHost,
     /// Host Busy - Pairing
-    HostBusyPairing = 0x38,
+    HostBusyPairing,
     /// Connection Rejected due to No Suitable Channel Found
-    ConnectionRejectedNoSuitableChannel = 0x39,
+    ConnectionRejectedNoSuitableChannel,
     /// Controller Busy
-    ControllerBusy = 0x3A,
+    ControllerBusy,
     /// Unacceptable Connection Parameters
-    UnacceptableConnectionParameters = 0x3B,
+    UnacceptableConnectionParameters,
     /// Advertising Timeout
-    AdvertisingTimeout = 0x3C,
+    AdvertisingTimeout,
     /// Connection Terminated due to MIC Failure
-    ConnectionTerminatedMicFailure = 0x3D,
+    ConnectionTerminatedMicFailure,
     /// Connection Failed to be Established
-    ConnectionFailedToEstablish = 0x3E,
+    ConnectionFailedToEstablish,
     /// MAC Connection Failed
-    MacConnectionFailed = 0x3F,
+    MacConnectionFailed,
     /// Coarse Clock Adjustment Rejected but Will Try to Adjust Using Clock Dragging
-    CoarseClockAdjustmentRejectedDraggingAttempted = 0x40,
+    CoarseClockAdjustmentRejectedDraggingAttempted,
     #[cfg(feature = "version-5-0")]
     /// Type0 Submap Not Defined
     ///
     /// First introduced in version 5.0
-    Type0SubmapNotDefined = 0x41,
+    Type0SubmapNotDefined,
     #[cfg(feature = "version-5-0")]
     /// Unknown Advertising Identifier
     ///
     /// First introduced in version 5.0
-    UnknownAdvertisingId = 0x42,
+    UnknownAdvertisingId,
     #[cfg(feature = "version-5-0")]
     /// Limit Reached
     ///
     /// First introduced in version 5.0
-    LimitReached = 0x43,
+    LimitReached,
     #[cfg(feature = "version-5-0")]
     /// Operation Cancelled by Host
     ///
     /// First introduced in version 5.0
-    OperationCancelledByHost = 0x44,
+    OperationCancelledByHost,
+    /// Vendor-specific status code
+    Vendor(V),
 }
 
 /// Wrapper enum for errors converting a u8 into a [`Status`].
@@ -397,10 +399,13 @@ pub enum BadStatusError {
     BadValue(u8),
 }
 
-impl core::convert::TryFrom<u8> for Status {
-    type Error = BadStatusError;
+impl<V> core::convert::TryFrom<u8> for Status<V>
+where
+    V: core::convert::TryFrom<u8>,
+{
+    type Error = V::Error;
 
-    fn try_from(value: u8) -> Result<Status, Self::Error> {
+    fn try_from(value: u8) -> Result<Status<V>, Self::Error> {
         match value {
             0x00 => Ok(Status::Success),
             0x01 => Ok(Status::UnknownCommand),
@@ -474,7 +479,7 @@ impl core::convert::TryFrom<u8> for Status {
                 }
                 #[cfg(not(feature = "version-5-0"))]
                 {
-                    Err(BadStatusError::BadValue(value))
+                    Ok(Status::Vendor(V::try_from(value)?))
                 }
             }
             0x42 => {
@@ -484,7 +489,7 @@ impl core::convert::TryFrom<u8> for Status {
                 }
                 #[cfg(not(feature = "version-5-0"))]
                 {
-                    Err(BadStatusError::BadValue(value))
+                    Ok(Status::Vendor(V::try_from(value)?))
                 }
             }
             0x43 => {
@@ -494,7 +499,7 @@ impl core::convert::TryFrom<u8> for Status {
                 }
                 #[cfg(not(feature = "version-5-0"))]
                 {
-                    Err(BadStatusError::BadValue(value))
+                    Ok(Status::Vendor(V::try_from(value)?))
                 }
             }
             0x44 => {
@@ -504,10 +509,107 @@ impl core::convert::TryFrom<u8> for Status {
                 }
                 #[cfg(not(feature = "version-5-0"))]
                 {
-                    Err(BadStatusError::BadValue(value))
+                    Ok(Status::Vendor(V::try_from(value)?))
                 }
             }
-            _ => Err(BadStatusError::BadValue(value)),
+            _ => Ok(Status::Vendor(V::try_from(value)?)),
+        }
+    }
+}
+
+impl<V> core::convert::Into<u8> for Status<V>
+where
+    V: core::convert::Into<u8>,
+{
+    fn into(self) -> u8 {
+        match self {
+            Status::Success => 0x00,
+            Status::UnknownCommand => 0x01,
+            Status::UnknownConnectionId => 0x02,
+            Status::HardwareFailure => 0x03,
+            Status::PageTimeout => 0x04,
+            Status::AuthFailure => 0x05,
+            Status::PinOrKeyMissing => 0x06,
+            Status::OutOfMemory => 0x07,
+            Status::ConnectionTimeout => 0x08,
+            Status::ConnectionLimitExceeeded => 0x09,
+            Status::SyncConnectionLimitExceeded => 0x0A,
+            Status::ConnectionAlreadyExists => 0x0B,
+            Status::CommandDisallowed => 0x0C,
+            Status::LimitedResources => 0x0D,
+            Status::ConnectionRejectedSecurity => 0x0E,
+            Status::UnacceptableBdAddr => 0x0F,
+            Status::AcceptTimeoutExceeded => 0x10,
+            Status::UnsupportedFeature => 0x11,
+            Status::InvalidParameters => 0x12,
+            Status::RemoteTerminationByUser => 0x13,
+            Status::RemoteTerminationLowResources => 0x14,
+            Status::RemoteTerminationPowerOff => 0x15,
+            Status::ConnectionTerminatedByHost => 0x16,
+            Status::RepeatedAttempts => 0x17,
+            Status::PairingNotAllowed => 0x18,
+            Status::UnknownLmpPdu => 0x19,
+            Status::UnsupportedRemoteFeature => 0x1A,
+            Status::ScoOffsetRejected => 0x1B,
+            Status::ScoIntervalRejected => 0x1C,
+            Status::ScoAirModeRejected => 0x1D,
+            Status::InvalidLmpParameters => 0x1E,
+            Status::UnspecifiedError => 0x1F,
+            Status::UnsupportedLmpParameterValue => 0x20,
+            Status::RoleChangeNotAllowed => 0x21,
+            Status::LmpResponseTimeout => 0x22,
+            Status::LmpTransactionCollision => 0x23,
+            Status::LmpPduNotAllowed => 0x24,
+            Status::EncryptionModeNotAcceptable => 0x25,
+            Status::LinkKeyCannotBeChanged => 0x26,
+            Status::RequestedQosNotSupported => 0x27,
+            Status::InstantPassed => 0x28,
+            Status::PairingWithUnitKeyNotSupported => 0x29,
+            Status::DifferentTransactionCollision => 0x2A,
+            Status::ReservedforFutureUse => 0x2B,
+            Status::QosUnacceptableParameter => 0x2C,
+            Status::QosRejected => 0x2D,
+            Status::ChannelClassificationNotSupported => 0x2E,
+            Status::InsufficientSecurity => 0x2F,
+            Status::ParameterOutOfMandatoryRange => 0x30,
+            Status::ReservedForFutureUse49 => 0x31,
+            Status::RoleSwitchPending => 0x32,
+            Status::ReservedForFutureUse51 => 0x33,
+            Status::ReservedSlotViolation => 0x34,
+            Status::RoleSwitchFailed => 0x35,
+            Status::ExtendedInquiryResponseTooLarge => 0x36,
+            Status::SecureSimplePairingNotSupportedByHost => 0x37,
+            Status::HostBusyPairing => 0x38,
+            Status::ConnectionRejectedNoSuitableChannel => 0x39,
+            Status::ControllerBusy => 0x3A,
+            Status::UnacceptableConnectionParameters => 0x3B,
+            Status::AdvertisingTimeout => 0x3C,
+            Status::ConnectionTerminatedMicFailure => 0x3D,
+            Status::ConnectionFailedToEstablish => 0x3E,
+            Status::MacConnectionFailed => 0x3F,
+            Status::CoarseClockAdjustmentRejectedDraggingAttempted => 0x40,
+            _ => {
+                #[cfg(feature = "version-5-0")]
+                {
+                    match self {
+                        Status::Type0SubmapNotDefined => 0x41,
+                        Status::UnknownAdvertisingId => 0x42,
+                        Status::LimitReached => 0x43,
+                        Status::OperationCancelledByHost => 0x44,
+                        Status::Vendor(v) => v.into(),
+                        _ => 0xFF,
+                    }
+                }
+
+                #[cfg(not(feature = "version-5-0"))]
+                {
+                    if let Status::Vendor(v) = self {
+                        v.into()
+                    } else {
+                        0xFF
+                    }
+                }
+            }
         }
     }
 }

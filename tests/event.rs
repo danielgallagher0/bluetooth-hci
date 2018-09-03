@@ -1,3 +1,5 @@
+#![feature(try_from)]
+
 extern crate bluetooth_hci as hci;
 
 use hci::event::*;
@@ -9,10 +11,16 @@ struct VendorEvent;
 struct VendorError;
 #[derive(Clone, Debug)]
 struct VendorReturnParameters;
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum VendorStatus {
+    FourFive,
+    FiveZero,
+}
 
 impl hci::event::VendorEvent for VendorEvent {
     type Error = VendorError;
     type ReturnParameters = VendorReturnParameters;
+    type Status = VendorStatus;
 
     fn new(_buffer: &[u8]) -> Result<Self, hci::event::Error<Self::Error>> {
         Err(hci::event::Error::Vendor(VendorError))
@@ -24,6 +32,18 @@ impl hci::event::VendorReturnParameters for VendorReturnParameters {
 
     fn new(_buffer: &[u8]) -> Result<Self, hci::event::Error<Self::Error>> {
         Err(hci::event::Error::Vendor(VendorError))
+    }
+}
+
+impl std::convert::TryFrom<u8> for VendorStatus {
+    type Error = hci::BadStatusError;
+
+    fn try_from(value: u8) -> Result<VendorStatus, Self::Error> {
+        match value {
+            0x45 => Ok(VendorStatus::FourFive),
+            0x50 => Ok(VendorStatus::FiveZero),
+            _ => Err(hci::BadStatusError::BadValue(value)),
+        }
     }
 }
 
@@ -177,6 +197,19 @@ fn command_status() {
         Ok(Event::CommandStatus(event)) => {
             assert_eq!(event.num_hci_command_packets, 8);
             assert_eq!(event.status, hci::Status::Success);
+            assert_eq!(event.opcode, hci::Opcode(0x0201));
+        }
+        other => panic!("Did not get command status: {:?}", other),
+    }
+}
+
+#[test]
+fn command_status_vendor_status() {
+    let buffer = [0x0F, 4, 0x45, 8, 0x01, 0x02];
+    match TestEvent::new(Packet(&buffer)) {
+        Ok(Event::CommandStatus(event)) => {
+            assert_eq!(event.num_hci_command_packets, 8);
+            assert_eq!(event.status, hci::Status::Vendor(VendorStatus::FourFive));
             assert_eq!(event.opcode, hci::Opcode(0x0201));
         }
         other => panic!("Did not get command status: {:?}", other),

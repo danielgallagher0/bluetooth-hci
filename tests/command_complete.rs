@@ -4,7 +4,7 @@ extern crate bluetooth_hci as hci;
 
 use hci::event::command::*;
 use hci::event::*;
-use std::convert::TryInto;
+use std::convert::{TryFrom, TryInto};
 
 #[derive(Debug)]
 struct VendorEvent;
@@ -12,12 +12,18 @@ struct VendorEvent;
 struct VendorError;
 #[derive(Clone, Debug)]
 enum VendorReturnParameters {
-    Opcode10 { status: hci::Status },
+    Opcode10 { status: hci::Status<VendorStatus> },
+}
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum VendorStatus {
+    FourFive,
+    FiveZero,
 }
 
 impl hci::event::VendorEvent for VendorEvent {
     type Error = VendorError;
     type ReturnParameters = VendorReturnParameters;
+    type Status = VendorStatus;
 
     fn new(_buffer: &[u8]) -> Result<Self, hci::event::Error<Self::Error>> {
         Err(hci::event::Error::Vendor(VendorError))
@@ -40,6 +46,18 @@ impl hci::event::VendorReturnParameters for VendorReturnParameters {
                 .try_into()
                 .map_err(|_e| hci::event::Error::Vendor(VendorError))?,
         })
+    }
+}
+
+impl TryFrom<u8> for VendorStatus {
+    type Error = hci::BadStatusError;
+
+    fn try_from(value: u8) -> Result<VendorStatus, Self::Error> {
+        match value {
+            0x45 => Ok(VendorStatus::FourFive),
+            0x50 => Ok(VendorStatus::FiveZero),
+            _ => Err(hci::BadStatusError::BadValue(value)),
+        }
     }
 }
 

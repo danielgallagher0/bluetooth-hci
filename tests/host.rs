@@ -11,6 +11,14 @@ struct RecordingSink {
 #[derive(Debug, PartialEq)]
 struct RecordingSinkError;
 
+#[derive(Debug, PartialEq)]
+struct VendorStatus;
+impl std::convert::Into<u8> for VendorStatus {
+    fn into(self) -> u8 {
+        0
+    }
+}
+
 impl hci::Controller for RecordingSink {
     type Error = RecordingSinkError;
     type Header = uart::CommandHeader;
@@ -41,8 +49,8 @@ impl RecordingSink {
         }
     }
 
-    fn as_controller(&mut self) -> &mut Hci<RecordingSinkError> {
-        self as &mut Hci<RecordingSinkError>
+    fn as_controller(&mut self) -> &mut Hci<RecordingSinkError, VendorStatus> {
+        self as &mut Hci<RecordingSinkError, VendorStatus>
     }
 }
 

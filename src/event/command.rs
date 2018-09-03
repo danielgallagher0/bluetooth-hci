@@ -183,144 +183,147 @@ where
     Spontaneous,
 
     /// Status returned by the [Set Event Mask](::host::Hci::set_event_mask) command.
-    SetEventMask(::Status),
+    SetEventMask(::Status<V::Status>),
 
     /// Status returned by the [Reset](::host::Hci::reset) command.
-    Reset(::Status),
+    Reset(::Status<V::Status>),
 
     /// [Read Transmit Power Level](::host::Hci::read_tx_power_level) return parameters.
-    ReadTxPowerLevel(TxPowerLevel),
+    ReadTxPowerLevel(TxPowerLevel<V::Status>),
 
     /// Local version info returned by the [Read Local Version
     /// Information](::host::Hci::read_local_version_information) command.
-    ReadLocalVersionInformation(LocalVersionInfo),
+    ReadLocalVersionInformation(LocalVersionInfo<V::Status>),
 
     /// Supported commands returned by the [Read Local Supported
     /// Commands](::host::Hci::read_local_supported_commands) command.
-    ReadLocalSupportedCommands(LocalSupportedCommands),
+    ReadLocalSupportedCommands(LocalSupportedCommands<V::Status>),
 
     /// Supported features returned by the [Read Local Supported
     /// Features](::host::Hci::read_local_supported_features) command.
-    ReadLocalSupportedFeatures(LocalSupportedFeatures),
+    ReadLocalSupportedFeatures(LocalSupportedFeatures<V::Status>),
 
     /// BD ADDR returned by the [Read BD ADDR](::host::Hci::read_bd_addr) command.
-    ReadBdAddr(ReadBdAddr),
+    ReadBdAddr(ReadBdAddr<V::Status>),
 
     /// RSSI returned by the [Read RSSI](::host::Hci::read_rssi) command.
-    ReadRssi(ReadRssi),
+    ReadRssi(ReadRssi<V::Status>),
 
     /// Status returned by the [LE Set Event Mask](::host::Hci::le_set_event_mask) command.
-    LeSetEventMask(::Status),
+    LeSetEventMask(::Status<V::Status>),
 
     /// Parameters returned by the [LE Read Buffer Size](::host::Hci::le_read_buffer_size) command.
-    LeReadBufferSize(LeReadBufferSize),
+    LeReadBufferSize(LeReadBufferSize<V::Status>),
 
     /// Parameters returned by the [LE Read Local Supported
     /// Features](::host::Hci::le_read_local_supported_features) command.
-    LeReadLocalSupportedFeatures(LeSupportedFeatures),
+    LeReadLocalSupportedFeatures(LeSupportedFeatures<V::Status>),
 
     /// Status returned by the [LE Set Random Address](::host::Hci::le_set_random_address) command.
-    LeSetRandomAddress(::Status),
+    LeSetRandomAddress(::Status<V::Status>),
 
     /// Status returned by the [LE Set Advertising
     /// Parameters](::host::Hci::le_set_advertising_parameters) command.
-    LeSetAdvertisingParameters(::Status),
+    LeSetAdvertisingParameters(::Status<V::Status>),
 
     /// Parameters returned by the [LE Read Advertising Channel TX
     /// Power](::host::Hci::le_read_advertising_channel_tx_power) command.
-    LeReadAdvertisingChannelTxPower(LeAdvertisingChannelTxPower),
+    LeReadAdvertisingChannelTxPower(LeAdvertisingChannelTxPower<V::Status>),
 
     /// Status returned by the [LE Set Advertising Data](::host::Hci::le_set_advertising_data)
     /// command.
-    LeSetAdvertisingData(::Status),
+    LeSetAdvertisingData(::Status<V::Status>),
 
     /// Status returned by the [LE Set Scan Response Data](::host::Hci::le_set_scan_response_data)
     /// command.
-    LeSetScanResponseData(::Status),
+    LeSetScanResponseData(::Status<V::Status>),
 
     /// Status returned by the [LE Set Advertise Enable](::host::Hci::le_set_advertise_enable)
     /// command.
     #[cfg(not(feature = "version-5-0"))]
-    LeSetAdvertiseEnable(::Status),
+    LeSetAdvertiseEnable(::Status<V::Status>),
 
     /// Status returned by the [LE Set Advertising Enable](::host::Hci::le_set_advertising_enable)
     /// command.
     #[cfg(feature = "version-5-0")]
-    LeSetAdvertisingEnable(::Status),
+    LeSetAdvertisingEnable(::Status<V::Status>),
 
     /// Status returned by the [LE Set Scan Parameters](::host::Hci::le_set_scan_parameters)
     /// command.
-    LeSetScanParameters(::Status),
+    LeSetScanParameters(::Status<V::Status>),
 
     /// Status returned by the [LE Set Scan Enable](::host::Hci::le_set_scan_enable) command.
-    LeSetScanEnable(::Status),
+    LeSetScanEnable(::Status<V::Status>),
 
     /// Status returned by the [LE Create Connection
     /// Cancel](::host::Hci::le_create_connection_cancel) command.
-    LeCreateConnectionCancel(::Status),
+    LeCreateConnectionCancel(::Status<V::Status>),
 
     /// Status and white list size returned by the [LE Read White List
     /// Size](::host::Hci::le_read_white_list_size) command.
-    LeReadWhiteListSize(::Status, usize),
+    LeReadWhiteListSize(::Status<V::Status>, usize),
 
     /// Status returned by the [LE Clear White List](::host::Hci::le_clear_white_list) command.
-    LeClearWhiteList(::Status),
+    LeClearWhiteList(::Status<V::Status>),
 
     /// Status returned by the [LE Add Device to White
     /// List](::host::Hci::le_add_device_to_white_list) command.
-    LeAddDeviceToWhiteList(::Status),
+    LeAddDeviceToWhiteList(::Status<V::Status>),
 
     /// Status returned by the [LE Remove Device from White
     /// List](::host::Hci::le_remove_device_from_white_list) command.
-    LeRemoveDeviceFromWhiteList(::Status),
+    LeRemoveDeviceFromWhiteList(::Status<V::Status>),
 
     /// Status returned by the [LE Set Host Channel
     /// Classification](::host::Hci::le_set_host_channel_classification) command.
-    LeSetHostChannelClassification(::Status),
+    LeSetHostChannelClassification(::Status<V::Status>),
 
     /// Parameters returned by the [LE Read Channel Map](::host::Hci::le_read_channel_map) command.
-    LeReadChannelMap(ChannelMapParameters),
+    LeReadChannelMap(ChannelMapParameters<V::Status>),
 
     /// Parameters returned by the [LE Encrypt](::host::Hci::le_encrypt) command.
-    LeEncrypt(EncryptedReturnParameters),
+    LeEncrypt(EncryptedReturnParameters<V::Status>),
 
     /// Parameters returned by the [LE Rand](::host::Hci::le_rand) command.
-    LeRand(LeRandom),
+    LeRand(LeRandom<V::Status>),
 
     /// Parameters returned by the [LE Long Term Key Request
     /// Reply](::host::Hci::le_long_term_key_request_reply) command.
-    LeLongTermKeyRequestReply(LeLongTermRequestReply),
+    LeLongTermKeyRequestReply(LeLongTermRequestReply<V::Status>),
 
     /// Parameters returned by the [LE Long Term Key Request Negative
     /// Reply](::host::Hci::le_long_term_key_request_negative_reply) command.
-    LeLongTermKeyRequestNegativeReply(LeLongTermRequestReply),
+    LeLongTermKeyRequestNegativeReply(LeLongTermRequestReply<V::Status>),
 
     /// Parameters returned by the [LE Read States](::host::Hci::le_read_supported_states))
     /// command.
-    LeReadSupportedStates(LeReadSupportedStates),
+    LeReadSupportedStates(LeReadSupportedStates<V::Status>),
 
     /// Status returned by the [LE Receiver Test](::host::Hci::le_receiver_test) command.
-    LeReceiverTest(::Status),
+    LeReceiverTest(::Status<V::Status>),
 
     /// Status returned by the [LE Transmitter Test](::host::Hci::le_transmitter_test) command.
-    LeTransmitterTest(::Status),
+    LeTransmitterTest(::Status<V::Status>),
 
     /// Parameters returned by the [LE Test End](::host::Hci::le_test_end) command.
-    LeTestEnd(LeTestEnd),
+    LeTestEnd(LeTestEnd<V::Status>),
 
     /// Parameters returned by vendor-specific commands.
     Vendor(V::ReturnParameters),
 }
 
-fn to_status<VE>(bytes: &[u8]) -> Result<::Status, ::event::Error<VE>> {
+fn to_status<VE, VS>(bytes: &[u8]) -> Result<::Status<VS>, ::event::Error<VE>>
+where
+    ::Status<VS>: TryFrom<u8, Error = ::BadStatusError>,
+{
     bytes[0].try_into().map_err(super::rewrap_bad_status)
 }
 
 /// Values returned by the [Read Transmit Power Level](::host::Hci::read_tx_power_level) command.
 #[derive(Copy, Clone, Debug)]
-pub struct TxPowerLevel {
+pub struct TxPowerLevel<VS> {
     /// Did the command fail, and if so, how?
-    pub status: ::Status,
+    pub status: ::Status<VS>,
 
     /// Specifies which connection handle's transmit power level setting is returned
     pub conn_handle: ::ConnectionHandle,
@@ -331,7 +334,10 @@ pub struct TxPowerLevel {
     pub tx_power_level_dbm: i8,
 }
 
-fn to_tx_power_level<VE>(bytes: &[u8]) -> Result<TxPowerLevel, ::event::Error<VE>> {
+fn to_tx_power_level<VE, VS>(bytes: &[u8]) -> Result<TxPowerLevel<VS>, ::event::Error<VE>>
+where
+    ::Status<VS>: TryFrom<u8, Error = ::BadStatusError>,
+{
     require_len!(bytes, 4);
     Ok(TxPowerLevel {
         status: to_status(bytes)?,
@@ -343,9 +349,9 @@ fn to_tx_power_level<VE>(bytes: &[u8]) -> Result<TxPowerLevel, ::event::Error<VE
 /// Values returned by [Read Local Version Information](::host::Hci::read_local_version_information)
 /// command.
 #[derive(Copy, Clone, Debug)]
-pub struct LocalVersionInfo {
+pub struct LocalVersionInfo<VS> {
     /// Did the command fail, and if so, how?
-    pub status: ::Status,
+    pub status: ::Status<VS>,
 
     /// The version information of the HCI layer.
     ///
@@ -375,7 +381,10 @@ pub struct LocalVersionInfo {
     pub lmp_subversion: u16,
 }
 
-fn to_local_version_info<VE>(bytes: &[u8]) -> Result<LocalVersionInfo, ::event::Error<VE>> {
+fn to_local_version_info<VE, VS>(bytes: &[u8]) -> Result<LocalVersionInfo<VS>, ::event::Error<VE>>
+where
+    ::Status<VS>: TryFrom<u8, Error = ::BadStatusError>,
+{
     require_len!(bytes, 9);
 
     Ok(LocalVersionInfo {
@@ -391,9 +400,9 @@ fn to_local_version_info<VE>(bytes: &[u8]) -> Result<LocalVersionInfo, ::event::
 /// Values returned by the [Read Local Supported
 /// Commands](::host::Hci::read_local_supported_commands) command.
 #[derive(Copy, Clone, Debug)]
-pub struct LocalSupportedCommands {
+pub struct LocalSupportedCommands<VS> {
     /// Did the command fail, and if so, how?
-    pub status: ::Status,
+    pub status: ::Status<VS>,
 
     /// Flags for supported commands.
     pub supported_commands: CommandFlags,
@@ -1032,7 +1041,12 @@ impl<'a> TryFrom<&'a [u8]> for CommandFlags {
     }
 }
 
-fn to_supported_commands<VE>(bytes: &[u8]) -> Result<LocalSupportedCommands, ::event::Error<VE>> {
+fn to_supported_commands<VE, VS>(
+    bytes: &[u8],
+) -> Result<LocalSupportedCommands<VS>, ::event::Error<VE>>
+where
+    ::Status<VS>: TryFrom<u8, Error = ::BadStatusError>,
+{
     require_len!(bytes, 1 + COMMAND_FLAGS_SIZE);
     Ok(LocalSupportedCommands {
         status: bytes[0].try_into().map_err(super::rewrap_bad_status)?,
@@ -1053,9 +1067,9 @@ fn to_supported_commands<VE>(bytes: &[u8]) -> Result<LocalSupportedCommands, ::e
 /// Values returned by the [Read Local Supported
 /// Features](::host::Hci::read_local_supported_features) command.
 #[derive(Copy, Clone, Debug)]
-pub struct LocalSupportedFeatures {
+pub struct LocalSupportedFeatures<VS> {
     /// Did the command fail, and if so, how?
-    pub status: ::Status,
+    pub status: ::Status<VS>,
 
     /// Flags for supported features.
     pub supported_features: LmpFeatures,
@@ -1177,7 +1191,12 @@ bitflags! {
     }
 }
 
-fn to_supported_features<VE>(bytes: &[u8]) -> Result<LocalSupportedFeatures, ::event::Error<VE>> {
+fn to_supported_features<VE, VS>(
+    bytes: &[u8],
+) -> Result<LocalSupportedFeatures<VS>, ::event::Error<VE>>
+where
+    ::Status<VS>: TryFrom<u8, Error = ::BadStatusError>,
+{
     require_len!(bytes, 9);
     Ok(LocalSupportedFeatures {
         status: to_status(bytes)?,
@@ -1187,15 +1206,18 @@ fn to_supported_features<VE>(bytes: &[u8]) -> Result<LocalSupportedFeatures, ::e
 
 /// Values returned by the [Read BD ADDR](::host::Hci::read_bd_addr) command.
 #[derive(Copy, Clone, Debug)]
-pub struct ReadBdAddr {
+pub struct ReadBdAddr<VS> {
     /// Did the command fail, and if so, how?
-    pub status: ::Status,
+    pub status: ::Status<VS>,
 
     /// Address of the device.
     pub bd_addr: ::BdAddr,
 }
 
-fn to_bd_addr<VE>(bytes: &[u8]) -> Result<ReadBdAddr, ::event::Error<VE>> {
+fn to_bd_addr<VE, VS>(bytes: &[u8]) -> Result<ReadBdAddr<VS>, ::event::Error<VE>>
+where
+    ::Status<VS>: TryFrom<u8, Error = ::BadStatusError>,
+{
     require_len!(bytes, 7);
     let mut bd_addr = ::BdAddr([0; 6]);
     bd_addr.0.copy_from_slice(&bytes[1..]);
@@ -1207,9 +1229,9 @@ fn to_bd_addr<VE>(bytes: &[u8]) -> Result<ReadBdAddr, ::event::Error<VE>> {
 
 /// Values returned by the [Read RSSI](::host::Hci::read_rssi) command.
 #[derive(Copy, Clone, Debug)]
-pub struct ReadRssi {
+pub struct ReadRssi<VS> {
     /// Did the command fail, and if so, how?
-    pub status: ::Status,
+    pub status: ::Status<VS>,
 
     /// The Handle for the connection for which the RSSI has been read.
     ///
@@ -1230,7 +1252,10 @@ pub struct ReadRssi {
     pub rssi: i8,
 }
 
-fn to_read_rssi<VE>(bytes: &[u8]) -> Result<ReadRssi, ::event::Error<VE>> {
+fn to_read_rssi<VE, VS>(bytes: &[u8]) -> Result<ReadRssi<VS>, ::event::Error<VE>>
+where
+    ::Status<VS>: TryFrom<u8, Error = ::BadStatusError>,
+{
     require_len!(bytes, 4);
     Ok(ReadRssi {
         status: to_status(bytes)?,
@@ -1241,9 +1266,9 @@ fn to_read_rssi<VE>(bytes: &[u8]) -> Result<ReadRssi, ::event::Error<VE>> {
 
 /// Values returned by the [LE Read Buffer Size](::host::Hci::le_read_buffer_size) command.
 #[derive(Copy, Clone, Debug)]
-pub struct LeReadBufferSize {
+pub struct LeReadBufferSize<VS> {
     /// Did the command fail, and if so, how?
-    pub status: ::Status,
+    pub status: ::Status<VS>,
 
     /// The size of the L2CAP PDU segments contained in ACL Data Packets, which are transferred from
     /// the Host to the Controller to be broken up into packets by the Link Layer. Both the Host and
@@ -1265,7 +1290,12 @@ pub struct LeReadBufferSize {
     pub data_packet_count: u8,
 }
 
-fn to_le_read_buffer_status<VE>(bytes: &[u8]) -> Result<LeReadBufferSize, ::event::Error<VE>> {
+fn to_le_read_buffer_status<VE, VS>(
+    bytes: &[u8],
+) -> Result<LeReadBufferSize<VS>, ::event::Error<VE>>
+where
+    ::Status<VS>: TryFrom<u8, Error = ::BadStatusError>,
+{
     require_len!(bytes, 4);
     Ok(LeReadBufferSize {
         status: to_status(bytes)?,
@@ -1277,9 +1307,9 @@ fn to_le_read_buffer_status<VE>(bytes: &[u8]) -> Result<LeReadBufferSize, ::even
 /// Values returned by the [LE Read Local Supported
 /// Features](::host::Hci::le_read_local_supported_features) command.
 #[derive(Copy, Clone, Debug)]
-pub struct LeSupportedFeatures {
+pub struct LeSupportedFeatures<VS> {
     /// Did the command fail, and if so, how?
-    pub status: ::Status,
+    pub status: ::Status<VS>,
 
     /// Supported LE features.
     pub supported_features: LeFeatures,
@@ -1340,9 +1370,12 @@ bitflags! {
     }
 }
 
-fn to_le_local_supported_features<VE>(
+fn to_le_local_supported_features<VE, VS>(
     bytes: &[u8],
-) -> Result<LeSupportedFeatures, ::event::Error<VE>> {
+) -> Result<LeSupportedFeatures<VS>, ::event::Error<VE>>
+where
+    ::Status<VS>: TryFrom<u8, Error = ::BadStatusError>,
+{
     require_len!(bytes, 9);
     Ok(LeSupportedFeatures {
         status: to_status(bytes)?,
@@ -1353,9 +1386,9 @@ fn to_le_local_supported_features<VE>(
 /// Values returned by the [LE Read Advertising Channel TX
 /// Power](::host::Hci::le_read_advertising_channel_tx_power) command.
 #[derive(Copy, Clone, Debug)]
-pub struct LeAdvertisingChannelTxPower {
+pub struct LeAdvertisingChannelTxPower<VS> {
     /// Did the command fail, and if so, how?
-    pub status: ::Status,
+    pub status: ::Status<VS>,
     /// The transmit power of the advertising channel.
     ///   - Range: -20 ≤ N ≤ 10 (this is not enforced in this implementation)
     ///   - Units: dBm
@@ -1363,9 +1396,12 @@ pub struct LeAdvertisingChannelTxPower {
     pub power: i8,
 }
 
-fn to_le_advertising_channel_tx_power<VE>(
+fn to_le_advertising_channel_tx_power<VE, VS>(
     bytes: &[u8],
-) -> Result<LeAdvertisingChannelTxPower, ::event::Error<VE>> {
+) -> Result<LeAdvertisingChannelTxPower<VS>, ::event::Error<VE>>
+where
+    ::Status<VS>: TryFrom<u8, Error = ::BadStatusError>,
+{
     require_len!(bytes, 2);
     Ok(LeAdvertisingChannelTxPower {
         status: to_status(bytes)?,
@@ -1374,7 +1410,7 @@ fn to_le_advertising_channel_tx_power<VE>(
 }
 
 #[cfg(not(feature = "version-5-0"))]
-fn to_le_set_advertise_enable<V>(status: ::Status) -> ReturnParameters<V>
+fn to_le_set_advertise_enable<V>(status: ::Status<V::Status>) -> ReturnParameters<V>
 where
     V: super::VendorEvent,
 {
@@ -1382,7 +1418,7 @@ where
 }
 
 #[cfg(feature = "version-5-0")]
-fn to_le_set_advertise_enable<V>(status: ::Status) -> ReturnParameters<V>
+fn to_le_set_advertise_enable<V>(status: ::Status<V::Status>) -> ReturnParameters<V>
 where
     V: super::VendorEvent,
 {
@@ -1391,9 +1427,9 @@ where
 
 /// Parameters returned by the [LE Read Channel Map](::host::Hci::le_read_channel_map) command.
 #[derive(Copy, Clone, Debug)]
-pub struct ChannelMapParameters {
+pub struct ChannelMapParameters<VS> {
     /// Did the command fail, and if so, how?
-    pub status: ::Status,
+    pub status: ::Status<VS>,
 
     /// Connection handle whose channel map is returned.
     pub conn_handle: ::ConnectionHandle,
@@ -1402,9 +1438,12 @@ pub struct ChannelMapParameters {
     pub channel_map: ::ChannelClassification,
 }
 
-fn to_le_channel_map_parameters<VE>(
+fn to_le_channel_map_parameters<VE, VS>(
     bytes: &[u8],
-) -> Result<ChannelMapParameters, ::event::Error<VE>> {
+) -> Result<ChannelMapParameters<VS>, ::event::Error<VE>>
+where
+    ::Status<VS>: TryFrom<u8, Error = ::BadStatusError>,
+{
     require_len!(bytes, 8);
 
     let mut channel_bits = [0; 5];
@@ -1420,9 +1459,9 @@ fn to_le_channel_map_parameters<VE>(
 
 /// Parameters returned by the [LE Encrypt](::host::Hci::le_encrypt) command.
 #[derive(Copy, Clone, Debug)]
-pub struct EncryptedReturnParameters {
+pub struct EncryptedReturnParameters<VS> {
     /// Did the command fail, and if so, how?
-    pub status: ::Status,
+    pub status: ::Status<VS>,
 
     /// Encrypted data block.
     ///
@@ -1443,7 +1482,12 @@ impl Debug for EncryptedBlock {
     }
 }
 
-fn to_le_encrypted_data<VE>(bytes: &[u8]) -> Result<EncryptedReturnParameters, ::event::Error<VE>> {
+fn to_le_encrypted_data<VE, VS>(
+    bytes: &[u8],
+) -> Result<EncryptedReturnParameters<VS>, ::event::Error<VE>>
+where
+    ::Status<VS>: TryFrom<u8, Error = ::BadStatusError>,
+{
     require_len!(bytes, 17);
 
     let mut block = [0; 16];
@@ -1456,15 +1500,18 @@ fn to_le_encrypted_data<VE>(bytes: &[u8]) -> Result<EncryptedReturnParameters, :
 
 /// Return parameters for the [LE Rand](::host::Hci::le_rand) command.
 #[derive(Copy, Clone, Debug)]
-pub struct LeRandom {
+pub struct LeRandom<VS> {
     /// Did the command fail, and if so, how?
-    pub status: ::Status,
+    pub status: ::Status<VS>,
 
     /// Controller-generated random number.
     pub random_number: u64,
 }
 
-fn to_random_number<VE>(bytes: &[u8]) -> Result<LeRandom, ::event::Error<VE>> {
+fn to_random_number<VE, VS>(bytes: &[u8]) -> Result<LeRandom<VS>, ::event::Error<VE>>
+where
+    ::Status<VS>: TryFrom<u8, Error = ::BadStatusError>,
+{
     require_len!(bytes, 9);
 
     Ok(LeRandom {
@@ -1476,15 +1523,20 @@ fn to_random_number<VE>(bytes: &[u8]) -> Result<LeRandom, ::event::Error<VE>> {
 /// Parameters returned by the [LE LTK Request Reply](::host::Hci::le_long_term_key_request_reply)
 /// command.
 #[derive(Copy, Clone, Debug)]
-pub struct LeLongTermRequestReply {
+pub struct LeLongTermRequestReply<VS> {
     /// Did the command fail, and if so, how?
-    pub status: ::Status,
+    pub status: ::Status<VS>,
 
     /// Connection handle that the request came from
     pub conn_handle: ::ConnectionHandle,
 }
 
-fn to_le_ltk_request_reply<VE>(bytes: &[u8]) -> Result<LeLongTermRequestReply, ::event::Error<VE>> {
+fn to_le_ltk_request_reply<VE, VS>(
+    bytes: &[u8],
+) -> Result<LeLongTermRequestReply<VS>, ::event::Error<VE>>
+where
+    ::Status<VS>: TryFrom<u8, Error = ::BadStatusError>,
+{
     require_len!(bytes, 3);
 
     Ok(LeLongTermRequestReply {
@@ -1496,9 +1548,9 @@ fn to_le_ltk_request_reply<VE>(bytes: &[u8]) -> Result<LeLongTermRequestReply, :
 /// Parameters returned by the [LE Read Supported States](::host::Hci::le_read_supported_states)
 /// command.
 #[derive(Copy, Clone, Debug)]
-pub struct LeReadSupportedStates {
+pub struct LeReadSupportedStates<VS> {
     /// Did the command fail, and if so, how?
-    pub status: ::Status,
+    pub status: ::Status<VS>,
 
     /// States or state combinations supported by the Controller. Multiple state and state
     /// combinations may be supported.
@@ -1596,7 +1648,10 @@ bitflags! {
     }
 }
 
-fn to_le_read_states<VE>(bytes: &[u8]) -> Result<LeReadSupportedStates, ::event::Error<VE>> {
+fn to_le_read_states<VE, VS>(bytes: &[u8]) -> Result<LeReadSupportedStates<VS>, ::event::Error<VE>>
+where
+    ::Status<VS>: TryFrom<u8, Error = ::BadStatusError>,
+{
     require_len!(bytes, 9);
 
     let bitfield = LittleEndian::read_u64(&bytes[1..]);
@@ -1609,16 +1664,19 @@ fn to_le_read_states<VE>(bytes: &[u8]) -> Result<LeReadSupportedStates, ::event:
 
 /// Parameters returned by the [LE Test End](::host::Hci::le_test_end) command.
 #[derive(Copy, Clone, Debug)]
-pub struct LeTestEnd {
+pub struct LeTestEnd<VS> {
     /// Did the command fail, and if so, how?
-    pub status: ::Status,
+    pub status: ::Status<VS>,
 
     /// The number of packets received during the test.  For transmitter tests, this value shall be
     /// 0.
     pub number_of_packets: usize,
 }
 
-fn to_le_test_end<VE>(bytes: &[u8]) -> Result<LeTestEnd, ::event::Error<VE>> {
+fn to_le_test_end<VE, VS>(bytes: &[u8]) -> Result<LeTestEnd<VS>, ::event::Error<VE>>
+where
+    ::Status<VS>: TryFrom<u8, Error = ::BadStatusError>,
+{
     require_len!(bytes, 3);
 
     Ok(LeTestEnd {

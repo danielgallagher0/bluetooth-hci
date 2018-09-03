@@ -11,6 +11,7 @@
 extern crate nb;
 
 use byteorder::{ByteOrder, LittleEndian};
+use core::convert::Into;
 use core::fmt::{Debug, Formatter, Result as FmtResult};
 use core::time::Duration;
 
@@ -59,7 +60,7 @@ pub trait HciHeader {
 /// Specializations must define the error type `E`, used for communication errors.
 ///
 /// An implementation is defined or all types that implement [`Controller`](super::Controller).
-pub trait Hci<E> {
+pub trait Hci<E, VS> {
     /// Terminates an existing connection.  All synchronous connections on a physical link should be
     /// disconnected before the ACL connection on the same physical connection is disconnected.
     ///
@@ -97,8 +98,8 @@ pub trait Hci<E> {
     fn disconnect(
         &mut self,
         conn_handle: ::ConnectionHandle,
-        reason: ::Status,
-    ) -> nb::Result<(), Error<E>>;
+        reason: ::Status<VS>,
+    ) -> nb::Result<(), Error<E, VS>>;
 
     /// Obtains the values for the version information for the remote device identified by the
     /// `conn_handle` parameter, which must be a connection handle for an ACL or LE connection.
@@ -402,7 +403,7 @@ pub trait Hci<E> {
     ///
     /// (v5.0) If the Host issues this command when scanning or legacy advertising is enabled, the
     /// Controller shall return the error code [Command Disallowed](::Status::CommandDisallowed).
-    fn le_set_random_address(&mut self, bd_addr: ::BdAddr) -> nb::Result<(), Error<E>>;
+    fn le_set_random_address(&mut self, bd_addr: ::BdAddr) -> nb::Result<(), Error<E, VS>>;
 
     /// Sets the advertising parameters on the Controller.
     ///
@@ -423,7 +424,7 @@ pub trait Hci<E> {
     fn le_set_advertising_parameters(
         &mut self,
         params: &AdvertisingParameters,
-    ) -> nb::Result<(), Error<E>>;
+    ) -> nb::Result<(), Error<E, VS>>;
 
     /// Reads the transmit power level used for LE advertising channel packets.
     ///
@@ -460,7 +461,7 @@ pub trait Hci<E> {
     /// # Generated events
     ///
     /// A [Command Complete](::event::Event::CommandComplete) event is generated.
-    fn le_set_advertising_data(&mut self, data: &[u8]) -> nb::Result<(), Error<E>>;
+    fn le_set_advertising_data(&mut self, data: &[u8]) -> nb::Result<(), Error<E, VS>>;
 
     /// Provides data used in scanning packets that have a data field.
     ///
@@ -484,7 +485,7 @@ pub trait Hci<E> {
     ///
     /// A [Command Complete](::event::command::ReturnParameters::LeSetScanResponseData) event is
     /// generated.
-    fn le_set_scan_response_data(&mut self, data: &[u8]) -> nb::Result<(), Error<E>>;
+    fn le_set_scan_response_data(&mut self, data: &[u8]) -> nb::Result<(), Error<E, VS>>;
 
     /// Requests the Controller to start or stop advertising. The Controller manages the timing of
     /// advertisements as per the advertising parameters given in the
@@ -868,7 +869,7 @@ pub trait Hci<E> {
     fn le_set_host_channel_classification(
         &mut self,
         channels: ::ChannelClassification,
-    ) -> nb::Result<(), Error<E>>;
+    ) -> nb::Result<(), Error<E, VS>>;
 
     /// Returns the current channel map for the specified connection handle. The returned value
     /// indicates the state of the channel map specified by the last transmitted or received channel
@@ -1049,7 +1050,7 @@ pub trait Hci<E> {
     ///
     /// A [Command Complete](::event::command::ReturnParameters::LeReceiverTest) event is
     /// generated.
-    fn le_receiver_test(&mut self, channel: u8) -> nb::Result<(), Error<E>>;
+    fn le_receiver_test(&mut self, channel: u8) -> nb::Result<(), Error<E, VS>>;
 
     /// Starts a test where the DUT generates test reference packets at a fixed interval. The
     /// Controller shall transmit at maximum power.
@@ -1078,7 +1079,7 @@ pub trait Hci<E> {
         channel: u8,
         payload_length: usize,
         payload: TestPacketPayload,
-    ) -> nb::Result<(), Error<E>>;
+    ) -> nb::Result<(), Error<E, VS>>;
 
     /// Stops any test which is in progress.
     ///
@@ -1097,10 +1098,10 @@ pub trait Hci<E> {
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
 /// of communication errors.
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum Error<E> {
+pub enum Error<E, VS> {
     /// For the [`disconnect`](Hci::disconnect) command: The provided reason is not a valid
     /// disconnection reason. Includes the reported reason.
-    BadDisconnectionReason(::Status),
+    BadDisconnectionReason(::Status<VS>),
 
     /// For the [`le_set_random_address`](Hci::le_set_random_address) command: The provided address
     /// does not meet the rules for random addresses in the Bluetooth Spec, Vol 6, Part B, Section
@@ -1139,7 +1140,7 @@ pub enum Error<E> {
     Comm(E),
 }
 
-fn rewrap_as_comm<E>(err: nb::Error<E>) -> nb::Error<Error<E>> {
+fn rewrap_as_comm<E, VS>(err: nb::Error<E>) -> nb::Error<Error<E, VS>> {
     match err {
         nb::Error::WouldBlock => nb::Error::WouldBlock,
         nb::Error::Other(e) => nb::Error::Other(Error::Comm(e)),
@@ -1161,11 +1162,11 @@ where
     controller.write(&header[..Header::HEADER_LENGTH], &params)
 }
 
-fn set_outbound_data<Header, T, E>(
+fn set_outbound_data<Header, T, E, VS>(
     controller: &mut T,
     opcode: ::opcode::Opcode,
     data: &[u8],
-) -> nb::Result<(), Error<E>>
+) -> nb::Result<(), Error<E, VS>>
 where
     Header: HciHeader,
     T: ::Controller<Error = E>,
@@ -1180,16 +1181,20 @@ where
     write_command::<Header, T, E>(controller, opcode, &params).map_err(rewrap_as_comm)
 }
 
-impl<E, T, Header> Hci<E> for T
+impl<E, VS, T, Header> Hci<E, VS> for T
 where
+    VS: Into<u8>,
     T: ::Controller<Error = E, Header = Header>,
     Header: HciHeader,
 {
     fn disconnect(
         &mut self,
         conn_handle: ::ConnectionHandle,
-        reason: ::Status,
-    ) -> nb::Result<(), Error<E>> {
+        reason: ::Status<VS>,
+    ) -> nb::Result<(), Error<E, VS>>
+    where
+        VS: Into<u8>,
+    {
         match reason {
             ::Status::AuthFailure
             | ::Status::RemoteTerminationByUser
@@ -1203,7 +1208,7 @@ where
 
         let mut params = [0; 3];
         LittleEndian::write_u16(&mut params[0..], conn_handle.0);
-        params[2] = reason as u8;
+        params[2] = reason.into();
         write_command::<Header, T, E>(self, ::opcode::DISCONNECT, &params).map_err(rewrap_as_comm)
     }
 
@@ -1275,7 +1280,7 @@ where
         write_command::<Header, T, E>(self, ::opcode::LE_READ_LOCAL_SUPPORTED_FEATURES, &[])
     }
 
-    fn le_set_random_address(&mut self, bd_addr: ::BdAddr) -> nb::Result<(), Error<E>> {
+    fn le_set_random_address(&mut self, bd_addr: ::BdAddr) -> nb::Result<(), Error<E, VS>> {
         validate_random_address(&bd_addr).map_err(nb::Error::Other)?;
         write_command::<Header, T, E>(self, ::opcode::LE_SET_RANDOM_ADDRESS, &bd_addr.0)
             .map_err(rewrap_as_comm)
@@ -1284,7 +1289,7 @@ where
     fn le_set_advertising_parameters(
         &mut self,
         params: &AdvertisingParameters,
-    ) -> nb::Result<(), Error<E>> {
+    ) -> nb::Result<(), Error<E, VS>> {
         let mut bytes = [0; 15];
         params.into_bytes(&mut bytes).map_err(nb::Error::Other)?;
         write_command::<Header, T, E>(self, ::opcode::LE_SET_ADVERTISING_PARAMETERS, &bytes)
@@ -1295,12 +1300,12 @@ where
         write_command::<Header, T, E>(self, ::opcode::LE_READ_ADVERTISING_CHANNEL_TX_POWER, &[])
     }
 
-    fn le_set_advertising_data(&mut self, data: &[u8]) -> nb::Result<(), Error<E>> {
-        set_outbound_data::<Header, T, E>(self, ::opcode::LE_SET_ADVERTISING_DATA, data)
+    fn le_set_advertising_data(&mut self, data: &[u8]) -> nb::Result<(), Error<E, VS>> {
+        set_outbound_data::<Header, T, E, VS>(self, ::opcode::LE_SET_ADVERTISING_DATA, data)
     }
 
-    fn le_set_scan_response_data(&mut self, data: &[u8]) -> nb::Result<(), Error<E>> {
-        set_outbound_data::<Header, T, E>(self, ::opcode::LE_SET_SCAN_RESPONSE_DATA, data)
+    fn le_set_scan_response_data(&mut self, data: &[u8]) -> nb::Result<(), Error<E, VS>> {
+        set_outbound_data::<Header, T, E, VS>(self, ::opcode::LE_SET_SCAN_RESPONSE_DATA, data)
     }
 
     #[cfg(not(feature = "version-5-0"))]
@@ -1384,7 +1389,7 @@ where
     fn le_set_host_channel_classification(
         &mut self,
         channels: ::ChannelClassification,
-    ) -> nb::Result<(), Error<E>> {
+    ) -> nb::Result<(), Error<E, VS>> {
         if channels.is_empty() {
             return Err(nb::Error::Other(Error::NoValidChannel));
         }
@@ -1454,7 +1459,7 @@ where
         write_command::<Header, T, E>(self, ::opcode::LE_READ_STATES, &[])
     }
 
-    fn le_receiver_test(&mut self, channel: u8) -> nb::Result<(), Error<E>> {
+    fn le_receiver_test(&mut self, channel: u8) -> nb::Result<(), Error<E, VS>> {
         if channel > MAX_TEST_CHANNEL {
             return Err(nb::Error::Other(Error::InvalidTestChannel(channel)));
         }
@@ -1468,7 +1473,7 @@ where
         channel: u8,
         payload_length: usize,
         payload: TestPacketPayload,
-    ) -> nb::Result<(), Error<E>> {
+    ) -> nb::Result<(), Error<E, VS>> {
         if channel > MAX_TEST_CHANNEL {
             return Err(nb::Error::Other(Error::InvalidTestChannel(channel)));
         }
@@ -1674,7 +1679,7 @@ bitflags! {
     }
 }
 
-fn validate_random_address<E>(bd_addr: &::BdAddr) -> Result<(), Error<E>> {
+fn validate_random_address<E, VS>(bd_addr: &::BdAddr) -> Result<(), Error<E, VS>> {
     let (pop_count, bit_count) = match (bd_addr.0[5] & 0b1100_0000) >> 6 {
         0b00 | 0b11 => (pop_count_except_top_2_bits(&bd_addr.0[0..]), 46),
         0b10 => (pop_count_except_top_2_bits(&bd_addr.0[3..]), 22),
@@ -1738,7 +1743,7 @@ pub struct AdvertisingParameters {
 }
 
 impl AdvertisingParameters {
-    fn into_bytes<E>(&self, bytes: &mut [u8]) -> Result<(), Error<E>> {
+    fn into_bytes<E, VS>(&self, bytes: &mut [u8]) -> Result<(), Error<E, VS>> {
         assert_eq!(bytes.len(), 15);
 
         if self.advertising_channel_map.is_empty() {
