@@ -2,52 +2,13 @@
 
 extern crate bluetooth_hci as hci;
 
+mod vendor;
+
 use hci::event::*;
 use std::time::Duration;
+use vendor::VendorStatus;
 
-#[derive(Debug)]
-struct VendorEvent;
-#[derive(Debug)]
-struct VendorError;
-#[derive(Clone, Debug)]
-struct VendorReturnParameters;
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum VendorStatus {
-    FourFive,
-    FiveZero,
-}
-
-impl hci::event::VendorEvent for VendorEvent {
-    type Error = VendorError;
-    type ReturnParameters = VendorReturnParameters;
-    type Status = VendorStatus;
-
-    fn new(_buffer: &[u8]) -> Result<Self, hci::event::Error<Self::Error>> {
-        Err(hci::event::Error::Vendor(VendorError))
-    }
-}
-
-impl hci::event::VendorReturnParameters for VendorReturnParameters {
-    type Error = VendorError;
-
-    fn new(_buffer: &[u8]) -> Result<Self, hci::event::Error<Self::Error>> {
-        Err(hci::event::Error::Vendor(VendorError))
-    }
-}
-
-impl std::convert::TryFrom<u8> for VendorStatus {
-    type Error = hci::BadStatusError;
-
-    fn try_from(value: u8) -> Result<VendorStatus, Self::Error> {
-        match value {
-            0x45 => Ok(VendorStatus::FourFive),
-            0x50 => Ok(VendorStatus::FiveZero),
-            _ => Err(hci::BadStatusError::BadValue(value)),
-        }
-    }
-}
-
-type TestEvent = Event<VendorEvent>;
+type TestEvent = Event<vendor::VendorEvent>;
 
 #[test]
 fn connection_complete() {

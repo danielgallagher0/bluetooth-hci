@@ -3,7 +3,6 @@
 extern crate nb;
 
 use byteorder::{ByteOrder, LittleEndian};
-use core::convert::Into;
 
 const PACKET_TYPE_HCI_COMMAND: u8 = 0x01;
 // const PACKET_TYPE_ACL_DATA: u8 = 0x02;
@@ -51,7 +50,7 @@ pub struct CommandHeader {
 ///
 /// Must be specialized for communication errors (`E`), vendor-specific events (`Vendor`), and
 /// vendor-specific errors (`VE`).
-pub trait Hci<E, VS, Vendor, VE>: super::Hci<E, VS> {
+pub trait Hci<E, Vendor, VE>: super::Hci<E> {
     /// Reads and returns a packet from the controller. Consumes exactly enough bytes to read the
     /// next packet including its header.
     ///
@@ -117,10 +116,9 @@ where
     )).map_err(|e| nb::Error::Other(Error::BLE(e)))
 }
 
-impl<E, VS, Vendor, VE, T> Hci<E, VS, Vendor, VE> for T
+impl<E, Vendor, VE, T> Hci<E, Vendor, VE> for T
 where
     T: ::Controller<Error = E, Header = CommandHeader>,
-    VS: Into<u8>,
 {
     fn read(&mut self) -> nb::Result<Packet<Vendor>, Error<E, VE>>
     where

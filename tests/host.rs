@@ -1,58 +1,13 @@
+#![feature(try_from)]
+
 extern crate bluetooth_hci as hci;
 extern crate nb;
 
+mod vendor;
+
 use hci::host::*;
 use std::time::Duration;
-
-struct RecordingSink {
-    written_data: Vec<u8>,
-}
-
-#[derive(Debug, PartialEq)]
-struct RecordingSinkError;
-
-#[derive(Debug, PartialEq)]
-struct VendorStatus;
-impl std::convert::Into<u8> for VendorStatus {
-    fn into(self) -> u8 {
-        0
-    }
-}
-
-impl hci::Controller for RecordingSink {
-    type Error = RecordingSinkError;
-    type Header = uart::CommandHeader;
-
-    fn write(&mut self, header: &[u8], payload: &[u8]) -> nb::Result<(), Self::Error> {
-        self.written_data.resize(header.len() + payload.len(), 0);
-        {
-            let (h, p) = self.written_data.split_at_mut(header.len());
-            h.copy_from_slice(header);
-            p.copy_from_slice(payload);
-        }
-        Ok(())
-    }
-
-    fn read_into(&mut self, _buffer: &mut [u8]) -> nb::Result<(), Self::Error> {
-        Err(nb::Error::Other(RecordingSinkError {}))
-    }
-
-    fn peek(&mut self, _n: usize) -> nb::Result<u8, Self::Error> {
-        Err(nb::Error::Other(RecordingSinkError {}))
-    }
-}
-
-impl RecordingSink {
-    fn new() -> RecordingSink {
-        RecordingSink {
-            written_data: Vec::new(),
-        }
-    }
-
-    fn as_controller(&mut self) -> &mut Hci<RecordingSinkError, VendorStatus> {
-        self as &mut Hci<RecordingSinkError, VendorStatus>
-    }
-}
+use vendor::RecordingSink;
 
 #[test]
 fn disconnect() {

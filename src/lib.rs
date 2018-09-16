@@ -96,6 +96,9 @@ pub mod types;
 pub use event::Event;
 pub use opcode::Opcode;
 
+use core::convert::TryFrom;
+use core::fmt::Debug;
+
 /// Interface to the Bluetooth controller from the host's perspective.
 ///
 /// The Bluetooth application host must communicate with a controller (which, in turn, communicates
@@ -119,6 +122,10 @@ pub trait Controller {
     /// the controller implementation.
     type Header;
 
+    /// Type containing vendor-specific extensions for the controller, including vendor-specific
+    /// errors, events, and status codes.
+    type Vendor: Vendor;
+
     /// Writes the bytes to the controller, in a single transaction if possible. All of `header`
     /// shall be written, followed by all of `payload`. `write` is allowed to block internally, but
     /// should return [`nb::Error::WouldBlock`] if the controller is not ready to receive the data.
@@ -140,15 +147,55 @@ pub trait Controller {
     ///
     /// // host calls:
     ///
+    /// # #![feature(try_from)]
     /// # extern crate nb;
     /// # extern crate bluetooth_hci;
     /// # use bluetooth_hci::Controller as HciController;
     /// # struct Controller;
     /// # struct Error;
     /// # struct Header;
+    /// # struct Vendor;
+    /// # impl bluetooth_hci::Vendor for Vendor {
+    /// #     type Status = VendorStatus;
+    /// #     type Event = VendorEvent;
+    /// # }
+    /// # #[derive(Clone, Debug)]
+    /// # struct VendorStatus;
+    /// # impl std::convert::TryFrom<u8> for VendorStatus {
+    /// #     type Error = bluetooth_hci::BadStatusError;
+    /// #     fn try_from(value: u8) -> Result<VendorStatus, Self::Error> {
+    /// #         Err(bluetooth_hci::BadStatusError::BadValue(value))
+    /// #     }
+    /// # }
+    /// # impl std::convert::Into<u8> for VendorStatus {
+    /// #    fn into(self) -> u8 {
+    /// #        0
+    /// #    }
+    /// # }
+    /// # struct VendorEvent;
+    /// # impl bluetooth_hci::event::VendorEvent for VendorEvent {
+    /// #     type Error = Error;
+    /// #     type Status = VendorStatus;
+    /// #     type ReturnParameters = ReturnParameters;
+    /// #     fn new(_buffer: &[u8]) -> Result<Self, bluetooth_hci::event::Error<Self::Error>>
+    /// #     where
+    /// #         Self: Sized
+    /// #     {
+    /// #         Ok(VendorEvent{})
+    /// #     }
+    /// # }
+    /// # #[derive(Clone, Debug)]
+    /// # struct ReturnParameters;
+    /// # impl bluetooth_hci::event::VendorReturnParameters for ReturnParameters {
+    /// #     type Error = Error;
+    /// #     fn new(_buffer: &[u8]) -> Result<Self, bluetooth_hci::event::Error<Self::Error>> {
+    /// #         Ok(ReturnParameters{})
+    /// #     }
+    /// # }
     /// # impl HciController for Controller {
     /// #     type Error = Error;
     /// #     type Header = Header;
+    /// #     type Vendor = Vendor;
     /// #     fn write(&mut self, _header: &[u8], _payload: &[u8]) -> nb::Result<(), Self::Error> {
     /// #         Ok(())
     /// #     }
@@ -192,15 +239,55 @@ pub trait Controller {
     /// read. For example, the code to read an HCI event looks like this:
     ///
     /// ```
+    /// # #![feature(try_from)]
     /// # extern crate nb;
     /// # extern crate bluetooth_hci;
     /// # use bluetooth_hci::Controller as HciController;
     /// # struct Controller;
     /// # struct Error;
     /// # struct Header;
+    /// # struct Vendor;
+    /// # impl bluetooth_hci::Vendor for Vendor {
+    /// #     type Status = VendorStatus;
+    /// #     type Event = VendorEvent;
+    /// # }
+    /// # #[derive(Clone, Debug)]
+    /// # struct VendorStatus;
+    /// # impl std::convert::TryFrom<u8> for VendorStatus {
+    /// #     type Error = bluetooth_hci::BadStatusError;
+    /// #     fn try_from(value: u8) -> Result<VendorStatus, Self::Error> {
+    /// #         Err(bluetooth_hci::BadStatusError::BadValue(value))
+    /// #     }
+    /// # }
+    /// # impl std::convert::Into<u8> for VendorStatus {
+    /// #    fn into(self) -> u8 {
+    /// #        0
+    /// #    }
+    /// # }
+    /// # struct VendorEvent;
+    /// # impl bluetooth_hci::event::VendorEvent for VendorEvent {
+    /// #     type Error = Error;
+    /// #     type Status = VendorStatus;
+    /// #     type ReturnParameters = ReturnParameters;
+    /// #     fn new(_buffer: &[u8]) -> Result<Self, bluetooth_hci::event::Error<Self::Error>>
+    /// #     where
+    /// #         Self: Sized
+    /// #     {
+    /// #         Ok(VendorEvent{})
+    /// #     }
+    /// # }
+    /// # #[derive(Clone, Debug)]
+    /// # struct ReturnParameters;
+    /// # impl bluetooth_hci::event::VendorReturnParameters for ReturnParameters {
+    /// #     type Error = Error;
+    /// #     fn new(_buffer: &[u8]) -> Result<Self, bluetooth_hci::event::Error<Self::Error>> {
+    /// #         Ok(ReturnParameters{})
+    /// #     }
+    /// # }
     /// # impl HciController for Controller {
     /// #     type Error = Error;
     /// #     type Header = Header;
+    /// #     type Vendor = Vendor;
     /// #     fn write(&mut self, _header: &[u8], _payload: &[u8]) -> nb::Result<(), Self::Error> {
     /// #         Ok(())
     /// #     }
@@ -232,6 +319,15 @@ pub trait Controller {
     /// # }
     /// ```
     fn peek(&mut self, n: usize) -> nb::Result<u8, Self::Error>;
+}
+
+/// Trait defining vendor-specific extensions for the Bluetooth Controller.
+pub trait Vendor {
+    /// Enumeration of vendor-specific status codes.
+    type Status: TryFrom<u8, Error = BadStatusError> + Into<u8> + Clone + Debug;
+
+    /// Enumeration of vendor-specific events.
+    type Event: event::VendorEvent;
 }
 
 /// List of possible error codes, Bluetooth Spec, Vol 2, Part D, Section 2.
