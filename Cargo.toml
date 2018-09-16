@@ -1,6 +1,6 @@
 [package]
 name = "bluetooth-hci"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["Daniel Gallagher <pdanielgallagher@gmail.com>"]
 categories = ["embedded", "hardware-support", "no-std"]
 description = "Implementation of the Bluetooth HCI"
