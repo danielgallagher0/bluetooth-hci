@@ -49,13 +49,13 @@ impl AdvertisingInterval {
         if self._advertising_type == AdvertisingType::ConnectableDirectedHighDutyCycle {
             bytes[0..4].copy_from_slice(&[0; 4]);
         } else {
-            LittleEndian::write_u16(&mut bytes[0..2], Self::as_u16(self.interval.0));
-            LittleEndian::write_u16(&mut bytes[2..4], Self::as_u16(self.interval.1));
+            LittleEndian::write_u16(&mut bytes[0..2], Self::duration_as_u16(self.interval.0));
+            LittleEndian::write_u16(&mut bytes[2..4], Self::duration_as_u16(self.interval.1));
         }
         bytes[4] = self._advertising_type as u8;
     }
 
-    fn as_u16(d: Duration) -> u16 {
+    fn duration_as_u16(d: Duration) -> u16 {
         // T = 0.625 ms * N
         // so N = T / 0.625 ms
         //      = T / 625 us

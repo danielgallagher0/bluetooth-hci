@@ -29,7 +29,7 @@ impl ExpectedConnectionLength {
         }
 
         const ABSOLUTE_MAX: Duration = Duration::from_micros(40_959_375);
-        assert_eq!(Self::as_u16(ABSOLUTE_MAX), 0xFFFF);
+        assert_eq!(Self::duration_as_u16(ABSOLUTE_MAX), 0xFFFF);
         if max > ABSOLUTE_MAX {
             return Err(ExpectedConnectionLengthError::TooLong(max));
         }
@@ -45,11 +45,11 @@ impl ExpectedConnectionLength {
     pub fn copy_into_slice(&self, bytes: &mut [u8]) {
         assert!(bytes.len() >= 4);
 
-        LittleEndian::write_u16(&mut bytes[0..2], Self::as_u16(self.range.0));
-        LittleEndian::write_u16(&mut bytes[2..4], Self::as_u16(self.range.1));
+        LittleEndian::write_u16(&mut bytes[0..2], Self::duration_as_u16(self.range.0));
+        LittleEndian::write_u16(&mut bytes[2..4], Self::duration_as_u16(self.range.1));
     }
 
-    fn as_u16(d: Duration) -> u16 {
+    fn duration_as_u16(d: Duration) -> u16 {
         // T = 0.625 ms * N
         // so N = T / 0.625 ms
         //      = T / 625 us

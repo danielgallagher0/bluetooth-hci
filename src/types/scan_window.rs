@@ -36,8 +36,8 @@ impl ScanWindow {
     pub fn copy_into_slice(&self, bytes: &mut [u8]) {
         assert!(bytes.len() >= 4);
 
-        LittleEndian::write_u16(&mut bytes[0..2], ScanWindow::as_u16(self.interval_width));
-        LittleEndian::write_u16(&mut bytes[2..4], ScanWindow::as_u16(self.window_width));
+        LittleEndian::write_u16(&mut bytes[0..2], Self::duration_as_u16(self.interval_width));
+        LittleEndian::write_u16(&mut bytes[2..4], Self::duration_as_u16(self.window_width));
     }
 
     /// Begins building a [ScanWindow]. The scan window has the given interval. Returns a
@@ -69,7 +69,7 @@ impl ScanWindow {
         Ok(d)
     }
 
-    fn as_u16(d: Duration) -> u16 {
+    fn duration_as_u16(d: Duration) -> u16 {
         // T = 0.625 ms * N
         // so N = T / 0.625 ms
         //      = T / 625 us
