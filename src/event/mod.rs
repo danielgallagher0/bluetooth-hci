@@ -59,6 +59,7 @@ use core::mem;
 ///
 /// The spec defines an "LE Meta-Event" event. This event is not exposed directly. Instead,
 /// individual LE events are included in this enum.
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug)]
 pub enum Event<V>
 where
