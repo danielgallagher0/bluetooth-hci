@@ -45,6 +45,7 @@ macro_rules! self_convert {
 pub mod command;
 
 use crate::types::{ConnectionIntervalError, FixedConnectionInterval};
+use crate::{BadStatusError, ConnectionHandle, Status};
 use byteorder::{ByteOrder, LittleEndian};
 use core::convert::{TryFrom, TryInto};
 use core::fmt::{Debug, Formatter, Result as FmtResult};
@@ -119,7 +120,7 @@ pub trait VendorEvent {
     type Error;
 
     /// Enumeration of vendor-specific status codes.
-    type Status: TryFrom<u8, Error = crate::BadStatusError> + Clone + Debug;
+    type Status: TryFrom<u8, Error = BadStatusError> + Clone + Debug;
 
     /// Enumeration of return parameters for vendor-specific commands.
     type ReturnParameters: VendorReturnParameters<Error = Self::Error> + Clone + Debug;
@@ -237,15 +238,15 @@ pub enum Error<V> {
     Vendor(V),
 }
 
-/// Extracts the value from a [`BadStatusError`](crate::BadStatusError) and returns it as a
+/// Extracts the value from a [`BadStatusError`](BadStatusError) and returns it as a
 /// [`BadStatus`](Error::BadStatus) error.
-pub fn rewrap_bad_status<VE>(bad_status: crate::BadStatusError) -> Error<VE> {
-    let crate::BadStatusError::BadValue(v) = bad_status;
+pub fn rewrap_bad_status<VE>(bad_status: BadStatusError) -> Error<VE> {
+    let BadStatusError::BadValue(v) = bad_status;
     Error::BadStatus(v)
 }
 
-fn rewrap_bad_reason<VE>(bad_status: crate::BadStatusError) -> Error<VE> {
-    let crate::BadStatusError::BadValue(v) = bad_status;
+fn rewrap_bad_reason<VE>(bad_status: BadStatusError) -> Error<VE> {
+    let BadStatusError::BadValue(v) = bad_status;
     Error::BadReason(v)
 }
 
@@ -348,10 +349,10 @@ where
 #[derive(Copy, Clone, Debug)]
 pub struct ConnectionComplete<VS> {
     /// Did the connection attempt fail, and if so, how?
-    pub status: crate::Status<VS>,
+    pub status: Status<VS>,
     /// Identifies a connection between two BR/ EDR Controllers. This is used as an identifier for
     /// transmitting and receiving voice or data.
-    pub conn_handle: crate::ConnectionHandle,
+    pub conn_handle: ConnectionHandle,
     /// BD ADDR of the other connected device forming the connection.
     pub bd_addr: crate::BdAddr,
     /// Type of connection.
@@ -383,7 +384,7 @@ impl TryFrom<u8> for LinkType {
 
 fn to_connection_complete<VE, VS>(payload: &[u8]) -> Result<ConnectionComplete<VS>, Error<VE>>
 where
-    crate::Status<VS>: TryFrom<u8, Error = crate::BadStatusError>,
+    Status<VS>: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(payload, 11);
 
@@ -391,7 +392,7 @@ where
     bd_addr.0.copy_from_slice(&payload[3..9]);
     Ok(ConnectionComplete {
         status: payload[0].try_into().map_err(rewrap_bad_status)?,
-        conn_handle: crate::ConnectionHandle(LittleEndian::read_u16(&payload[1..])),
+        conn_handle: ConnectionHandle(LittleEndian::read_u16(&payload[1..])),
         bd_addr: bd_addr,
         link_type: payload[9]
             .try_into()
@@ -420,10 +421,10 @@ fn try_into_encryption_enabled(value: u8) -> Result<bool, Error<!>> {
 #[derive(Copy, Clone, Debug)]
 pub struct DisconnectionComplete<VS> {
     /// Indicates if the disconnection was successful or not.
-    pub status: crate::Status<VS>,
+    pub status: Status<VS>,
 
     /// Connection handle which was disconnected.
-    pub conn_handle: crate::ConnectionHandle,
+    pub conn_handle: ConnectionHandle,
 
     /// Indicates the reason for the disconnection if the disconnection was successful. If the
     /// disconnection was not successful, the value of the reason parameter can be ignored by the
@@ -431,18 +432,18 @@ pub struct DisconnectionComplete<VS> {
     /// [Disconnect](crate::host::Hci::disconnect) command and there was a parameter error, or the
     /// command was not presently allowed, or a connection handle that didn't correspond to a
     /// connection was given.
-    pub reason: crate::Status<VS>,
+    pub reason: Status<VS>,
 }
 
 fn to_disconnection_complete<VE, VS>(payload: &[u8]) -> Result<DisconnectionComplete<VS>, Error<VE>>
 where
-    crate::Status<VS>: TryFrom<u8, Error = crate::BadStatusError>,
+    Status<VS>: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(payload, 4);
 
     Ok(DisconnectionComplete {
         status: payload[0].try_into().map_err(rewrap_bad_status)?,
-        conn_handle: crate::ConnectionHandle(LittleEndian::read_u16(&payload[1..])),
+        conn_handle: ConnectionHandle(LittleEndian::read_u16(&payload[1..])),
         reason: payload[3].try_into().map_err(rewrap_bad_reason)?,
     })
 }
@@ -458,14 +459,14 @@ where
 #[derive(Copy, Clone, Debug)]
 pub struct EncryptionChange<VS> {
     /// Indicates if the encryption change was successful or not.
-    pub status: crate::Status<VS>,
+    pub status: Status<VS>,
 
     /// Connection handle for which the link layer encryption has been enabled/disabled for all
     /// connection handles with the same BR/EDR Controller endpoint as the specified
     /// connection handle.
     ///
     /// The connection handle will be a connection handle for an ACL connection.
-    pub conn_handle: crate::ConnectionHandle,
+    pub conn_handle: ConnectionHandle,
 
     /// Specifies the new encryption type parameter for
     /// [`conn_handle`](EncryptionChange::conn_handle).
@@ -507,12 +508,12 @@ impl TryFrom<u8> for Encryption {
 
 fn to_encryption_change<VE, VS>(payload: &[u8]) -> Result<EncryptionChange<VS>, Error<VE>>
 where
-    crate::Status<VS>: TryFrom<u8, Error = crate::BadStatusError>,
+    Status<VS>: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(payload, 4);
     Ok(EncryptionChange {
         status: payload[0].try_into().map_err(rewrap_bad_status)?,
-        conn_handle: crate::ConnectionHandle(LittleEndian::read_u16(&payload[1..])),
+        conn_handle: ConnectionHandle(LittleEndian::read_u16(&payload[1..])),
         encryption: payload[3]
             .try_into()
             .map_err(self_convert!(Error::BadEncryptionType))?,
@@ -526,12 +527,12 @@ where
 #[derive(Copy, Clone, Debug)]
 pub struct RemoteVersionInformation<VS> {
     /// Status of the read event.
-    pub status: crate::Status<VS>,
+    pub status: Status<VS>,
 
     /// Connection Handle which was used for the
     /// [`read_remote_version_information`](crate::host::Hci::read_remote_version_information) command.
     /// The connection handle shall be for an ACL connection.
-    pub conn_handle: crate::ConnectionHandle,
+    pub conn_handle: ConnectionHandle,
 
     /// Version of the Current LMP in the remote Controller. See [LMP] version and [Link Layer]
     /// version in the Bluetooth Assigned Numbers.
@@ -564,12 +565,12 @@ pub struct RemoteVersionInformation<VS> {
 
 fn to_remote_version_info<VE, VS>(payload: &[u8]) -> Result<RemoteVersionInformation<VS>, Error<VE>>
 where
-    crate::Status<VS>: TryFrom<u8, Error = crate::BadStatusError>,
+    Status<VS>: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(payload, 8);
     Ok(RemoteVersionInformation {
         status: payload[0].try_into().map_err(rewrap_bad_status)?,
-        conn_handle: crate::ConnectionHandle(LittleEndian::read_u16(&payload[1..])),
+        conn_handle: ConnectionHandle(LittleEndian::read_u16(&payload[1..])),
         version: payload[3],
         mfgr_name: LittleEndian::read_u16(&payload[4..]),
         subversion: LittleEndian::read_u16(&payload[6..]),
@@ -584,7 +585,7 @@ where
 #[derive(Copy, Clone, Debug)]
 pub struct CommandStatus<VS> {
     /// Status of the command that has started.
-    pub status: crate::Status<VS>,
+    pub status: Status<VS>,
 
     /// Number of HCI Command packets that can be sent to the controller from the host.
     pub num_hci_command_packets: u8,
@@ -597,7 +598,7 @@ pub struct CommandStatus<VS> {
 
 fn to_command_status<VE, VS>(buffer: &[u8]) -> Result<CommandStatus<VS>, Error<VE>>
 where
-    crate::Status<VS>: TryFrom<u8, Error = crate::BadStatusError>,
+    Status<VS>: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(buffer, 4);
 
@@ -683,9 +684,7 @@ impl<'a> Iterator for NumberOfCompletedPacketsIterator<'a> {
         let index = self.next_index;
         self.next_index += NUM_COMPLETED_PACKETS_PAIR_LEN;
         Some(NumberOfCompletedPacketsPair {
-            conn_handle: crate::ConnectionHandle(LittleEndian::read_u16(
-                &self.event.data_buf[index..],
-            )),
+            conn_handle: ConnectionHandle(LittleEndian::read_u16(&self.event.data_buf[index..])),
             num_completed_packets: LittleEndian::read_u16(&self.event.data_buf[index + 2..])
                 as usize,
         })
@@ -697,7 +696,7 @@ impl<'a> Iterator for NumberOfCompletedPacketsIterator<'a> {
 #[derive(Copy, Clone, Debug)]
 pub struct NumberOfCompletedPacketsPair {
     /// Connection handle
-    pub conn_handle: crate::ConnectionHandle,
+    pub conn_handle: ConnectionHandle,
     /// The number of HCI Data Packets that have been completed (transmitted or flushed) for
     /// [`conn_handle`](NumberOfCompletedPacketsPair::conn_handle) since the previous time the event
     /// was returned.
@@ -759,21 +758,21 @@ fn to_data_buffer_overflow<VE>(payload: &[u8]) -> Result<DataBufferOverflow, Err
 #[derive(Copy, Clone, Debug)]
 pub struct EncryptionKeyRefreshComplete<VS> {
     /// Did the encryption key refresh fail, and if so, how?
-    pub status: crate::Status<VS>,
+    pub status: Status<VS>,
     /// Connection Handle for the ACL connection to have the encryption key refreshed on.
-    pub conn_handle: crate::ConnectionHandle,
+    pub conn_handle: ConnectionHandle,
 }
 
 fn to_encryption_key_refresh_complete<VE, VS>(
     payload: &[u8],
 ) -> Result<EncryptionKeyRefreshComplete<VS>, Error<VE>>
 where
-    crate::Status<VS>: TryFrom<u8, Error = crate::BadStatusError>,
+    Status<VS>: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(payload, 3);
     Ok(EncryptionKeyRefreshComplete {
         status: payload[0].try_into().map_err(rewrap_bad_status)?,
-        conn_handle: crate::ConnectionHandle(LittleEndian::read_u16(&payload[1..])),
+        conn_handle: ConnectionHandle(LittleEndian::read_u16(&payload[1..])),
     })
 }
 
@@ -791,11 +790,11 @@ where
 #[derive(Copy, Clone, Debug)]
 pub struct LeConnectionComplete<VS> {
     /// Did the LE Connection fail, and if so, how?
-    pub status: crate::Status<VS>,
+    pub status: Status<VS>,
 
     /// Connection handle to be used to identify a connection between two Bluetooth devices. The
     /// connection handle is used as an identifier for transmitting and receiving data.
-    pub conn_handle: crate::ConnectionHandle,
+    pub conn_handle: ConnectionHandle,
 
     /// Role of the device receiving this event in the connection.
     pub role: ConnectionRole,
@@ -877,14 +876,14 @@ impl TryFrom<u8> for CentralClockAccuracy {
 
 fn to_le_connection_complete<VE, VS>(payload: &[u8]) -> Result<LeConnectionComplete<VS>, Error<VE>>
 where
-    crate::Status<VS>: TryFrom<u8, Error = crate::BadStatusError>,
+    Status<VS>: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(payload, 19);
     let mut bd_addr = crate::BdAddr([0; 6]);
     bd_addr.0.copy_from_slice(&payload[6..12]);
     Ok(LeConnectionComplete {
         status: payload[1].try_into().map_err(rewrap_bad_status)?,
-        conn_handle: crate::ConnectionHandle(LittleEndian::read_u16(&payload[2..])),
+        conn_handle: ConnectionHandle(LittleEndian::read_u16(&payload[2..])),
         role: payload[4]
             .try_into()
             .map_err(self_convert!(Error::BadLeConnectionRole))?,
@@ -1131,11 +1130,11 @@ fn to_le_advertising_report<VE>(payload: &[u8]) -> Result<LeAdvertisingReport, E
 #[derive(Copy, Clone, Debug)]
 pub struct LeConnectionUpdateComplete<VS> {
     /// Did the LE Connection Update fail, and if so, how?
-    pub status: crate::Status<VS>,
+    pub status: Status<VS>,
 
     /// Connection handle to be used to identify a connection between two Bluetooth devices. The
     /// connection handle is used as an identifier for transmitting and receiving data.
-    pub conn_handle: crate::ConnectionHandle,
+    pub conn_handle: ConnectionHandle,
 
     /// Connection interval used on this connection.
     pub conn_interval: FixedConnectionInterval,
@@ -1145,12 +1144,12 @@ fn to_le_connection_update_complete<VE, VS>(
     payload: &[u8],
 ) -> Result<LeConnectionUpdateComplete<VS>, Error<VE>>
 where
-    crate::Status<VS>: TryFrom<u8, Error = crate::BadStatusError>,
+    Status<VS>: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(payload, 10);
     Ok(LeConnectionUpdateComplete {
         status: payload[1].try_into().map_err(rewrap_bad_status)?,
-        conn_handle: crate::ConnectionHandle(LittleEndian::read_u16(&payload[2..])),
+        conn_handle: ConnectionHandle(LittleEndian::read_u16(&payload[2..])),
         conn_interval: FixedConnectionInterval::from_bytes(&payload[4..10])
             .map_err(Error::BadConnectionInterval)?,
     })
@@ -1168,9 +1167,9 @@ where
 #[derive(Copy, Clone, Debug)]
 pub struct LeReadRemoteUsedFeaturesComplete<VS> {
     /// Did the read fail, and if so, how?
-    pub status: crate::Status<VS>,
+    pub status: Status<VS>,
     /// Connection handle to be used to identify a connection between two Bluetooth devices.
-    pub conn_handle: crate::ConnectionHandle,
+    pub conn_handle: ConnectionHandle,
     /// Bit Mask List of used LE features.
     pub features: crate::LinkLayerFeature,
 }
@@ -1179,14 +1178,14 @@ fn to_le_read_remote_used_features_complete<VE, VS>(
     payload: &[u8],
 ) -> Result<LeReadRemoteUsedFeaturesComplete<VS>, Error<VE>>
 where
-    crate::Status<VS>: TryFrom<u8, Error = crate::BadStatusError>,
+    Status<VS>: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(payload, 12);
 
     let feature_flags = LittleEndian::read_u64(&payload[4..]);
     Ok(LeReadRemoteUsedFeaturesComplete {
         status: payload[1].try_into().map_err(rewrap_bad_status)?,
-        conn_handle: crate::ConnectionHandle(LittleEndian::read_u16(&payload[2..])),
+        conn_handle: ConnectionHandle(LittleEndian::read_u16(&payload[2..])),
         features: crate::LinkLayerFeature::from_bits(feature_flags)
             .ok_or(Error::BadRemoteUsedFeatureFlag(feature_flags))?,
     })
@@ -1200,7 +1199,7 @@ where
 #[derive(Copy, Clone, Debug)]
 pub struct LeLongTermKeyRequest {
     /// Connection handle to be used to identify a connection between two Bluetooth devices.
-    pub conn_handle: crate::ConnectionHandle,
+    pub conn_handle: ConnectionHandle,
     /// 64-bit random number.
     pub random_value: u64,
     /// 16-bit encrypted diversifier
@@ -1211,7 +1210,7 @@ fn to_le_ltk_request<VE>(payload: &[u8]) -> Result<LeLongTermKeyRequest, Error<V
     require_len!(payload, 13);
 
     Ok(LeLongTermKeyRequest {
-        conn_handle: crate::ConnectionHandle(LittleEndian::read_u16(&payload[1..])),
+        conn_handle: ConnectionHandle(LittleEndian::read_u16(&payload[1..])),
         random_value: LittleEndian::read_u64(&payload[3..]),
         encrypted_diversifier: LittleEndian::read_u16(&payload[11..]),
     })

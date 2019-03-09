@@ -10,6 +10,7 @@
 //! 7.6 of the same part of the spec.
 
 use super::VendorReturnParameters;
+use crate::{BadStatusError, ConnectionHandle, Status};
 use byteorder::{ByteOrder, LittleEndian};
 use core::convert::{TryFrom, TryInto};
 use core::fmt::{Debug, Formatter, Result as FmtResult};
@@ -189,10 +190,10 @@ where
     Spontaneous,
 
     /// Status returned by the [Set Event Mask](crate::host::Hci::set_event_mask) command.
-    SetEventMask(crate::Status<V::Status>),
+    SetEventMask(Status<V::Status>),
 
     /// Status returned by the [Reset](crate::host::Hci::reset) command.
-    Reset(crate::Status<V::Status>),
+    Reset(Status<V::Status>),
 
     /// [Read Transmit Power Level](crate::host::Hci::read_tx_power_level) return parameters.
     ReadTxPowerLevel(TxPowerLevel<V::Status>),
@@ -216,7 +217,7 @@ where
     ReadRssi(ReadRssi<V::Status>),
 
     /// Status returned by the [LE Set Event Mask](crate::host::Hci::le_set_event_mask) command.
-    LeSetEventMask(crate::Status<V::Status>),
+    LeSetEventMask(Status<V::Status>),
 
     /// Parameters returned by the [LE Read Buffer Size](crate::host::Hci::le_read_buffer_size) command.
     LeReadBufferSize(LeReadBufferSize<V::Status>),
@@ -226,11 +227,11 @@ where
     LeReadLocalSupportedFeatures(LeSupportedFeatures<V::Status>),
 
     /// Status returned by the [LE Set Random Address](crate::host::Hci::le_set_random_address) command.
-    LeSetRandomAddress(crate::Status<V::Status>),
+    LeSetRandomAddress(Status<V::Status>),
 
     /// Status returned by the [LE Set Advertising
     /// Parameters](crate::host::Hci::le_set_advertising_parameters) command.
-    LeSetAdvertisingParameters(crate::Status<V::Status>),
+    LeSetAdvertisingParameters(Status<V::Status>),
 
     /// Parameters returned by the [LE Read Advertising Channel TX
     /// Power](crate::host::Hci::le_read_advertising_channel_tx_power) command.
@@ -238,51 +239,51 @@ where
 
     /// Status returned by the [LE Set Advertising Data](crate::host::Hci::le_set_advertising_data)
     /// command.
-    LeSetAdvertisingData(crate::Status<V::Status>),
+    LeSetAdvertisingData(Status<V::Status>),
 
     /// Status returned by the [LE Set Scan Response Data](crate::host::Hci::le_set_scan_response_data)
     /// command.
-    LeSetScanResponseData(crate::Status<V::Status>),
+    LeSetScanResponseData(Status<V::Status>),
 
     /// Status returned by the [LE Set Advertise Enable](crate::host::Hci::le_set_advertise_enable)
     /// command.
     #[cfg(not(feature = "version-5-0"))]
-    LeSetAdvertiseEnable(crate::Status<V::Status>),
+    LeSetAdvertiseEnable(Status<V::Status>),
 
     /// Status returned by the [LE Set Advertising Enable](crate::host::Hci::le_set_advertising_enable)
     /// command.
     #[cfg(feature = "version-5-0")]
-    LeSetAdvertisingEnable(crate::Status<V::Status>),
+    LeSetAdvertisingEnable(Status<V::Status>),
 
     /// Status returned by the [LE Set Scan Parameters](crate::host::Hci::le_set_scan_parameters)
     /// command.
-    LeSetScanParameters(crate::Status<V::Status>),
+    LeSetScanParameters(Status<V::Status>),
 
     /// Status returned by the [LE Set Scan Enable](crate::host::Hci::le_set_scan_enable) command.
-    LeSetScanEnable(crate::Status<V::Status>),
+    LeSetScanEnable(Status<V::Status>),
 
     /// Status returned by the [LE Create Connection
     /// Cancel](crate::host::Hci::le_create_connection_cancel) command.
-    LeCreateConnectionCancel(crate::Status<V::Status>),
+    LeCreateConnectionCancel(Status<V::Status>),
 
     /// Status and white list size returned by the [LE Read White List
     /// Size](crate::host::Hci::le_read_white_list_size) command.
-    LeReadWhiteListSize(crate::Status<V::Status>, usize),
+    LeReadWhiteListSize(Status<V::Status>, usize),
 
     /// Status returned by the [LE Clear White List](crate::host::Hci::le_clear_white_list) command.
-    LeClearWhiteList(crate::Status<V::Status>),
+    LeClearWhiteList(Status<V::Status>),
 
     /// Status returned by the [LE Add Device to White
     /// List](crate::host::Hci::le_add_device_to_white_list) command.
-    LeAddDeviceToWhiteList(crate::Status<V::Status>),
+    LeAddDeviceToWhiteList(Status<V::Status>),
 
     /// Status returned by the [LE Remove Device from White
     /// List](crate::host::Hci::le_remove_device_from_white_list) command.
-    LeRemoveDeviceFromWhiteList(crate::Status<V::Status>),
+    LeRemoveDeviceFromWhiteList(Status<V::Status>),
 
     /// Status returned by the [LE Set Host Channel
     /// Classification](crate::host::Hci::le_set_host_channel_classification) command.
-    LeSetHostChannelClassification(crate::Status<V::Status>),
+    LeSetHostChannelClassification(Status<V::Status>),
 
     /// Parameters returned by the [LE Read Channel Map](crate::host::Hci::le_read_channel_map) command.
     LeReadChannelMap(ChannelMapParameters<V::Status>),
@@ -306,10 +307,10 @@ where
     LeReadSupportedStates(LeReadSupportedStates<V::Status>),
 
     /// Status returned by the [LE Receiver Test](crate::host::Hci::le_receiver_test) command.
-    LeReceiverTest(crate::Status<V::Status>),
+    LeReceiverTest(Status<V::Status>),
 
     /// Status returned by the [LE Transmitter Test](crate::host::Hci::le_transmitter_test) command.
-    LeTransmitterTest(crate::Status<V::Status>),
+    LeTransmitterTest(Status<V::Status>),
 
     /// Parameters returned by the [LE Test End](crate::host::Hci::le_test_end) command.
     LeTestEnd(LeTestEnd<V::Status>),
@@ -318,9 +319,9 @@ where
     Vendor(V::ReturnParameters),
 }
 
-fn to_status<VE, VS>(bytes: &[u8]) -> Result<crate::Status<VS>, crate::event::Error<VE>>
+fn to_status<VE, VS>(bytes: &[u8]) -> Result<Status<VS>, crate::event::Error<VE>>
 where
-    crate::Status<VS>: TryFrom<u8, Error = crate::BadStatusError>,
+    Status<VS>: TryFrom<u8, Error = BadStatusError>,
 {
     bytes[0].try_into().map_err(super::rewrap_bad_status)
 }
@@ -329,10 +330,10 @@ where
 #[derive(Copy, Clone, Debug)]
 pub struct TxPowerLevel<VS> {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<VS>,
+    pub status: Status<VS>,
 
     /// Specifies which connection handle's transmit power level setting is returned
-    pub conn_handle: crate::ConnectionHandle,
+    pub conn_handle: ConnectionHandle,
 
     /// Power level for the connection handle, in dBm.
     ///
@@ -342,12 +343,12 @@ pub struct TxPowerLevel<VS> {
 
 fn to_tx_power_level<VE, VS>(bytes: &[u8]) -> Result<TxPowerLevel<VS>, crate::event::Error<VE>>
 where
-    crate::Status<VS>: TryFrom<u8, Error = crate::BadStatusError>,
+    Status<VS>: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(bytes, 4);
     Ok(TxPowerLevel {
         status: to_status(bytes)?,
-        conn_handle: crate::ConnectionHandle(LittleEndian::read_u16(&bytes[1..])),
+        conn_handle: ConnectionHandle(LittleEndian::read_u16(&bytes[1..])),
         tx_power_level_dbm: unsafe { mem::transmute::<u8, i8>(bytes[3]) },
     })
 }
@@ -357,7 +358,7 @@ where
 #[derive(Copy, Clone, Debug)]
 pub struct LocalVersionInfo<VS> {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<VS>,
+    pub status: Status<VS>,
 
     /// The version information of the HCI layer.
     ///
@@ -391,7 +392,7 @@ fn to_local_version_info<VE, VS>(
     bytes: &[u8],
 ) -> Result<LocalVersionInfo<VS>, crate::event::Error<VE>>
 where
-    crate::Status<VS>: TryFrom<u8, Error = crate::BadStatusError>,
+    Status<VS>: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(bytes, 9);
 
@@ -410,7 +411,7 @@ where
 #[derive(Copy, Clone, Debug)]
 pub struct LocalSupportedCommands<VS> {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<VS>,
+    pub status: Status<VS>,
 
     /// Flags for supported commands.
     pub supported_commands: CommandFlags,
@@ -1053,7 +1054,7 @@ fn to_supported_commands<VE, VS>(
     bytes: &[u8],
 ) -> Result<LocalSupportedCommands<VS>, crate::event::Error<VE>>
 where
-    crate::Status<VS>: TryFrom<u8, Error = crate::BadStatusError>,
+    Status<VS>: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(bytes, 1 + COMMAND_FLAGS_SIZE);
     Ok(LocalSupportedCommands {
@@ -1077,7 +1078,7 @@ where
 #[derive(Copy, Clone, Debug)]
 pub struct LocalSupportedFeatures<VS> {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<VS>,
+    pub status: Status<VS>,
 
     /// Flags for supported features.
     pub supported_features: LmpFeatures,
@@ -1203,7 +1204,7 @@ fn to_supported_features<VE, VS>(
     bytes: &[u8],
 ) -> Result<LocalSupportedFeatures<VS>, crate::event::Error<VE>>
 where
-    crate::Status<VS>: TryFrom<u8, Error = crate::BadStatusError>,
+    Status<VS>: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(bytes, 9);
     Ok(LocalSupportedFeatures {
@@ -1216,7 +1217,7 @@ where
 #[derive(Copy, Clone, Debug)]
 pub struct ReadBdAddr<VS> {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<VS>,
+    pub status: Status<VS>,
 
     /// Address of the device.
     pub bd_addr: crate::BdAddr,
@@ -1224,7 +1225,7 @@ pub struct ReadBdAddr<VS> {
 
 fn to_bd_addr<VE, VS>(bytes: &[u8]) -> Result<ReadBdAddr<VS>, crate::event::Error<VE>>
 where
-    crate::Status<VS>: TryFrom<u8, Error = crate::BadStatusError>,
+    Status<VS>: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(bytes, 7);
     let mut bd_addr = crate::BdAddr([0; 6]);
@@ -1239,13 +1240,13 @@ where
 #[derive(Copy, Clone, Debug)]
 pub struct ReadRssi<VS> {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<VS>,
+    pub status: Status<VS>,
 
     /// The Handle for the connection for which the RSSI has been read.
     ///
     /// The Handle is a connection handle for a BR/EDR Controller and a physical link handle for an
     /// AMP Controller.
-    pub conn_handle: crate::ConnectionHandle,
+    pub conn_handle: ConnectionHandle,
 
     /// - BR/EDR
     ///   - No range restriction
@@ -1262,12 +1263,12 @@ pub struct ReadRssi<VS> {
 
 fn to_read_rssi<VE, VS>(bytes: &[u8]) -> Result<ReadRssi<VS>, crate::event::Error<VE>>
 where
-    crate::Status<VS>: TryFrom<u8, Error = crate::BadStatusError>,
+    Status<VS>: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(bytes, 4);
     Ok(ReadRssi {
         status: to_status(bytes)?,
-        conn_handle: crate::ConnectionHandle(LittleEndian::read_u16(&bytes[1..])),
+        conn_handle: ConnectionHandle(LittleEndian::read_u16(&bytes[1..])),
         rssi: unsafe { mem::transmute::<u8, i8>(bytes[3]) },
     })
 }
@@ -1276,7 +1277,7 @@ where
 #[derive(Copy, Clone, Debug)]
 pub struct LeReadBufferSize<VS> {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<VS>,
+    pub status: Status<VS>,
 
     /// The size of the L2CAP PDU segments contained in ACL Data Packets, which are transferred from
     /// the Host to the Controller to be broken up into packets by the Link Layer. Both the Host and
@@ -1302,7 +1303,7 @@ fn to_le_read_buffer_status<VE, VS>(
     bytes: &[u8],
 ) -> Result<LeReadBufferSize<VS>, crate::event::Error<VE>>
 where
-    crate::Status<VS>: TryFrom<u8, Error = crate::BadStatusError>,
+    Status<VS>: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(bytes, 4);
     Ok(LeReadBufferSize {
@@ -1317,7 +1318,7 @@ where
 #[derive(Copy, Clone, Debug)]
 pub struct LeSupportedFeatures<VS> {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<VS>,
+    pub status: Status<VS>,
 
     /// Supported LE features.
     pub supported_features: LeFeatures,
@@ -1382,7 +1383,7 @@ fn to_le_local_supported_features<VE, VS>(
     bytes: &[u8],
 ) -> Result<LeSupportedFeatures<VS>, crate::event::Error<VE>>
 where
-    crate::Status<VS>: TryFrom<u8, Error = crate::BadStatusError>,
+    Status<VS>: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(bytes, 9);
     Ok(LeSupportedFeatures {
@@ -1396,7 +1397,7 @@ where
 #[derive(Copy, Clone, Debug)]
 pub struct LeAdvertisingChannelTxPower<VS> {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<VS>,
+    pub status: Status<VS>,
     /// The transmit power of the advertising channel.
     ///   - Range: -20 ≤ N ≤ 10 (this is not enforced in this implementation)
     ///   - Units: dBm
@@ -1408,7 +1409,7 @@ fn to_le_advertising_channel_tx_power<VE, VS>(
     bytes: &[u8],
 ) -> Result<LeAdvertisingChannelTxPower<VS>, crate::event::Error<VE>>
 where
-    crate::Status<VS>: TryFrom<u8, Error = crate::BadStatusError>,
+    Status<VS>: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(bytes, 2);
     Ok(LeAdvertisingChannelTxPower {
@@ -1418,7 +1419,7 @@ where
 }
 
 #[cfg(not(feature = "version-5-0"))]
-fn to_le_set_advertise_enable<V>(status: crate::Status<V::Status>) -> ReturnParameters<V>
+fn to_le_set_advertise_enable<V>(status: Status<V::Status>) -> ReturnParameters<V>
 where
     V: super::VendorEvent,
 {
@@ -1426,7 +1427,7 @@ where
 }
 
 #[cfg(feature = "version-5-0")]
-fn to_le_set_advertise_enable<V>(status: crate::Status<V::Status>) -> ReturnParameters<V>
+fn to_le_set_advertise_enable<V>(status: Status<V::Status>) -> ReturnParameters<V>
 where
     V: super::VendorEvent,
 {
@@ -1437,10 +1438,10 @@ where
 #[derive(Copy, Clone, Debug)]
 pub struct ChannelMapParameters<VS> {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<VS>,
+    pub status: Status<VS>,
 
     /// Connection handle whose channel map is returned.
-    pub conn_handle: crate::ConnectionHandle,
+    pub conn_handle: ConnectionHandle,
 
     /// Channels that may be used for this connection.
     pub channel_map: crate::ChannelClassification,
@@ -1450,7 +1451,7 @@ fn to_le_channel_map_parameters<VE, VS>(
     bytes: &[u8],
 ) -> Result<ChannelMapParameters<VS>, crate::event::Error<VE>>
 where
-    crate::Status<VS>: TryFrom<u8, Error = crate::BadStatusError>,
+    Status<VS>: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(bytes, 8);
 
@@ -1459,7 +1460,7 @@ where
     let channel_bits = channel_bits;
     Ok(ChannelMapParameters {
         status: to_status(&bytes[0..])?,
-        conn_handle: crate::ConnectionHandle(LittleEndian::read_u16(&bytes[1..])),
+        conn_handle: ConnectionHandle(LittleEndian::read_u16(&bytes[1..])),
         channel_map: crate::ChannelClassification::from_bits(&bytes[3..])
             .ok_or(crate::event::Error::InvalidChannelMap(channel_bits))?,
     })
@@ -1469,7 +1470,7 @@ where
 #[derive(Copy, Clone, Debug)]
 pub struct EncryptedReturnParameters<VS> {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<VS>,
+    pub status: Status<VS>,
 
     /// Encrypted data block.
     ///
@@ -1494,7 +1495,7 @@ fn to_le_encrypted_data<VE, VS>(
     bytes: &[u8],
 ) -> Result<EncryptedReturnParameters<VS>, crate::event::Error<VE>>
 where
-    crate::Status<VS>: TryFrom<u8, Error = crate::BadStatusError>,
+    Status<VS>: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(bytes, 17);
 
@@ -1510,7 +1511,7 @@ where
 #[derive(Copy, Clone, Debug)]
 pub struct LeRandom<VS> {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<VS>,
+    pub status: Status<VS>,
 
     /// Controller-generated random number.
     pub random_number: u64,
@@ -1518,7 +1519,7 @@ pub struct LeRandom<VS> {
 
 fn to_random_number<VE, VS>(bytes: &[u8]) -> Result<LeRandom<VS>, crate::event::Error<VE>>
 where
-    crate::Status<VS>: TryFrom<u8, Error = crate::BadStatusError>,
+    Status<VS>: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(bytes, 9);
 
@@ -1533,23 +1534,23 @@ where
 #[derive(Copy, Clone, Debug)]
 pub struct LeLongTermRequestReply<VS> {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<VS>,
+    pub status: Status<VS>,
 
     /// Connection handle that the request came from
-    pub conn_handle: crate::ConnectionHandle,
+    pub conn_handle: ConnectionHandle,
 }
 
 fn to_le_ltk_request_reply<VE, VS>(
     bytes: &[u8],
 ) -> Result<LeLongTermRequestReply<VS>, crate::event::Error<VE>>
 where
-    crate::Status<VS>: TryFrom<u8, Error = crate::BadStatusError>,
+    Status<VS>: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(bytes, 3);
 
     Ok(LeLongTermRequestReply {
         status: to_status(&bytes)?,
-        conn_handle: crate::ConnectionHandle(LittleEndian::read_u16(&bytes[1..])),
+        conn_handle: ConnectionHandle(LittleEndian::read_u16(&bytes[1..])),
     })
 }
 
@@ -1558,7 +1559,7 @@ where
 #[derive(Copy, Clone, Debug)]
 pub struct LeReadSupportedStates<VS> {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<VS>,
+    pub status: Status<VS>,
 
     /// States or state combinations supported by the Controller. Multiple state and state
     /// combinations may be supported.
@@ -1660,7 +1661,7 @@ fn to_le_read_states<VE, VS>(
     bytes: &[u8],
 ) -> Result<LeReadSupportedStates<VS>, crate::event::Error<VE>>
 where
-    crate::Status<VS>: TryFrom<u8, Error = crate::BadStatusError>,
+    Status<VS>: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(bytes, 9);
 
@@ -1676,7 +1677,7 @@ where
 #[derive(Copy, Clone, Debug)]
 pub struct LeTestEnd<VS> {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<VS>,
+    pub status: Status<VS>,
 
     /// The number of packets received during the test.  For transmitter tests, this value shall be
     /// 0.
@@ -1685,7 +1686,7 @@ pub struct LeTestEnd<VS> {
 
 fn to_le_test_end<VE, VS>(bytes: &[u8]) -> Result<LeTestEnd<VS>, crate::event::Error<VE>>
 where
-    crate::Status<VS>: TryFrom<u8, Error = crate::BadStatusError>,
+    Status<VS>: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(bytes, 3);
 
