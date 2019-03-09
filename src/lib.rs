@@ -19,9 +19,9 @@
 //!
 //! The [`host::Hci`] trait defines all of the functions that communicate from the host to the
 //! controller. The [`host::uart::Hci`] trait defines a read function that returns a
-//! [`host::uart::Packet`], which can contain an [`Event`], AclData (TODO), or SyncData (TODO). Both
-//! of these traits have default implementations in terms of the [`Controller`], so calling code
-//! does not need to implement any commands or event parsing code.
+//! [`host::uart::Packet`], which can contain an [`Event`], `AclData` (TODO), or `SyncData`
+//! (TODO). Both of these traits have default implementations in terms of the [`Controller`], so
+//! calling code does not need to implement any commands or event parsing code.
 //!
 //! ## Vendor-specific commands and events
 //!
@@ -50,11 +50,11 @@
 //!   header and writing the data to the [`Controller`]. Vendor code should only be responsible for
 //!   serializing commands into byte slices.
 //!
-//! - Remove the cmd_link and event_link modules, and merge uart up into host. The Bluetooth spec
-//!   made it seem like there were devices that do not include the packet type byte at the beginning
-//!   of packets, but STMicro's BlueNRG implementation and Nordic's Zephyr implementation both
-//!   include it. If there is a controller that does *not* include the packet type, the event_link
-//!   HCI can always be brought back.
+//! - Remove the `cmd_link` and `event_link` modules, and merge `uart` up into `host`. The Bluetooth
+//!   spec made it seem like there were devices that do not include the packet type byte at the
+//!   beginning of packets, but STMicro's BlueNRG implementation and Nordic's Zephyr implementation
+//!   both include it. If there is a controller that does *not* include the packet type, the
+//!   `event_link` HCI can always be brought back.
 //!
 //! - Provide config features for different versions of the Bluetooth Specification.
 //!

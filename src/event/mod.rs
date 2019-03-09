@@ -7,7 +7,7 @@
 #![macro_use]
 
 /// Verifies that the length of the LHS expression is exactly the RHS expression.  Fails with a
-/// BadLength error if not.
+/// [`BadLength`](crate::event::Error::BadLength) error if not.
 #[macro_export]
 macro_rules! require_len {
     ($left:expr, $right:expr) => {
@@ -18,7 +18,7 @@ macro_rules! require_len {
 }
 
 /// Verifies that the length of the LHS expression is greater than or equal to the RHS expression.
-/// Fails with a BadLength error if not.
+/// Fails with a [`BadLength`](crate::event::Error::BadLength) error if not.
 #[macro_export]
 macro_rules! require_len_at_least {
     ($left:expr, $right:expr) => {
@@ -29,8 +29,8 @@ macro_rules! require_len_at_least {
 }
 
 /// Converts a specific generic enum value between specializations.  This is used below to convert
-/// from Error<!> to Error<VendorError> in various places where only one error value is possible
-/// (such as from try_into).
+/// from [`Error<!>`] to [`Error<VendorError>`] in various places where only one error value is
+/// possible (such as from `try_into`).
 macro_rules! self_convert {
     ($val:path) => {
         |e| {
@@ -937,7 +937,7 @@ impl LeAdvertisingReport {
 pub mod test_helpers {
     use super::*;
 
-    /// Create an [LeAdvertisingReport] from a slice of `LeAdvertisement` structs.
+    /// Create an [`LeAdvertisingReport`] from a slice of [`LeAdvertisement`] structs.
     ///
     /// Panics if the resulting report would be too big to fit in a report event.
     pub fn report_with_advertisements<'a>(

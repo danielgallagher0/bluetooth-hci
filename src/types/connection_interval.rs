@@ -103,7 +103,7 @@ impl ConnectionInterval {
     }
 }
 
-/// Intermediate builder for the [ConnectionInterval]
+/// Intermediate builder for the [`ConnectionInterval`].
 #[derive(Default)]
 pub struct ConnectionIntervalBuilder {
     interval: Option<(Duration, Duration)>,
@@ -252,7 +252,7 @@ impl ConnectionIntervalBuilder {
     }
 }
 
-/// Types of errors that can occure when creating a [ConnectionInterval].
+/// Types of errors that can occure when creating a [`ConnectionInterval`].
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ConnectionIntervalError {
     /// At least one of any of [`with_range`](ConnectionIntervalBuilder::with_range),

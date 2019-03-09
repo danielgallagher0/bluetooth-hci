@@ -59,7 +59,7 @@ impl ExpectedConnectionLength {
     }
 }
 
-/// Types of errors that can occure when creating a [ExpectedConnectionLength].
+/// Types of errors that can occure when creating a [`ExpectedConnectionLength`].
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ExpectedConnectionLengthError {
     /// The maximum expected length is too long. The maximum is 40.959375, because nothing higher

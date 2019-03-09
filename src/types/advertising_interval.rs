@@ -144,7 +144,7 @@ impl AdvertisingIntervalBuilder {
     }
 }
 
-/// Potential errors that can occur when specifying an [AdvertisingInterval].
+/// Potential errors that can occur when specifying an [`AdvertisingInterval`].
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum AdvertisingIntervalError {
     /// The minimum value was too short. Includes the invalid value.

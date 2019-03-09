@@ -36,7 +36,7 @@ const MAX_HEADER_LENGTH: usize = 5;
 /// itself then contains various parameters as defined by the Bluetooth specification.
 ///
 /// Before this command header, many (all?) Bluetooth implementations include a 1-byte packet type
-/// preceding the command header. This version of the HciHeader is implemented by
+/// preceding the command header. This version of the `HciHeader` is implemented by
 /// [`uart::CommandHeader`], while versions without the packet byte are implemented by
 /// [`cmd_link::Header`] and [`event_link::NoCommands`].
 pub trait HciHeader {

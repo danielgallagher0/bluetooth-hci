@@ -79,7 +79,7 @@ impl ScanWindow {
     }
 }
 
-/// Intermediate builder for the [ScanWindow].
+/// Intermediate builder for the [`ScanWindow`].
 pub struct ScanWindowBuilder {
     interval: Duration,
 }
@@ -109,7 +109,7 @@ impl ScanWindowBuilder {
     }
 }
 
-/// Types of errors that can occure when creating a [ScanWindow].
+/// Types of errors that can occure when creating a [`ScanWindow`].
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ScanWindowError {
     /// The duration is too short. Both the interval and duration must be at least 2.5 ms. Includes
