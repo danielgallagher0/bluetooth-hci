@@ -22,7 +22,7 @@ impl super::HciHeader for Header {
 
     fn new(opcode: crate::opcode::Opcode, param_len: usize) -> Header {
         Header {
-            opcode: opcode,
+            opcode,
             param_len: param_len as u8,
         }
     }

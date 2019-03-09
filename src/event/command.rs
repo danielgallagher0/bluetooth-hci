@@ -1066,11 +1066,9 @@ where
             .try_into()
             .map_err(|e| match e {
                 crate::event::Error::BadLength(actual, expected) => {
-                    return crate::event::Error::BadLength(actual, expected);
+                    crate::event::Error::BadLength(actual, expected)
                 }
-                crate::event::Error::BadCommandFlag => {
-                    return crate::event::Error::BadCommandFlag;
-                }
+                crate::event::Error::BadCommandFlag => crate::event::Error::BadCommandFlag,
                 _ => unreachable!(),
             })?,
     })
@@ -1235,7 +1233,7 @@ where
     bd_addr.0.copy_from_slice(&bytes[1..]);
     Ok(ReadBdAddr {
         status: to_status(bytes)?,
-        bd_addr: bd_addr,
+        bd_addr,
     })
 }
 
@@ -1465,7 +1463,7 @@ where
         status: to_status(&bytes[0..])?,
         conn_handle: ConnectionHandle(LittleEndian::read_u16(&bytes[1..])),
         channel_map: crate::ChannelClassification::from_bits(&bytes[3..])
-            .ok_or(crate::event::Error::InvalidChannelMap(channel_bits))?,
+            .ok_or_else(|| crate::event::Error::InvalidChannelMap(channel_bits))?,
     })
 }
 
@@ -1672,7 +1670,7 @@ where
     Ok(LeReadSupportedStates {
         status: to_status(bytes)?,
         supported_states: LeStates::from_bits(bitfield)
-            .ok_or(crate::event::Error::InvalidLeStates(bitfield))?,
+            .ok_or_else(|| crate::event::Error::InvalidLeStates(bitfield))?,
     })
 }
 

@@ -74,11 +74,11 @@ impl ConnectionInterval {
         // Do the error checking with the standard connection interval builder. The min and max of
         // the interval range are allowed to be equal.
         let interval_min =
-            Duration::from_micros(1_250) * LittleEndian::read_u16(&bytes[0..2]) as u32;
+            Duration::from_micros(1_250) * u32::from(LittleEndian::read_u16(&bytes[0..2]));
         let interval_max =
-            Duration::from_micros(1_250) * LittleEndian::read_u16(&bytes[2..4]) as u32;
+            Duration::from_micros(1_250) * u32::from(LittleEndian::read_u16(&bytes[2..4]));
         let latency = LittleEndian::read_u16(&bytes[4..6]);
-        let timeout = Duration::from_millis(10) * LittleEndian::read_u16(&bytes[6..8]) as u32;
+        let timeout = Duration::from_millis(10) * u32::from(LittleEndian::read_u16(&bytes[6..8]));
         ConnectionIntervalBuilder::new()
             .with_range(interval_min, interval_max)
             .with_latency(latency)
@@ -104,6 +104,7 @@ impl ConnectionInterval {
 }
 
 /// Intermediate builder for the [ConnectionInterval]
+#[derive(Default)]
 pub struct ConnectionIntervalBuilder {
     interval: Option<(Duration, Duration)>,
     conn_latency: Option<u16>,
@@ -220,7 +221,7 @@ impl ConnectionIntervalBuilder {
         }
 
         let supervision_timeout = self.supervision_timeout.unwrap();
-        let computed_timeout_min = interval.1 * (1 + conn_latency as u32) * 2;
+        let computed_timeout_min = interval.1 * (1 + u32::from(conn_latency)) * 2;
         const TIMEOUT_MAX: Duration = Duration::from_secs(32);
         if computed_timeout_min >= TIMEOUT_MAX {
             return Err(ConnectionIntervalError::ImpossibleSupervisionTimeout(
@@ -308,9 +309,10 @@ impl FixedConnectionInterval {
 
         // Do the error checking with the standard connection interval builder. The min and max of
         // the interval range are allowed to be equal.
-        let interval = Duration::from_micros(1_250) * LittleEndian::read_u16(&bytes[0..2]) as u32;
+        let interval =
+            Duration::from_micros(1_250) * u32::from(LittleEndian::read_u16(&bytes[0..2]));
         let latency = LittleEndian::read_u16(&bytes[2..4]);
-        let timeout = Duration::from_millis(10) * LittleEndian::read_u16(&bytes[4..6]) as u32;
+        let timeout = Duration::from_millis(10) * u32::from(LittleEndian::read_u16(&bytes[4..6]));
         ConnectionIntervalBuilder::new()
             .with_range(interval, interval)
             .with_latency(latency)

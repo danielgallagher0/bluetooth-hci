@@ -98,7 +98,7 @@ impl ScanWindowBuilder {
         if window > self.interval {
             return Err(ScanWindowError::Inverted {
                 interval: self.interval,
-                window: window,
+                window,
             });
         }
 

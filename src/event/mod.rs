@@ -393,7 +393,7 @@ where
     Ok(ConnectionComplete {
         status: payload[0].try_into().map_err(rewrap_bad_status)?,
         conn_handle: ConnectionHandle(LittleEndian::read_u16(&payload[1..])),
-        bd_addr: bd_addr,
+        bd_addr,
         link_type: payload[9]
             .try_into()
             .map_err(self_convert!(Error::BadLinkType))?,
@@ -656,7 +656,7 @@ impl Debug for NumberOfCompletedPackets {
 
 impl NumberOfCompletedPackets {
     /// Returns an iterator over the connection handle-number of completed packet pairs.
-    pub fn iter<'a>(&'a self) -> NumberOfCompletedPacketsIterator<'a> {
+    pub fn iter(&self) -> NumberOfCompletedPacketsIterator {
         NumberOfCompletedPacketsIterator {
             event: self,
             next_index: 0,
@@ -715,7 +715,7 @@ fn to_number_of_completed_packets<VE>(
     data_buf[..num_pairs * NUM_COMPLETED_PACKETS_PAIR_LEN].copy_from_slice(&payload[1..]);
     Ok(NumberOfCompletedPackets {
         num_handles: num_pairs,
-        data_buf: data_buf,
+        data_buf,
     })
 }
 
@@ -917,13 +917,13 @@ const MAX_ADVERTISING_REPORT_LEN: usize = 253;
 
 impl LeAdvertisingReport {
     /// Returns an iterator over the advertisements from the event.
-    pub fn iter<'a>(&'a self) -> LeAdvertisingReportIterator<'a> {
+    pub fn iter(&self) -> LeAdvertisingReportIterator {
         LeAdvertisingReportIterator {
             inner_iter: self.inner_iter(),
         }
     }
 
-    fn inner_iter<'a, VE>(&'a self) -> LeAdvertisingReportInnerIterator<'a, VE> {
+    fn inner_iter<VE>(&self) -> LeAdvertisingReportInnerIterator<'_, VE> {
         LeAdvertisingReportInnerIterator {
             event_data: &self.data_buf[..self.data_len],
             next_index: 0,
@@ -1094,20 +1094,12 @@ fn to_le_advertising_report<VE>(payload: &[u8]) -> Result<LeAdvertisingReport, E
         next_index: 0,
         phantom: PhantomData,
     };
-    loop {
-        match check_iter.next()? {
-            Some(_) => (),
-            None => break,
-        }
-    }
+    while let Some(_) = check_iter.next()? {}
 
     let data_len = payload.len() - 2;
     let mut data_buf = [0; MAX_ADVERTISING_REPORT_LEN];
     data_buf[..data_len].copy_from_slice(&payload[2..]);
-    Ok(LeAdvertisingReport {
-        data_len: data_len,
-        data_buf: data_buf,
-    })
+    Ok(LeAdvertisingReport { data_len, data_buf })
 }
 
 /// Indicates that the Controller process to update the connection has completed.
@@ -1187,7 +1179,7 @@ where
         status: payload[1].try_into().map_err(rewrap_bad_status)?,
         conn_handle: ConnectionHandle(LittleEndian::read_u16(&payload[2..])),
         features: crate::LinkLayerFeature::from_bits(feature_flags)
-            .ok_or(Error::BadRemoteUsedFeatureFlag(feature_flags))?,
+            .ok_or_else(|| Error::BadRemoteUsedFeatureFlag(feature_flags))?,
     })
 }
 

@@ -75,7 +75,7 @@ impl super::HciHeader for CommandHeader {
 
     fn new(opcode: crate::opcode::Opcode, param_len: usize) -> CommandHeader {
         CommandHeader {
-            opcode: opcode,
+            opcode,
             param_len: param_len as u8,
         }
     }
