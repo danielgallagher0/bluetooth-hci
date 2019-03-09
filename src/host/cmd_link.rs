@@ -27,7 +27,7 @@ impl super::HciHeader for Header {
         }
     }
 
-    fn into_bytes(&self, buffer: &mut [u8]) {
+    fn copy_into_slice(&self, buffer: &mut [u8]) {
         LittleEndian::write_u16(buffer, self.opcode.0);
         buffer[2] = self.param_len;
     }

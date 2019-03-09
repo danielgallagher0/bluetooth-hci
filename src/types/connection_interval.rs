@@ -41,7 +41,7 @@ impl ConnectionInterval {
     /// # Panics
     ///
     /// The provided buffer must be at least 8 bytes long.
-    pub fn into_bytes(&self, bytes: &mut [u8]) {
+    pub fn copy_into_slice(&self, bytes: &mut [u8]) {
         assert!(bytes.len() >= 8);
 
         LittleEndian::write_u16(&mut bytes[0..2], Self::interval_as_u16(self.interval_.0));

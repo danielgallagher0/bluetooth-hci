@@ -9,7 +9,7 @@ fn valid() {
         ExpectedConnectionLength::new(Duration::from_millis(200), Duration::from_millis(500))
             .unwrap();
     let mut bytes = [0; 4];
-    range.into_bytes(&mut bytes);
+    range.copy_into_slice(&mut bytes);
     assert_eq!(bytes, [0x40, 0x01, 0x20, 0x03]);
 }
 
@@ -18,8 +18,9 @@ fn interval_too_long() {
     let err = ExpectedConnectionLength::new(
         Duration::from_millis(200),
         Duration::from_micros(40_959_376),
-    ).err()
-        .unwrap();
+    )
+    .err()
+    .unwrap();
     assert_eq!(
         err,
         ExpectedConnectionLengthError::TooLong(Duration::from_micros(40_959_376))

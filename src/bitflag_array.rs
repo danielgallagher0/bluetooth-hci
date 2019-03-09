@@ -110,7 +110,7 @@ macro_rules! bitflag_array {
 
             /// Copies the bitfield array into the given slice.  The slice must have exactly the
             /// right number of elements.
-            pub fn into_bytes(&self, bytes: &mut [u8]) {
+            pub fn copy_into_slice(&self, bytes: &mut [u8]) {
                 assert_eq!(self.0.len(), bytes.len());
                 bytes.copy_from_slice(&self.0);
             }

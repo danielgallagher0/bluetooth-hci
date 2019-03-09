@@ -42,7 +42,7 @@ impl ExpectedConnectionLength {
     /// # Panics
     ///
     /// The buffer must be at least 4 bytes long.
-    pub fn into_bytes(&self, bytes: &mut [u8]) {
+    pub fn copy_into_slice(&self, bytes: &mut [u8]) {
         assert!(bytes.len() >= 4);
 
         LittleEndian::write_u16(&mut bytes[0..2], Self::as_u16(self.range.0));

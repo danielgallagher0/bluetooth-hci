@@ -955,7 +955,7 @@ pub mod test_helpers {
             data_buf[event_type_index] = advertisement.event_type as u8;
             advertisement
                 .address
-                .into_bytes(&mut data_buf[addr_index..data_len_index]);
+                .copy_into_slice(&mut data_buf[addr_index..data_len_index]);
             data_buf[data_len_index] = advertisement.data.len() as u8;
             data_buf[data_start_index..rssi_index].copy_from_slice(advertisement.data);
             data_buf[rssi_index] =

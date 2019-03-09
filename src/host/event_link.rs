@@ -67,7 +67,7 @@ impl super::HciHeader for NoCommands {
         NoCommands
     }
 
-    fn into_bytes(&self, _buffer: &mut [u8]) {}
+    fn copy_into_slice(&self, _buffer: &mut [u8]) {}
 }
 
 fn rewrap_error<E, VE>(e: nb::Error<E>) -> nb::Error<Error<E, VE>> {

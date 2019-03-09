@@ -52,7 +52,7 @@ pub trait HciHeader {
     /// # Panics
     ///
     /// Panics if `buf.len() < Self::HEADER_LENGTH`
-    fn into_bytes(&self, buf: &mut [u8]);
+    fn copy_into_slice(&self, buf: &mut [u8]);
 }
 
 /// Trait defining the interface from the host to the controller.
@@ -1171,7 +1171,7 @@ where
     T: crate::Controller<Error = E>,
 {
     let mut header = [0; MAX_HEADER_LENGTH];
-    Header::new(opcode, params.len()).into_bytes(&mut header);
+    Header::new(opcode, params.len()).copy_into_slice(&mut header);
 
     controller.write(&header[..Header::HEADER_LENGTH], &params)
 }
@@ -1307,7 +1307,9 @@ where
         params: &AdvertisingParameters,
     ) -> nb::Result<(), Error<E, Self::VS>> {
         let mut bytes = [0; 15];
-        params.into_bytes(&mut bytes).map_err(nb::Error::Other)?;
+        params
+            .copy_into_slice(&mut bytes)
+            .map_err(nb::Error::Other)?;
         write_command::<Header, T, E>(self, crate::opcode::LE_SET_ADVERTISING_PARAMETERS, &bytes)
             .map_err(rewrap_as_comm)
     }
@@ -1356,7 +1358,7 @@ where
 
     fn le_set_scan_parameters(&mut self, params: &ScanParameters) -> nb::Result<(), E> {
         let mut bytes = [0; 7];
-        params.into_bytes(&mut bytes);
+        params.copy_into_slice(&mut bytes);
         write_command::<Header, T, E>(self, crate::opcode::LE_SET_SCAN_PARAMETERS, &bytes)
     }
 
@@ -1370,7 +1372,7 @@ where
 
     fn le_create_connection(&mut self, params: &ConnectionParameters) -> nb::Result<(), E> {
         let mut bytes = [0; 25];
-        params.into_bytes(&mut bytes);
+        params.copy_into_slice(&mut bytes);
         write_command::<Header, T, E>(self, crate::opcode::LE_CREATE_CONNECTION, &bytes)
     }
 
@@ -1388,7 +1390,7 @@ where
 
     fn le_add_device_to_white_list(&mut self, addr: crate::BdAddrType) -> nb::Result<(), E> {
         let mut params = [0; 7];
-        addr.into_bytes(&mut params);
+        addr.copy_into_slice(&mut params);
         write_command::<Header, T, E>(self, crate::opcode::LE_ADD_DEVICE_TO_WHITE_LIST, &params)
     }
 
@@ -1403,7 +1405,7 @@ where
 
     fn le_remove_device_from_white_list(&mut self, addr: crate::BdAddrType) -> nb::Result<(), E> {
         let mut params = [0; 7];
-        addr.into_bytes(&mut params);
+        addr.copy_into_slice(&mut params);
         write_command::<Header, T, E>(
             self,
             crate::opcode::LE_REMOVE_DEVICE_FROM_WHITE_LIST,
@@ -1422,7 +1424,7 @@ where
 
     fn le_connection_update(&mut self, params: &ConnectionUpdateParameters) -> nb::Result<(), E> {
         let mut bytes = [0; 14];
-        params.into_bytes(&mut bytes);
+        params.copy_into_slice(&mut bytes);
         write_command::<Header, T, E>(self, crate::opcode::LE_CONNECTION_UPDATE, &bytes)
     }
 
@@ -1435,7 +1437,7 @@ where
         }
 
         let mut bytes = [0; 5];
-        channels.into_bytes(&mut bytes);
+        channels.copy_into_slice(&mut bytes);
         write_command::<Header, T, E>(
             self,
             crate::opcode::LE_SET_HOST_CHANNEL_CLASSIFICATION,
@@ -1785,16 +1787,16 @@ pub struct AdvertisingParameters {
 }
 
 impl AdvertisingParameters {
-    fn into_bytes<E, VS>(&self, bytes: &mut [u8]) -> Result<(), Error<E, VS>> {
+    fn copy_into_slice<E, VS>(&self, bytes: &mut [u8]) -> Result<(), Error<E, VS>> {
         assert_eq!(bytes.len(), 15);
 
         if self.advertising_channel_map.is_empty() {
             return Err(Error::BadChannelMap(self.advertising_channel_map));
         }
 
-        self.advertising_interval.into_bytes(&mut bytes[0..5]);
+        self.advertising_interval.copy_into_slice(&mut bytes[0..5]);
         bytes[5] = self.own_address_type as u8;
-        self.peer_address.into_bytes(&mut bytes[6..13]);
+        self.peer_address.copy_into_slice(&mut bytes[6..13]);
         bytes[13] = self.advertising_channel_map.bits();
         bytes[14] = self.advertising_filter_policy as u8;
 
@@ -1876,11 +1878,11 @@ pub struct ScanParameters {
 }
 
 impl ScanParameters {
-    fn into_bytes(&self, bytes: &mut [u8]) {
+    fn copy_into_slice(&self, bytes: &mut [u8]) {
         assert_eq!(bytes.len(), 7);
 
         bytes[0] = self.scan_type as u8;
-        self.scan_window.into_bytes(&mut bytes[1..5]);
+        self.scan_window.copy_into_slice(&mut bytes[1..5]);
         bytes[5] = self.own_address_type as u8;
         bytes[6] = self.filter_policy as u8;
     }
@@ -1975,23 +1977,23 @@ pub struct ConnectionParameters {
 }
 
 impl ConnectionParameters {
-    fn into_bytes(&self, bytes: &mut [u8]) {
+    fn copy_into_slice(&self, bytes: &mut [u8]) {
         assert_eq!(bytes.len(), 25);
 
-        self.scan_window.into_bytes(&mut bytes[0..4]);
+        self.scan_window.copy_into_slice(&mut bytes[0..4]);
         bytes[4] = self.initiator_filter_policy as u8;
         match self.initiator_filter_policy {
             ConnectionFilterPolicy::UseAddress => {
-                self.peer_address.into_bytes(&mut bytes[5..12]);
+                self.peer_address.copy_into_slice(&mut bytes[5..12]);
             }
             ConnectionFilterPolicy::WhiteList => {
                 bytes[5..12].copy_from_slice(&[0; 7]);
             }
         }
         bytes[12] = self.own_address_type as u8;
-        self.conn_interval.into_bytes(&mut bytes[13..21]);
+        self.conn_interval.copy_into_slice(&mut bytes[13..21]);
         self.expected_connection_length
-            .into_bytes(&mut bytes[21..25]);
+            .copy_into_slice(&mut bytes[21..25]);
     }
 }
 
@@ -2036,7 +2038,7 @@ impl PeerAddrType {
     ///
     /// `bytes` must be 7 bytes long.
     #[cfg(not(any(feature = "version-4-2", feature = "version-5-0")))]
-    pub fn into_bytes(&self, bytes: &mut [u8]) {
+    pub fn copy_into_slice(&self, bytes: &mut [u8]) {
         assert_eq!(bytes.len(), 7);
         match *self {
             PeerAddrType::PublicDeviceAddress(bd_addr) => {
@@ -2056,7 +2058,7 @@ impl PeerAddrType {
     ///
     /// `bytes` must be 7 bytes long.
     #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
-    pub fn into_bytes(&self, bytes: &mut [u8]) {
+    pub fn copy_into_slice(&self, bytes: &mut [u8]) {
         assert_eq!(bytes.len(), 7);
         match *self {
             PeerAddrType::PublicDeviceAddress(bd_addr) => {
@@ -2095,13 +2097,13 @@ pub struct ConnectionUpdateParameters {
 }
 
 impl ConnectionUpdateParameters {
-    fn into_bytes(&self, bytes: &mut [u8]) {
+    fn copy_into_slice(&self, bytes: &mut [u8]) {
         assert_eq!(bytes.len(), 14);
 
         LittleEndian::write_u16(&mut bytes[0..], self.conn_handle.0);
-        self.conn_interval.into_bytes(&mut bytes[2..10]);
+        self.conn_interval.copy_into_slice(&mut bytes[2..10]);
         self.expected_connection_length
-            .into_bytes(&mut bytes[10..14]);
+            .copy_into_slice(&mut bytes[10..14]);
     }
 }
 

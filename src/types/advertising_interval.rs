@@ -45,7 +45,7 @@ impl AdvertisingInterval {
     /// # Panics
     ///
     /// - If the provided buffer is not at least 5 bytes long.
-    pub fn into_bytes(&self, bytes: &mut [u8]) {
+    pub fn copy_into_slice(&self, bytes: &mut [u8]) {
         if self._advertising_type == AdvertisingType::ConnectableDirectedHighDutyCycle {
             bytes[0..4].copy_from_slice(&[0; 4]);
         } else {

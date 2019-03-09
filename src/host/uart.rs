@@ -80,7 +80,7 @@ impl super::HciHeader for CommandHeader {
         }
     }
 
-    fn into_bytes(&self, buffer: &mut [u8]) {
+    fn copy_into_slice(&self, buffer: &mut [u8]) {
         buffer[0] = PACKET_TYPE_HCI_COMMAND;
         LittleEndian::write_u16(&mut buffer[1..=2], self.opcode.0);
         buffer[3] = self.param_len;

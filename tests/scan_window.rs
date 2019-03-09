@@ -72,12 +72,12 @@ fn inverted_and_window_too_long() {
 }
 
 #[test]
-fn into_bytes() {
+fn copy_into_slice() {
     let scan_window = ScanWindow::start_every(Duration::from_millis(10))
         .unwrap()
         .open_for(Duration::from_millis(5))
         .unwrap();
     let mut bytes = [0; 4];
-    scan_window.into_bytes(&mut bytes);
+    scan_window.copy_into_slice(&mut bytes);
     assert_eq!(bytes, [0x10, 0x00, 0x08, 0x00]);
 }

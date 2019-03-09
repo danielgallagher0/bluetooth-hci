@@ -730,7 +730,7 @@ pub enum BdAddrType {
 impl BdAddrType {
     /// Writes a `BdAddrType` into the given slice.  The slice must be exactly the right length (7
     /// bytes).
-    pub fn into_bytes(&self, bytes: &mut [u8]) {
+    pub fn copy_into_slice(&self, bytes: &mut [u8]) {
         assert_eq!(bytes.len(), 7);
         match *self {
             BdAddrType::Public(addr) => {

@@ -9,7 +9,7 @@ fn valid() {
         .with_range(Duration::from_millis(21), Duration::from_millis(1000))
         .unwrap();
     let mut bytes = [0; 5];
-    interval.into_bytes(&mut bytes);
+    interval.copy_into_slice(&mut bytes);
 
     // 21 ms / 0.625 ms = 33 = 0x0021
     // 1000 ms / 0.625 ms = 1600 = 0x0640
@@ -36,7 +36,7 @@ fn normal_min_scannable_undirected() {
         .with_range(Duration::from_millis(99), Duration::from_millis(1000))
         .unwrap();
     let mut bytes = [0; 5];
-    interval.into_bytes(&mut bytes);
+    interval.copy_into_slice(&mut bytes);
 
     // 99 ms / 0.625 ms = 158 = 0x009E
     // 1000 ms / 0.625 ms = 1600 = 0x0640
@@ -49,7 +49,7 @@ fn connectable_directed_high_duty_cycle_without_range() {
         .build()
         .unwrap();
     let mut bytes = [0; 5];
-    interval.into_bytes(&mut bytes);
+    interval.copy_into_slice(&mut bytes);
     assert_eq!(bytes, [0x00, 0x00, 0x00, 0x00, 0x01]);
 }
 
@@ -59,7 +59,7 @@ fn connectable_directed_high_duty_cycle_with_range() {
         .with_range(Duration::from_millis(99), Duration::from_millis(1000))
         .unwrap();
     let mut bytes = [0; 5];
-    interval.into_bytes(&mut bytes);
+    interval.copy_into_slice(&mut bytes);
 
     // Interval is ignored for this advertising type.
     assert_eq!(bytes, [0x00, 0x00, 0x00, 0x00, 0x01]);

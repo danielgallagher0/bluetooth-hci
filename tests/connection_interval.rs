@@ -14,7 +14,7 @@ fn valid() {
         .build()
         .unwrap();
     let mut bytes = [0; 8];
-    interval.into_bytes(&mut bytes);
+    interval.copy_into_slice(&mut bytes);
 
     // 50 ms / 1.25 ms = 40 = 0x0028
     // 500 ms / 1.25 ms = 400 = 0x0190
@@ -189,7 +189,7 @@ fn from_bytes_valid() {
     let valid_bytes = [0x90, 0x00, 0x90, 0x01, 0x0A, 0x00, 0xDC, 0x05];
     let interval = ConnectionInterval::from_bytes(&valid_bytes).unwrap();
     let mut bytes = [0; 8];
-    interval.into_bytes(&mut bytes);
+    interval.copy_into_slice(&mut bytes);
     assert_eq!(bytes, valid_bytes);
 }
 
