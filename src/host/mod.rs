@@ -42,7 +42,7 @@ pub trait HciHeader {
     const HEADER_LENGTH: usize;
 
     /// Returns a new header with the given opcode and parameter length.
-    fn new(opcode: ::opcode::Opcode, param_len: usize) -> Self;
+    fn new(opcode: crate::opcode::Opcode, param_len: usize) -> Self;
 
     /// Serialize the header into the given buffer, in Bluetooth byte order (little-endian).
     ///
@@ -70,38 +70,38 @@ pub trait Hci<E> {
     /// - `conn_handle` indicates which connection is to be disconnected.
     /// - `reason` indicates the reason for ending the connection. The remote Controller will
     ///   receive the Reason command parameter in the [Disconnection
-    ///   Complete](::event::Event::DisconnectionComplete) event.
+    ///   Complete](crate::event::Event::DisconnectionComplete) event.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.1.6.
     ///
     /// # Errors
     ///
     /// - [`BadDisconnectionReason`](Error::BadDisconnectionReason) when `reason` is not a valid
-    ///   disconnection reason.  The reason must be one of [`AuthFailure`](::Status::AuthFailure),
-    ///   [`RemoteTerminationByUser`](::Status::RemoteTerminationByUser),
-    ///   [`RemoteTerminationLowResources`](::Status::RemoteTerminationLowResources),
-    ///   [`RemoteTerminationPowerOff`](::Status::RemoteTerminationPowerOff),
-    ///   [`UnsupportedRemoteFeature`](::Status::UnsupportedRemoteFeature),
-    ///   [`PairingWithUnitKeyNotSupported`](::Status::PairingWithUnitKeyNotSupported), or
-    ///   [`UnacceptableConnectionParameters`](::Status::UnacceptableConnectionParameters).
+    ///   disconnection reason.  The reason must be one of [`AuthFailure`](crate::Status::AuthFailure),
+    ///   [`RemoteTerminationByUser`](crate::Status::RemoteTerminationByUser),
+    ///   [`RemoteTerminationLowResources`](crate::Status::RemoteTerminationLowResources),
+    ///   [`RemoteTerminationPowerOff`](crate::Status::RemoteTerminationPowerOff),
+    ///   [`UnsupportedRemoteFeature`](crate::Status::UnsupportedRemoteFeature),
+    ///   [`PairingWithUnitKeyNotSupported`](crate::Status::PairingWithUnitKeyNotSupported), or
+    ///   [`UnacceptableConnectionParameters`](crate::Status::UnacceptableConnectionParameters).
     /// - Underlying communication errors.
     ///
     /// # Generated Events
     ///
     /// When the Controller receives the Disconnect command, it shall send the
-    /// [Command Status](::event::Event::CommandStatus) event to the Host. The [Disconnection
-    /// Complete](::event::Event::DisconnectionComplete) event will occur at each Host when the
+    /// [Command Status](crate::event::Event::CommandStatus) event to the Host. The [Disconnection
+    /// Complete](crate::event::Event::DisconnectionComplete) event will occur at each Host when the
     /// termination of the connection has completed, and indicates that this command has been
     /// completed.
     ///
     /// Note: No Command Complete event will be sent by the Controller to indicate that this command
     /// has been completed. Instead, the [Disconnection
-    /// Complete](::event::Event::DisconnectionComplete) event will indicate that this command has
+    /// Complete](crate::event::Event::DisconnectionComplete) event will indicate that this command has
     /// been completed.
     fn disconnect(
         &mut self,
-        conn_handle: ::ConnectionHandle,
-        reason: ::Status<Self::VS>,
+        conn_handle: crate::ConnectionHandle,
+        reason: crate::Status<Self::VS>,
     ) -> nb::Result<(), Error<E, Self::VS>>;
 
     /// Obtains the values for the version information for the remote device identified by the
@@ -116,20 +116,20 @@ pub trait Hci<E> {
     /// # Generated Events
     ///
     /// When the Controller receives the Read Remote Version Information command, the Controller
-    /// shall send the [Command Status](::event::Event::CommandStatus) event to the Host. When the
+    /// shall send the [Command Status](crate::event::Event::CommandStatus) event to the Host. When the
     /// Link Manager or Link Layer has completed the sequence to determine the remote version
     /// information, the local Controller shall send a [Read Remote Version Information
-    /// Complete](::event::Event::ReadRemoteVersionInformationComplete) event to the Host. That
+    /// Complete](crate::event::Event::ReadRemoteVersionInformationComplete) event to the Host. That
     /// event contains the status of this command, and parameters describing the version and
     /// subversion of the LMP or Link Layer used by the remote device.
     ///
     /// Note: No Command Complete event will be sent by the Controller to indicate that this command
     /// has been completed. Instead, the [Read Remote Version Information
-    /// Complete](::event::Event::ReadRemoteVersionInformationComplete) event will indicate that
+    /// Complete](crate::event::Event::ReadRemoteVersionInformationComplete) event will indicate that
     /// this command has been completed.
     fn read_remote_version_information(
         &mut self,
-        conn_handle: ::ConnectionHandle,
+        conn_handle: crate::ConnectionHandle,
     ) -> nb::Result<(), E>;
 
     /// Controls which events are generated by the HCI for the Host. If the flag in the mask is set,
@@ -146,7 +146,7 @@ pub trait Hci<E> {
     ///
     /// # Generated Events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::SetEventMask) event is generated.
+    /// A [Command Complete](crate::event::command::ReturnParameters::SetEventMask) event is generated.
     fn set_event_mask(&mut self, mask: EventFlags) -> nb::Result<(), E>;
 
     /// Resets the Controller and the Link Manager on the BR/EDR Controller, the PAL on an AMP
@@ -175,7 +175,7 @@ pub trait Hci<E> {
     ///
     /// # Generated Events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::Reset) event is generated.
+    /// A [Command Complete](crate::event::command::ReturnParameters::Reset) event is generated.
     fn reset(&mut self) -> nb::Result<(), E>;
 
     /// Reads the values for the transmit power level for the specified
@@ -189,11 +189,11 @@ pub trait Hci<E> {
     ///
     /// # Generated Events
     ///
-    /// A [Comand Complete](::event::command::ReturnParameters::ReadTxPowerLevel) event is
+    /// A [Comand Complete](crate::event::command::ReturnParameters::ReadTxPowerLevel) event is
     /// generated.
     fn read_tx_power_level(
         &mut self,
-        conn_handle: ::ConnectionHandle,
+        conn_handle: crate::ConnectionHandle,
         power_level_type: TxPowerLevel,
     ) -> nb::Result<(), E>;
 
@@ -207,7 +207,7 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Comand Complete](::event::command::ReturnParameters::ReadLocalVersionInformation) event
+    /// A [Comand Complete](crate::event::command::ReturnParameters::ReadLocalVersionInformation) event
     /// is generated.
     fn read_local_version_information(&mut self) -> nb::Result<(), E>;
 
@@ -226,7 +226,7 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::ReadLocalSupportedCommands) event
+    /// A [Command Complete](crate::event::command::ReturnParameters::ReadLocalSupportedCommands) event
     /// is generated.
     fn read_local_supported_commands(&mut self) -> nb::Result<(), E>;
 
@@ -242,7 +242,7 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::ReadLocalSupportedFeatures) event
+    /// A [Command Complete](crate::event::command::ReturnParameters::ReadLocalSupportedFeatures) event
     /// is generated.
     fn read_local_supported_features(&mut self) -> nb::Result<(), E>;
 
@@ -262,7 +262,7 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::ReadBdAddr) event is generated.
+    /// A [Command Complete](crate::event::command::ReturnParameters::ReadBdAddr) event is generated.
     fn read_bd_addr(&mut self) -> nb::Result<(), E>;
 
     /// Reads the Received Signal Strength Indication (RSSI) value from a Controller.
@@ -301,8 +301,8 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::ReadRssi) event is generated.
-    fn read_rssi(&mut self, conn_handle: ::ConnectionHandle) -> nb::Result<(), E>;
+    /// A [Command Complete](crate::event::command::ReturnParameters::ReadRssi) event is generated.
+    fn read_rssi(&mut self, conn_handle: crate::ConnectionHandle) -> nb::Result<(), E>;
 
     /// Controls which LE events are generated by the HCI for the Host. If the flag in `event_mask`
     /// is set, then the event associated with that flag will be enabled. The Host has to deal with
@@ -321,7 +321,7 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeSetEventMask) event is
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeSetEventMask) event is
     /// generated.
     fn le_set_event_mask(&mut self, event_mask: LeEventFlags) -> nb::Result<(), E>;
 
@@ -348,7 +348,7 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeReadBufferSize) event is
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeReadBufferSize) event is
     /// generated.
     fn le_read_buffer_size(&mut self) -> nb::Result<(), E>;
 
@@ -362,7 +362,7 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeReadLocalSupportedFeatures) event
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeReadLocalSupportedFeatures) event
     /// is generated.
     fn le_read_local_supported_features(&mut self) -> nb::Result<(), E>;
 
@@ -401,12 +401,15 @@ pub trait Hci<E> {
     ///
     /// # Generated Events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeSetRandomAddress) event is
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeSetRandomAddress) event is
     /// generated.
     ///
     /// (v5.0) If the Host issues this command when scanning or legacy advertising is enabled, the
-    /// Controller shall return the error code [Command Disallowed](::Status::CommandDisallowed).
-    fn le_set_random_address(&mut self, bd_addr: ::BdAddr) -> nb::Result<(), Error<E, Self::VS>>;
+    /// Controller shall return the error code [Command Disallowed](crate::Status::CommandDisallowed).
+    fn le_set_random_address(
+        &mut self,
+        bd_addr: crate::BdAddr,
+    ) -> nb::Result<(), Error<E, Self::VS>>;
 
     /// Sets the advertising parameters on the Controller.
     ///
@@ -419,11 +422,11 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeSetAdvertisingParameters) event
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeSetAdvertisingParameters) event
     /// is generated.
     ///
     /// The Host shall not issue this command when advertising is enabled in the Controller; if it
-    /// is the [Command Disallowed](::Status::CommandDisallowed) error code shall be used.
+    /// is the [Command Disallowed](crate::Status::CommandDisallowed) error code shall be used.
     fn le_set_advertising_parameters(
         &mut self,
         params: &AdvertisingParameters,
@@ -439,7 +442,7 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeReadAdvertisingChannelTxPower)
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeReadAdvertisingChannelTxPower)
     /// event is generated.
     fn le_read_advertising_channel_tx_power(&mut self) -> nb::Result<(), E>;
 
@@ -463,7 +466,7 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::Event::CommandComplete) event is generated.
+    /// A [Command Complete](crate::event::Event::CommandComplete) event is generated.
     fn le_set_advertising_data(&mut self, data: &[u8]) -> nb::Result<(), Error<E, Self::VS>>;
 
     /// Provides data used in scanning packets that have a data field.
@@ -486,7 +489,7 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeSetScanResponseData) event is
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeSetScanResponseData) event is
     /// generated.
     fn le_set_scan_response_data(&mut self, data: &[u8]) -> nb::Result<(), Error<E, Self::VS>>;
 
@@ -510,20 +513,20 @@ pub trait Hci<E> {
     /// # Generated events
     ///
     /// When the command has completed, a [Command
-    /// Complete](::event::command::ReturnParameters::LeSetAdvertiseEnable) event shall be
+    /// Complete](crate::event::command::ReturnParameters::LeSetAdvertiseEnable) event shall be
     /// generated.
     ///
     /// If the [advertising type](AdvertisingInterval::for_type) is
     /// [`ConnectableDirectedHighDutyCycle`](AdvertisingType::ConnectableDirectedHighDutyCycle) and
     /// the directed advertising fails to create a connection, an [LE Connection
-    /// Complete](::event::Event::LeConnectionComplete) event shall be generated with the Status
-    /// code set to [`AdvertisingTimeout`](::Status::AdvertisingTimeout).
+    /// Complete](crate::event::Event::LeConnectionComplete) event shall be generated with the Status
+    /// code set to [`AdvertisingTimeout`](crate::Status::AdvertisingTimeout).
     ///
     /// If the [advertising type](AdvertisingInterval::for_type) is
     /// [`ConnectableUndirected`](AdvertisingType::ConnectableUndirected),
     /// [`ConnectableDirectedHighDutyCycle`](AdvertisingType::ConnectableDirectedHighDutyCycle), or
     /// [`ConnectableDirectedLowDutyCycle`](AdvertisingType::ConnectableDirectedLowDutyCycle) and a
-    /// connection is established, an [LE Connection Complete](::event::Event::LeConnectionComplete)
+    /// connection is established, an [LE Connection Complete](crate::event::Event::LeConnectionComplete)
     /// event shall be generated.
     ///
     /// Note: There is a possible race condition if `enable` is set to false (Disable) and the
@@ -550,13 +553,13 @@ pub trait Hci<E> {
     /// If [`own_address_type`](AdvertisingParameters::own_address_type) is set to
     /// [`Random`](OwnAddressType::Random) and the random address for the device has not been
     /// initialized, the Controller shall return the error code
-    /// [`InvalidParameters`](::Status::InvalidParameters).
+    /// [`InvalidParameters`](crate::Status::InvalidParameters).
     ///
     /// If [`own_address_type`](AdvertisingParameters::own_address_type) is set to
     /// [`PrivateFallbackRandom`](OwnAddressType::PrivateFallbackRandom), the controller's resolving
     /// list did not contain a matching entry, and the random address for the device has not been
     /// initialized, the Controller shall return the error code
-    /// [`InvalidParameters`](::Status::InvalidParameters).
+    /// [`InvalidParameters`](crate::Status::InvalidParameters).
     ///
     /// Note: Enabling advertising when it is already enabled can cause the random address to
     /// change. Disabling advertising when it is already disabled has no effect.
@@ -571,24 +574,24 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeSetAdvertisingEnable) event is
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeSetAdvertisingEnable) event is
     /// generated.
     ///
-    /// If [`advertising_type`](AdvertisingParameters::advertising_type) is
+    /// If [`advertising_type`](crate::types::AdvertisingInterval::_advertising_type) is
     /// [`ConnectableDirectedHighDutyCycle`](AdvertisingType::ConnectableDirectedHighDutyCycle) and
     /// the directed advertising fails to create a connection, an [LE Connection
-    /// Complete](::event::Event::LeConnectionComplete) event shall be generated with the Status
-    /// code set to [`AdvertisingTimeout`](::Status::AdvertisingTimeout).
+    /// Complete](crate::event::Event::LeConnectionComplete) event shall be generated with the Status
+    /// code set to [`AdvertisingTimeout`](crate::Status::AdvertisingTimeout).
     ///
-    /// If [`advertising_type`](AdvertisingParameters::advertising_type) is
+    /// If [`advertising_type`](crate::types::AdvertisingInterval::_advertising_type) is
     /// [`ConnectableUndirected`](AdvertisingType::ConnectableUndirected),
     /// [`ConnectableDirectedHighDutyCycle`](AdvertisingType::ConnectableDirectedHighDutyCycle), or
     /// [`ConnectableDirectedLowDutyCycle`](AdvertisingType::ConnectableDirectedLowDutyCycle) and a
-    /// connection is created, an [LE Connection Complete](::event::Event::LeConnectionComplete) or
+    /// connection is created, an [LE Connection Complete](crate::event::Event::LeConnectionComplete) or
     /// LE Enhanced Connection Complete event shall be generated.
     ///
     /// Note: There is a possible race condition if `enable` is set to false (Disable) and
-    /// [`advertising_type`](AdvertisingParameters::advertising_type) is
+    /// [`advertising_type`](crate::types::AdvertisingInterval::_advertising_type) is
     /// [`ConnectableUndirected`](AdvertisingType::ConnectableUndirected),
     /// [`ConnectableDirectedHighDutyCycle`](AdvertisingType::ConnectableDirectedHighDutyCycle), or
     /// [`ConnectableDirectedLowDutyCycle`](AdvertisingType::ConnectableDirectedLowDutyCycle). The
@@ -602,7 +605,7 @@ pub trait Hci<E> {
     /// Sets the scan parameters.
     ///
     /// The Host shall not issue this command when scanning is enabled in the Controller; if it is
-    /// the [`CommandDisallowed`](::Status::CommandDisallowed) error code shall be used.
+    /// the [`CommandDisallowed`](crate::Status::CommandDisallowed) error code shall be used.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.10.
     ///
@@ -612,7 +615,7 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeSetScanParameters) event is
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeSetScanParameters) event is
     /// generated.
     fn le_set_scan_parameters(&mut self, params: &ScanParameters) -> nb::Result<(), E>;
 
@@ -625,7 +628,7 @@ pub trait Hci<E> {
     /// If [`own_address_type`](ScanParameters::own_address_type) is set to
     /// [`Random`](OwnAddressType::Random) or [`PrivateFallbackRandom`](OwnAddressType) and the
     /// random address for the device has not been initialized, the Controller shall return the
-    /// error code [`InvalidParameters`](::Status::InvalidParameters).
+    /// error code [`InvalidParameters`](crate::Status::InvalidParameters).
     ///
     /// If `enable` is true and scanning is already enabled, any change to the `filter_duplicates`
     /// setting shall take effect.
@@ -640,10 +643,10 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeSetScanEnable) event is
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeSetScanEnable) event is
     /// generated.
     ///
-    /// Zero or more [LE Advertising Reports](::event::Event::LeAdvertisingReport) are generated by
+    /// Zero or more [LE Advertising Reports](crate::event::Event::LeAdvertisingReport) are generated by
     /// the Controller based on advertising packets received and the duplicate filtering. More than
     /// one advertising packet may be reported in each LE Advertising Report event.
     fn le_set_scan_enable(&mut self, enable: bool, filter_duplicates: bool) -> nb::Result<(), E>;
@@ -652,7 +655,7 @@ pub trait Hci<E> {
     ///
     /// The Host shall not issue this command when another `le_create_connection` is pending in the
     /// Controller; if this does occur the Controller shall return the
-    /// [`CommandDisallowed`](::Status::CommandDisallowed) error code.
+    /// [`CommandDisallowed`](crate::Status::CommandDisallowed) error code.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.12.
     ///
@@ -662,9 +665,9 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// The Controller sends the [Command Status](::event::Event::CommandStatus) event to the Host
+    /// The Controller sends the [Command Status](crate::event::Event::CommandStatus) event to the Host
     /// when the event is received.  An [LE Connection
-    /// Complete](::event::Event::LeConnectionComplete) event shall be generated when a connection
+    /// Complete](crate::event::Event::LeConnectionComplete) event shall be generated when a connection
     /// is created or the connection creation procedure is cancelled.
     ///
     /// Note: No Command Complete event is sent by the Controller to indicate that this command has
@@ -675,9 +678,9 @@ pub trait Hci<E> {
     /// Cancels the [`le_create_connection`](Hci::le_create_connection) or
     /// `le_extended_create_connection` (for v5.0) command. This command shall only be issued after
     /// the [`le_create_connection`](Hci::le_create_connection) command has been issued, a
-    /// [`CommandStatus`](::event::Event::CommandStatus) event has been received for the
+    /// [`CommandStatus`](crate::event::Event::CommandStatus) event has been received for the
     /// [`le_create_connection`](Hci::le_create_connection) command and before the
-    /// [`LeConnectionComplete`](::event::Event::LeConnectionComplete) event.
+    /// [`LeConnectionComplete`](crate::event::Event::LeConnectionComplete) event.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.13.
     ///
@@ -687,16 +690,16 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeCreateConnectionCancel) event
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeCreateConnectionCancel) event
     /// shall be generated.
     ///
     /// If this command is sent to the Controller without a preceding
     /// [`le_create_connection`](Hci::le_create_connection) command, the Controller shall return a
-    /// [Command Complete](::event::command::ReturnParameters::LeCreateConnectionCancel) event with
-    /// the error code [`CommandDisallowed`](::Status::CommandDisallowed).
+    /// [Command Complete](crate::event::command::ReturnParameters::LeCreateConnectionCancel) event with
+    /// the error code [`CommandDisallowed`](crate::Status::CommandDisallowed).
     ///
-    /// The [LE Connection Complete](::event::Event::LeConnectionComplete) event with the error code
-    /// [`UnknownConnectionId`](::Status::UnknownConnectionId) shall be sent after the Command
+    /// The [LE Connection Complete](crate::event::Event::LeConnectionComplete) event with the error code
+    /// [`UnknownConnectionId`](crate::Status::UnknownConnectionId) shall be sent after the Command
     /// Complete event for this command if the cancellation was successful.
     fn le_create_connection_cancel(&mut self) -> nb::Result<(), E>;
 
@@ -714,7 +717,7 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeReadWhiteListSize) event is
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeReadWhiteListSize) event is
     /// generated.
     fn le_read_white_list_size(&mut self) -> nb::Result<(), E>;
 
@@ -734,7 +737,7 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeClearWhiteList) event is
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeClearWhiteList) event is
     /// generated.
     fn le_clear_white_list(&mut self) -> nb::Result<(), E>;
 
@@ -754,10 +757,10 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeAddDeviceToWhiteList) event is
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeAddDeviceToWhiteList) event is
     /// generated. When a Controller cannot add a device to the White List because there is no space
-    /// available, it shall return [`OutOfMemory`](::Status::OutOfMemory).
-    fn le_add_device_to_white_list(&mut self, addr: ::BdAddrType) -> nb::Result<(), E>;
+    /// available, it shall return [`OutOfMemory`](crate::Status::OutOfMemory).
+    fn le_add_device_to_white_list(&mut self, addr: crate::BdAddrType) -> nb::Result<(), E>;
 
     /// Adds anonymous devices sending advertisements to the white list stored in the Controller.
     ///
@@ -775,9 +778,9 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeAddDeviceToWhiteList) event is
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeAddDeviceToWhiteList) event is
     /// generated.  When a Controller cannot add a device to the White List because there is no
-    /// space available, it shall return [`OutOfMemory`](::Status::OutOfMemory).
+    /// space available, it shall return [`OutOfMemory`](crate::Status::OutOfMemory).
     #[cfg(feature = "version-5-0")]
     fn le_add_anon_advertising_devices_to_white_list(&mut self) -> nb::Result<(), E>;
 
@@ -797,9 +800,9 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeRemoveDeviceFromWhiteList) event
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeRemoveDeviceFromWhiteList) event
     /// is generated.
-    fn le_remove_device_from_white_list(&mut self, addr: ::BdAddrType) -> nb::Result<(), E>;
+    fn le_remove_device_from_white_list(&mut self, addr: crate::BdAddrType) -> nb::Result<(), E>;
 
     /// Removes anonymous devices sending advertisements from the white list stored in the
     /// Controller.
@@ -818,7 +821,7 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeRemoveDeviceFromWhiteList) event
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeRemoveDeviceFromWhiteList) event
     /// is generated.
     #[cfg(feature = "version-5-0")]
     fn le_remove_anon_advertising_devices_from_white_list(&mut self) -> nb::Result<(), E>;
@@ -838,8 +841,8 @@ pub trait Hci<E> {
     /// # Generated events
     ///
     /// When the Controller receives the command, the Controller sends the [Command
-    /// Status](::event::Event::CommandStatus) event to the Host. The [LE Connection Update
-    /// Complete](::event::Event::LeConnectionUpdateComplete) event shall be generated after the
+    /// Status](crate::event::Event::CommandStatus) event to the Host. The [LE Connection Update
+    /// Complete](crate::event::Event::LeConnectionUpdateComplete) event shall be generated after the
     /// connection parameters have been applied by the Controller.
     ///
     /// Note: a Command Complete event is not sent by the Controller to indicate that this command
@@ -867,11 +870,11 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeSetHostChannelClassification)
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeSetHostChannelClassification)
     /// event is generated.
     fn le_set_host_channel_classification(
         &mut self,
-        channels: ::ChannelClassification,
+        channels: crate::ChannelClassification,
     ) -> nb::Result<(), Error<E, Self::VS>>;
 
     /// Returns the current channel map for the specified connection handle. The returned value
@@ -887,9 +890,9 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeReadChannelMap) event is
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeReadChannelMap) event is
     /// generated.
-    fn le_read_channel_map(&mut self, conn_handle: ::ConnectionHandle) -> nb::Result<(), E>;
+    fn le_read_channel_map(&mut self, conn_handle: crate::ConnectionHandle) -> nb::Result<(), E>;
 
     /// Requests a list of the used LE features from the remote device.  This command shall return a
     /// list of the used LE features.
@@ -905,12 +908,12 @@ pub trait Hci<E> {
     /// # Generated events
     ///
     /// When the Controller receives this command, the Controller shall send the [Command
-    /// Status](`::event::Event::CommandStatus) event to the Host. When the Controller has completed
+    /// Status](`crate::event::Event::CommandStatus) event to the Host. When the Controller has completed
     /// the procedure to determine the remote features, the Controller shall send a [LE Read Remote
-    /// Used Features Complete](::event::Event::LeReadRemoteUsedFeaturesComplete) event to the Host.
+    /// Used Features Complete](crate::event::Event::LeReadRemoteUsedFeaturesComplete) event to the Host.
     ///
     /// The [LE Read Remote Used Features
-    /// Complete](::event::Event::LeReadRemoteUsedFeaturesComplete) event contains the status of
+    /// Complete](crate::event::Event::LeReadRemoteUsedFeaturesComplete) event contains the status of
     /// this command, and the parameter describing the used features of the remote device.
     ///
     /// Note: A Command Complete event is not sent by the Controller to indicate that this command
@@ -918,7 +921,7 @@ pub trait Hci<E> {
     /// this command has been completed.
     fn le_read_remote_used_features(
         &mut self,
-        conn_handle: ::ConnectionHandle,
+        conn_handle: crate::ConnectionHandle,
     ) -> nb::Result<(), E>;
 
     /// Requests the Controller to encrypt the plaintext data in the command using the key given in
@@ -934,12 +937,12 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeEncrypt) event is generated.
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeEncrypt) event is generated.
     fn le_encrypt(&mut self, params: &AesParameters) -> nb::Result<(), E>;
 
     /// Requests the Controller to generate 8 octets of random data to be sent to the Host. The
     /// random number shall be generated according to the Bluetooth spec, Vol 2, Part H, Section 2
-    /// if the [LL Encryption](::event::command::LmpFeatures::ENCRYPTION) Feature is supported.
+    /// if the [LL Encryption](crate::event::command::LmpFeatures::ENCRYPTION) Feature is supported.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.23.
     ///
@@ -949,7 +952,7 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeRand) event is generated.
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeRand) event is generated.
     fn le_rand(&mut self) -> nb::Result<(), E>;
 
     /// Authenticates the given encryption key associated with the remote device specified by the
@@ -974,11 +977,11 @@ pub trait Hci<E> {
     /// # Generated events
     ///
     /// When the Controller receives this command it shall send the [Command
-    /// Status](::event::Event::CommandStatus) event to the Host. If the connection is not encrypted
-    /// when this command is issued, an [Encryption Change](::event::Event::EncryptionChange) event
+    /// Status](crate::event::Event::CommandStatus) event to the Host. If the connection is not encrypted
+    /// when this command is issued, an [Encryption Change](crate::event::Event::EncryptionChange) event
     /// shall occur when encryption has been started for the connection. If the connection is
     /// encrypted when this command is issued, an [Encryption Key Refresh
-    /// Complete](::event::Event::EncryptionKeyRefreshComplete) event shall occur when encryption
+    /// Complete](crate::event::Event::EncryptionKeyRefreshComplete) event shall occur when encryption
     /// has been resumed.
     ///
     /// Note: A Command Complete event is not sent by the Controller to indicate that this command
@@ -986,7 +989,7 @@ pub trait Hci<E> {
     /// indicate that this command has been completed.
     fn le_start_encryption(&mut self, params: &EncryptionParameters) -> nb::Result<(), E>;
 
-    /// Replies to an [LE Long Term Key Request](::event::Event::LeLongTermKeyRequest) event from
+    /// Replies to an [LE Long Term Key Request](crate::event::Event::LeLongTermKeyRequest) event from
     /// the Controller, and specifies the long term key parameter that shall be used for this
     /// connection handle.
     ///
@@ -998,15 +1001,15 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeLongTermKeyRequestReply) event is
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeLongTermKeyRequestReply) event is
     /// generated.
     fn le_long_term_key_request_reply(
         &mut self,
-        conn_handle: ::ConnectionHandle,
+        conn_handle: crate::ConnectionHandle,
         key: &EncryptionKey,
     ) -> nb::Result<(), E>;
 
-    /// Replies to an [LE Long Term Key Request](::event::Event::LeLongTermKeyRequest) event from
+    /// Replies to an [LE Long Term Key Request](crate::event::Event::LeLongTermKeyRequest) event from
     /// the Controller if the Host cannot provide a Long Term Key for this connection handle.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.26.
@@ -1017,11 +1020,11 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeLongTermKeyRequestNegativeReply)
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeLongTermKeyRequestNegativeReply)
     /// event is generated.
     fn le_long_term_key_request_negative_reply(
         &mut self,
-        conn_handle: ::ConnectionHandle,
+        conn_handle: crate::ConnectionHandle,
     ) -> nb::Result<(), E>;
 
     /// Reads the states and state combinations that the link layer supports.
@@ -1034,7 +1037,7 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeReadSupportedStates) event is
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeReadSupportedStates) event is
     /// generated.
     fn le_read_supported_states(&mut self) -> nb::Result<(), E>;
 
@@ -1051,7 +1054,7 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeReceiverTest) event is
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeReceiverTest) event is
     /// generated.
     fn le_receiver_test(&mut self, channel: u8) -> nb::Result<(), Error<E, Self::VS>>;
 
@@ -1075,7 +1078,7 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeTransmitterTest) event is
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeTransmitterTest) event is
     /// generated.
     fn le_transmitter_test(
         &mut self,
@@ -1094,7 +1097,7 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](::event::command::ReturnParameters::LeTestEnd) event is generated.
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeTestEnd) event is generated.
     fn le_test_end(&mut self) -> nb::Result<(), E>;
 }
 
@@ -1104,12 +1107,12 @@ pub trait Hci<E> {
 pub enum Error<E, VS> {
     /// For the [`disconnect`](Hci::disconnect) command: The provided reason is not a valid
     /// disconnection reason. Includes the reported reason.
-    BadDisconnectionReason(::Status<VS>),
+    BadDisconnectionReason(crate::Status<VS>),
 
     /// For the [`le_set_random_address`](Hci::le_set_random_address) command: The provided address
     /// does not meet the rules for random addresses in the Bluetooth Spec, Vol 6, Part B, Section
     /// 1.3.  Includes the invalid address.
-    BadRandomAddress(::BdAddr),
+    BadRandomAddress(crate::BdAddr),
 
     /// For the [`le_set_advertising_parameters`](Hci::le_set_advertising_parameters) command: The
     /// channel map did not include any enabled channels.  Includes the provided channel map.
@@ -1152,12 +1155,12 @@ fn rewrap_as_comm<E, VS>(err: nb::Error<E>) -> nb::Error<Error<E, VS>> {
 
 fn write_command<Header, T, E>(
     controller: &mut T,
-    opcode: ::opcode::Opcode,
+    opcode: crate::opcode::Opcode,
     params: &[u8],
 ) -> nb::Result<(), E>
 where
     Header: HciHeader,
-    T: ::Controller<Error = E>,
+    T: crate::Controller<Error = E>,
 {
     let mut header = [0; MAX_HEADER_LENGTH];
     Header::new(opcode, params.len()).into_bytes(&mut header);
@@ -1167,12 +1170,12 @@ where
 
 fn set_outbound_data<Header, T, E, VS>(
     controller: &mut T,
-    opcode: ::opcode::Opcode,
+    opcode: crate::opcode::Opcode,
     data: &[u8],
 ) -> nb::Result<(), Error<E, VS>>
 where
     Header: HciHeader,
-    T: ::Controller<Error = E>,
+    T: crate::Controller<Error = E>,
 {
     const MAX_DATA_LEN: usize = 31;
     if data.len() > MAX_DATA_LEN {
@@ -1186,104 +1189,108 @@ where
 
 impl<E, T, Header> Hci<E> for T
 where
-    T: ::Controller<Error = E, Header = Header>,
+    T: crate::Controller<Error = E, Header = Header>,
     Header: HciHeader,
 {
-    type VS = <<T as ::Controller>::Vendor as ::Vendor>::Status;
+    type VS = <<T as crate::Controller>::Vendor as crate::Vendor>::Status;
 
     fn disconnect(
         &mut self,
-        conn_handle: ::ConnectionHandle,
-        reason: ::Status<Self::VS>,
+        conn_handle: crate::ConnectionHandle,
+        reason: crate::Status<Self::VS>,
     ) -> nb::Result<(), Error<E, Self::VS>> {
         match reason {
-            ::Status::AuthFailure
-            | ::Status::RemoteTerminationByUser
-            | ::Status::RemoteTerminationLowResources
-            | ::Status::RemoteTerminationPowerOff
-            | ::Status::UnsupportedRemoteFeature
-            | ::Status::PairingWithUnitKeyNotSupported
-            | ::Status::UnacceptableConnectionParameters => (),
+            crate::Status::AuthFailure
+            | crate::Status::RemoteTerminationByUser
+            | crate::Status::RemoteTerminationLowResources
+            | crate::Status::RemoteTerminationPowerOff
+            | crate::Status::UnsupportedRemoteFeature
+            | crate::Status::PairingWithUnitKeyNotSupported
+            | crate::Status::UnacceptableConnectionParameters => (),
             _ => return Err(nb::Error::Other(Error::BadDisconnectionReason(reason))),
         }
 
         let mut params = [0; 3];
         LittleEndian::write_u16(&mut params[0..], conn_handle.0);
         params[2] = reason.into();
-        write_command::<Header, T, E>(self, ::opcode::DISCONNECT, &params).map_err(rewrap_as_comm)
+        write_command::<Header, T, E>(self, crate::opcode::DISCONNECT, &params)
+            .map_err(rewrap_as_comm)
     }
 
     fn read_remote_version_information(
         &mut self,
-        conn_handle: ::ConnectionHandle,
+        conn_handle: crate::ConnectionHandle,
     ) -> nb::Result<(), E> {
         let mut params = [0; 2];
         LittleEndian::write_u16(&mut params, conn_handle.0);
-        write_command::<Header, T, E>(self, ::opcode::READ_REMOTE_VERSION_INFO, &params)
+        write_command::<Header, T, E>(self, crate::opcode::READ_REMOTE_VERSION_INFO, &params)
     }
 
     fn set_event_mask(&mut self, mask: EventFlags) -> nb::Result<(), E> {
         let mut params = [0; 8];
         LittleEndian::write_u64(&mut params, mask.bits());
 
-        write_command::<Header, T, E>(self, ::opcode::SET_EVENT_MASK, &params)
+        write_command::<Header, T, E>(self, crate::opcode::SET_EVENT_MASK, &params)
     }
 
     fn reset(&mut self) -> nb::Result<(), E> {
-        write_command::<Header, T, E>(self, ::opcode::RESET, &[])
+        write_command::<Header, T, E>(self, crate::opcode::RESET, &[])
     }
 
     fn read_tx_power_level(
         &mut self,
-        conn_handle: ::ConnectionHandle,
+        conn_handle: crate::ConnectionHandle,
         power_level_type: TxPowerLevel,
     ) -> nb::Result<(), E> {
         let mut params = [0; 3];
         LittleEndian::write_u16(&mut params, conn_handle.0);
         params[2] = power_level_type as u8;
-        write_command::<Header, T, E>(self, ::opcode::READ_TX_POWER_LEVEL, &params)
+        write_command::<Header, T, E>(self, crate::opcode::READ_TX_POWER_LEVEL, &params)
     }
 
     fn read_local_version_information(&mut self) -> nb::Result<(), E> {
-        write_command::<Header, T, E>(self, ::opcode::READ_LOCAL_VERSION_INFO, &[])
+        write_command::<Header, T, E>(self, crate::opcode::READ_LOCAL_VERSION_INFO, &[])
     }
 
     fn read_local_supported_commands(&mut self) -> nb::Result<(), E> {
-        write_command::<Header, T, E>(self, ::opcode::READ_LOCAL_SUPPORTED_COMMANDS, &[])
+        write_command::<Header, T, E>(self, crate::opcode::READ_LOCAL_SUPPORTED_COMMANDS, &[])
     }
 
     fn read_local_supported_features(&mut self) -> nb::Result<(), E> {
-        write_command::<Header, T, E>(self, ::opcode::READ_LOCAL_SUPPORTED_FEATURES, &[])
+        write_command::<Header, T, E>(self, crate::opcode::READ_LOCAL_SUPPORTED_FEATURES, &[])
     }
 
     fn read_bd_addr(&mut self) -> nb::Result<(), E> {
-        write_command::<Header, T, E>(self, ::opcode::READ_BD_ADDR, &[])
+        write_command::<Header, T, E>(self, crate::opcode::READ_BD_ADDR, &[])
     }
 
-    fn read_rssi(&mut self, conn_handle: ::ConnectionHandle) -> nb::Result<(), E> {
+    fn read_rssi(&mut self, conn_handle: crate::ConnectionHandle) -> nb::Result<(), E> {
         let mut params = [0; 2];
         LittleEndian::write_u16(&mut params, conn_handle.0);
-        write_command::<Header, T, E>(self, ::opcode::READ_RSSI, &params)
+        write_command::<Header, T, E>(self, crate::opcode::READ_RSSI, &params)
     }
 
     fn le_set_event_mask(&mut self, event_mask: LeEventFlags) -> nb::Result<(), E> {
         let mut params = [0; 8];
         LittleEndian::write_u64(&mut params, event_mask.bits());
 
-        write_command::<Header, T, E>(self, ::opcode::LE_SET_EVENT_MASK, &params)
+        write_command::<Header, T, E>(self, crate::opcode::LE_SET_EVENT_MASK, &params)
     }
 
     fn le_read_buffer_size(&mut self) -> nb::Result<(), E> {
-        write_command::<Header, T, E>(self, ::opcode::LE_READ_BUFFER_SIZE, &[])
+        write_command::<Header, T, E>(self, crate::opcode::LE_READ_BUFFER_SIZE, &[])
     }
 
     fn le_read_local_supported_features(&mut self) -> nb::Result<(), E> {
-        write_command::<Header, T, E>(self, ::opcode::LE_READ_LOCAL_SUPPORTED_FEATURES, &[])
+        write_command::<Header, T, E>(self, crate::opcode::LE_READ_LOCAL_SUPPORTED_FEATURES, &[])
     }
 
-    fn le_set_random_address(&mut self, bd_addr: ::BdAddr) -> nb::Result<(), Error<E, Self::VS>> {
+    fn le_set_random_address(
+        &mut self,
+        bd_addr: crate::BdAddr,
+    ) -> nb::Result<(), Error<E, Self::VS>> {
         validate_random_address(&bd_addr).map_err(nb::Error::Other)?;
-        write_command::<Header, T, E>(self, ::opcode::LE_SET_RANDOM_ADDRESS, &bd_addr.0)
+        write_command::<Header, T, E>(self, crate::opcode::LE_SET_RANDOM_ADDRESS, &bd_addr.0)
             .map_err(rewrap_as_comm)
     }
 
@@ -1293,42 +1300,62 @@ where
     ) -> nb::Result<(), Error<E, Self::VS>> {
         let mut bytes = [0; 15];
         params.into_bytes(&mut bytes).map_err(nb::Error::Other)?;
-        write_command::<Header, T, E>(self, ::opcode::LE_SET_ADVERTISING_PARAMETERS, &bytes)
+        write_command::<Header, T, E>(self, crate::opcode::LE_SET_ADVERTISING_PARAMETERS, &bytes)
             .map_err(rewrap_as_comm)
     }
 
     fn le_read_advertising_channel_tx_power(&mut self) -> nb::Result<(), E> {
-        write_command::<Header, T, E>(self, ::opcode::LE_READ_ADVERTISING_CHANNEL_TX_POWER, &[])
+        write_command::<Header, T, E>(
+            self,
+            crate::opcode::LE_READ_ADVERTISING_CHANNEL_TX_POWER,
+            &[],
+        )
     }
 
     fn le_set_advertising_data(&mut self, data: &[u8]) -> nb::Result<(), Error<E, Self::VS>> {
-        set_outbound_data::<Header, T, E, Self::VS>(self, ::opcode::LE_SET_ADVERTISING_DATA, data)
+        set_outbound_data::<Header, T, E, Self::VS>(
+            self,
+            crate::opcode::LE_SET_ADVERTISING_DATA,
+            data,
+        )
     }
 
     fn le_set_scan_response_data(&mut self, data: &[u8]) -> nb::Result<(), Error<E, Self::VS>> {
-        set_outbound_data::<Header, T, E, Self::VS>(self, ::opcode::LE_SET_SCAN_RESPONSE_DATA, data)
+        set_outbound_data::<Header, T, E, Self::VS>(
+            self,
+            crate::opcode::LE_SET_SCAN_RESPONSE_DATA,
+            data,
+        )
     }
 
     #[cfg(not(feature = "version-5-0"))]
     fn le_set_advertise_enable(&mut self, enable: bool) -> nb::Result<(), E> {
-        write_command::<Header, T, E>(self, ::opcode::LE_SET_ADVERTISE_ENABLE, &[enable as u8])
+        write_command::<Header, T, E>(
+            self,
+            crate::opcode::LE_SET_ADVERTISE_ENABLE,
+            &[enable as u8],
+        )
     }
 
     #[cfg(feature = "version-5-0")]
     fn le_set_advertising_enable(&mut self, enable: bool) -> nb::Result<(), E> {
-        write_command::<Header, T, E>(self, ::opcode::LE_SET_ADVERTISE_ENABLE, &[enable as u8])
+        write_command::<Header, T, E>(
+            self,
+            crate::opcode::LE_SET_ADVERTISE_ENABLE,
+            &[enable as u8],
+        )
     }
 
     fn le_set_scan_parameters(&mut self, params: &ScanParameters) -> nb::Result<(), E> {
         let mut bytes = [0; 7];
         params.into_bytes(&mut bytes);
-        write_command::<Header, T, E>(self, ::opcode::LE_SET_SCAN_PARAMETERS, &bytes)
+        write_command::<Header, T, E>(self, crate::opcode::LE_SET_SCAN_PARAMETERS, &bytes)
     }
 
     fn le_set_scan_enable(&mut self, enable: bool, filter_duplicates: bool) -> nb::Result<(), E> {
         write_command::<Header, T, E>(
             self,
-            ::opcode::LE_SET_SCAN_ENABLE,
+            crate::opcode::LE_SET_SCAN_ENABLE,
             &[enable as u8, filter_duplicates as u8],
         )
     }
@@ -1336,47 +1363,51 @@ where
     fn le_create_connection(&mut self, params: &ConnectionParameters) -> nb::Result<(), E> {
         let mut bytes = [0; 25];
         params.into_bytes(&mut bytes);
-        write_command::<Header, T, E>(self, ::opcode::LE_CREATE_CONNECTION, &bytes)
+        write_command::<Header, T, E>(self, crate::opcode::LE_CREATE_CONNECTION, &bytes)
     }
 
     fn le_create_connection_cancel(&mut self) -> nb::Result<(), E> {
-        write_command::<Header, T, E>(self, ::opcode::LE_CREATE_CONNECTION_CANCEL, &[])
+        write_command::<Header, T, E>(self, crate::opcode::LE_CREATE_CONNECTION_CANCEL, &[])
     }
 
     fn le_read_white_list_size(&mut self) -> nb::Result<(), E> {
-        write_command::<Header, T, E>(self, ::opcode::LE_READ_WHITE_LIST_SIZE, &[])
+        write_command::<Header, T, E>(self, crate::opcode::LE_READ_WHITE_LIST_SIZE, &[])
     }
 
     fn le_clear_white_list(&mut self) -> nb::Result<(), E> {
-        write_command::<Header, T, E>(self, ::opcode::LE_CLEAR_WHITE_LIST, &[])
+        write_command::<Header, T, E>(self, crate::opcode::LE_CLEAR_WHITE_LIST, &[])
     }
 
-    fn le_add_device_to_white_list(&mut self, addr: ::BdAddrType) -> nb::Result<(), E> {
+    fn le_add_device_to_white_list(&mut self, addr: crate::BdAddrType) -> nb::Result<(), E> {
         let mut params = [0; 7];
         addr.into_bytes(&mut params);
-        write_command::<Header, T, E>(self, ::opcode::LE_ADD_DEVICE_TO_WHITE_LIST, &params)
+        write_command::<Header, T, E>(self, crate::opcode::LE_ADD_DEVICE_TO_WHITE_LIST, &params)
     }
 
     #[cfg(feature = "version-5-0")]
     fn le_add_anon_advertising_devices_to_white_list(&mut self) -> nb::Result<(), E> {
         write_command::<Header, T, E>(
             self,
-            ::opcode::LE_ADD_DEVICE_TO_WHITE_LIST,
+            crate::opcode::LE_ADD_DEVICE_TO_WHITE_LIST,
             &[0xFF, 0, 0, 0, 0, 0, 0],
         )
     }
 
-    fn le_remove_device_from_white_list(&mut self, addr: ::BdAddrType) -> nb::Result<(), E> {
+    fn le_remove_device_from_white_list(&mut self, addr: crate::BdAddrType) -> nb::Result<(), E> {
         let mut params = [0; 7];
         addr.into_bytes(&mut params);
-        write_command::<Header, T, E>(self, ::opcode::LE_REMOVE_DEVICE_FROM_WHITE_LIST, &params)
+        write_command::<Header, T, E>(
+            self,
+            crate::opcode::LE_REMOVE_DEVICE_FROM_WHITE_LIST,
+            &params,
+        )
     }
 
     #[cfg(feature = "version-5-0")]
     fn le_remove_anon_advertising_devices_from_white_list(&mut self) -> nb::Result<(), E> {
         write_command::<Header, T, E>(
             self,
-            ::opcode::LE_REMOVE_DEVICE_FROM_WHITE_LIST,
+            crate::opcode::LE_REMOVE_DEVICE_FROM_WHITE_LIST,
             &[0xFF, 0, 0, 0, 0, 0, 0],
         )
     }
@@ -1384,12 +1415,12 @@ where
     fn le_connection_update(&mut self, params: &ConnectionUpdateParameters) -> nb::Result<(), E> {
         let mut bytes = [0; 14];
         params.into_bytes(&mut bytes);
-        write_command::<Header, T, E>(self, ::opcode::LE_CONNECTION_UPDATE, &bytes)
+        write_command::<Header, T, E>(self, crate::opcode::LE_CONNECTION_UPDATE, &bytes)
     }
 
     fn le_set_host_channel_classification(
         &mut self,
-        channels: ::ChannelClassification,
+        channels: crate::ChannelClassification,
     ) -> nb::Result<(), Error<E, Self::VS>> {
         if channels.is_empty() {
             return Err(nb::Error::Other(Error::NoValidChannel));
@@ -1397,34 +1428,38 @@ where
 
         let mut bytes = [0; 5];
         channels.into_bytes(&mut bytes);
-        write_command::<Header, T, E>(self, ::opcode::LE_SET_HOST_CHANNEL_CLASSIFICATION, &bytes)
-            .map_err(rewrap_as_comm)
+        write_command::<Header, T, E>(
+            self,
+            crate::opcode::LE_SET_HOST_CHANNEL_CLASSIFICATION,
+            &bytes,
+        )
+        .map_err(rewrap_as_comm)
     }
 
-    fn le_read_channel_map(&mut self, conn_handle: ::ConnectionHandle) -> nb::Result<(), E> {
+    fn le_read_channel_map(&mut self, conn_handle: crate::ConnectionHandle) -> nb::Result<(), E> {
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes, conn_handle.0);
-        write_command::<Header, T, E>(self, ::opcode::LE_READ_CHANNEL_MAP, &bytes)
+        write_command::<Header, T, E>(self, crate::opcode::LE_READ_CHANNEL_MAP, &bytes)
     }
 
     fn le_read_remote_used_features(
         &mut self,
-        conn_handle: ::ConnectionHandle,
+        conn_handle: crate::ConnectionHandle,
     ) -> nb::Result<(), E> {
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes, conn_handle.0);
-        write_command::<Header, T, E>(self, ::opcode::LE_READ_REMOTE_USED_FEATURES, &bytes)
+        write_command::<Header, T, E>(self, crate::opcode::LE_READ_REMOTE_USED_FEATURES, &bytes)
     }
 
     fn le_encrypt(&mut self, params: &AesParameters) -> nb::Result<(), E> {
         let mut bytes = [0; 32];
         bytes[..16].copy_from_slice(&params.key.0);
         bytes[16..].copy_from_slice(&params.plaintext_data.0);
-        write_command::<Header, T, E>(self, ::opcode::LE_ENCRYPT, &bytes)
+        write_command::<Header, T, E>(self, crate::opcode::LE_ENCRYPT, &bytes)
     }
 
     fn le_rand(&mut self) -> nb::Result<(), E> {
-        write_command::<Header, T, E>(self, ::opcode::LE_RAND, &[])
+        write_command::<Header, T, E>(self, crate::opcode::LE_RAND, &[])
     }
 
     fn le_start_encryption(&mut self, params: &EncryptionParameters) -> nb::Result<(), E> {
@@ -1433,31 +1468,31 @@ where
         LittleEndian::write_u64(&mut bytes[2..], params.random_number);
         LittleEndian::write_u16(&mut bytes[10..], params.encrypted_diversifier);
         bytes[12..].copy_from_slice(&params.long_term_key.0);
-        write_command::<Header, T, E>(self, ::opcode::LE_START_ENCRYPTION, &bytes)
+        write_command::<Header, T, E>(self, crate::opcode::LE_START_ENCRYPTION, &bytes)
     }
 
     fn le_long_term_key_request_reply(
         &mut self,
-        conn_handle: ::ConnectionHandle,
+        conn_handle: crate::ConnectionHandle,
         key: &EncryptionKey,
     ) -> nb::Result<(), E> {
         let mut bytes = [0; 18];
         LittleEndian::write_u16(&mut bytes[0..], conn_handle.0);
         bytes[2..].copy_from_slice(&key.0);
-        write_command::<Header, T, E>(self, ::opcode::LE_LTK_REQUEST_REPLY, &bytes)
+        write_command::<Header, T, E>(self, crate::opcode::LE_LTK_REQUEST_REPLY, &bytes)
     }
 
     fn le_long_term_key_request_negative_reply(
         &mut self,
-        conn_handle: ::ConnectionHandle,
+        conn_handle: crate::ConnectionHandle,
     ) -> nb::Result<(), E> {
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes[0..], conn_handle.0);
-        write_command::<Header, T, E>(self, ::opcode::LE_LTK_REQUEST_NEGATIVE_REPLY, &bytes)
+        write_command::<Header, T, E>(self, crate::opcode::LE_LTK_REQUEST_NEGATIVE_REPLY, &bytes)
     }
 
     fn le_read_supported_states(&mut self) -> nb::Result<(), E> {
-        write_command::<Header, T, E>(self, ::opcode::LE_READ_STATES, &[])
+        write_command::<Header, T, E>(self, crate::opcode::LE_READ_STATES, &[])
     }
 
     fn le_receiver_test(&mut self, channel: u8) -> nb::Result<(), Error<E, Self::VS>> {
@@ -1465,7 +1500,7 @@ where
             return Err(nb::Error::Other(Error::InvalidTestChannel(channel)));
         }
 
-        write_command::<Header, T, E>(self, ::opcode::LE_RECEIVER_TEST, &[channel])
+        write_command::<Header, T, E>(self, crate::opcode::LE_RECEIVER_TEST, &[channel])
             .map_err(rewrap_as_comm)
     }
 
@@ -1488,13 +1523,14 @@ where
 
         write_command::<Header, _, _>(
             self,
-            ::opcode::LE_TRANSMITTER_TEST,
+            crate::opcode::LE_TRANSMITTER_TEST,
             &[channel, payload_length as u8, payload as u8],
-        ).map_err(rewrap_as_comm)
+        )
+        .map_err(rewrap_as_comm)
     }
 
     fn le_test_end(&mut self) -> nb::Result<(), E> {
-        write_command::<Header, _, _>(self, ::opcode::LE_TEST_END, &[])
+        write_command::<Header, _, _>(self, crate::opcode::LE_TEST_END, &[])
     }
 }
 
@@ -1680,7 +1716,7 @@ bitflags! {
     }
 }
 
-fn validate_random_address<E, VS>(bd_addr: &::BdAddr) -> Result<(), Error<E, VS>> {
+fn validate_random_address<E, VS>(bd_addr: &crate::BdAddr) -> Result<(), Error<E, VS>> {
     let (pop_count, bit_count) = match (bd_addr.0[5] & 0b1100_0000) >> 6 {
         0b00 | 0b11 => (pop_count_except_top_2_bits(&bd_addr.0[0..]), 46),
         0b10 => (pop_count_except_top_2_bits(&bd_addr.0[3..]), 22),
@@ -1733,7 +1769,7 @@ pub struct AdvertisingParameters {
     /// [`PrivateFallbackRandom`](OwnAddressType), the Controller generates
     /// the peer's Resolvable Private Address using the peer's IRK corresponding to the peer's
     /// Identity Address contained in `peer_address`.
-    pub peer_address: ::BdAddrType,
+    pub peer_address: crate::BdAddrType,
 
     /// Bit field that indicates the advertising channels that shall be used when transmitting
     /// advertising packets. At least one channel bit shall be set in the bitfield.
@@ -1818,7 +1854,7 @@ pub enum AdvertisingFilterPolicy {
 }
 
 /// Parameters for the [`le_set_scan_parameters`](Hci::le_set_scan_parameters) command.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ScanParameters {
     /// The type of scan to perform
     pub scan_type: ScanType,
@@ -1848,7 +1884,7 @@ impl ScanParameters {
 /// Types of scan to perform.
 ///
 /// See [`ScanParameters`] and [`le_set_scan_parameters`](Hci::le_set_scan_parameters).
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 #[repr(u8)]
 pub enum ScanType {
     /// Passive Scanning. No scanning PDUs shall be sent (default).
@@ -1860,7 +1896,7 @@ pub enum ScanType {
 /// Which advertising packets to accept from a scan.
 ///
 /// See [`ScanParameters`] and [`le_set_scan_parameters`](Hci::le_set_scan_parameters).
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 #[repr(u8)]
 pub enum ScanFilterPolicy {
     /// Accept all advertising packets except directed advertising packets not addressed to this
@@ -1911,17 +1947,17 @@ pub struct ConnectionParameters {
     ///
     /// If this is [`Random`](OwnAddressType::Random) and the random address for the device has not
     /// been initialized, the Controller shall return the error code
-    /// [`::Status::InvalidParameters`].
+    /// [`crate::Status::InvalidParameters`].
     ///
     /// If this is [`PrivateFallbackRemote`](OwnAddressType), `initiator_filter_policy` is
     /// [`UseAddress`](ConnectionFilterPolicy::UseAddress), the controller's resolving list did not
     /// contain a matching entry, and the random address for the device has not been initialized,
-    /// the Controller shall return the error code [`::Status::InvalidParameters`].
+    /// the Controller shall return the error code [`crate::Status::InvalidParameters`].
     ///
     /// If this is set [`PrivateFallbackRandom`](`OwnAddressType`), `initiator_filter_policy` is
     /// [`WhiteList`](ConnectionFilterPolicy::WhiteList), and the random address for the device has
     /// not been initialized, the Controller shall return the error code
-    /// [`::Status::InvalidParameters`].
+    /// [`crate::Status::InvalidParameters`].
     pub own_address_type: OwnAddressType,
 
     /// Defines the minimum and maximum allowed connection interval, latency, and supervision
@@ -1973,19 +2009,19 @@ pub enum ConnectionFilterPolicy {
 #[derive(Copy, Clone, Debug)]
 pub enum PeerAddrType {
     /// Public Device Address
-    PublicDeviceAddress(::BdAddr),
+    PublicDeviceAddress(crate::BdAddr),
     /// Random Device Address
-    RandomDeviceAddress(::BdAddr),
+    RandomDeviceAddress(crate::BdAddr),
     /// Public Identity Address (Corresponds to peer's Resolvable Private Address). This value shall
     /// only be used by the Host if either the Host or the Controller does not support the LE Set
     /// Privacy Mode command.
     #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
-    PublicIdentityAddress(::BdAddr),
+    PublicIdentityAddress(crate::BdAddr),
     /// Random (static) Identity Address (Corresponds to peer’s Resolvable Private Address). This
     /// value shall only be used by a Host if either the Host or the Controller does not support the
     /// LE Set Privacy Mode command.
     #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
-    RandomIdentityAddress(::BdAddr),
+    RandomIdentityAddress(crate::BdAddr),
 }
 
 impl PeerAddrType {
@@ -2043,7 +2079,7 @@ impl PeerAddrType {
 /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.18.
 pub struct ConnectionUpdateParameters {
     /// Handle for identifying a connection.
-    pub conn_handle: ::ConnectionHandle,
+    pub conn_handle: crate::ConnectionHandle,
 
     /// Defines the connection interval, latency, and supervision timeout.
     pub conn_interval: ConnectionInterval,
@@ -2107,7 +2143,7 @@ impl Debug for PlaintextBlock {
 /// Parameters for the [`le_start_encryption`](Hci::le_start_encryption) command.
 pub struct EncryptionParameters {
     /// ID for the connection.
-    pub conn_handle: ::ConnectionHandle,
+    pub conn_handle: crate::ConnectionHandle,
 
     /// Random value distrubuted by the peripheral during pairing
     pub random_number: u64,

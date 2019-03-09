@@ -76,7 +76,6 @@
 
 #![no_std]
 #![feature(const_fn)]
-#![feature(try_from)]
 #![feature(never_type)]
 #![deny(missing_docs)]
 
@@ -118,7 +117,7 @@ pub trait Controller {
     type Error;
 
     /// The type of header sent to the controller for HCI commands.  Should be either
-    /// [`uart::CommandHeader`], [`cmd_link::Header`], or [`event_link::NoCommands`], depending on
+    /// [`host::uart::CommandHeader`], [`host::cmd_link::Header`], or [`host::event_link::NoCommands`], depending on
     /// the controller implementation.
     type Header;
 

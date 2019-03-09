@@ -15,7 +15,7 @@ extern crate nb;
 #[derive(Copy, Clone, Debug)]
 pub enum Error<E, VError> {
     /// There was an error deserializing an event. Contains the underlying error.
-    BLE(::event::Error<VError>),
+    BLE(crate::event::Error<VError>),
     /// There was a communication error. Contains the underlying error.
     Comm(E),
 }
@@ -26,7 +26,7 @@ pub struct NoCommands;
 
 /// Trait for reading events from the controller. Since this trait should only be used when events
 /// are sent by a different physical link than commands, it does not need to implement
-/// [`::host::Hci`].
+/// [`crate::host::Hci`].
 ///
 /// Must be specialized for communication errors (`E`), vendor-specific events (`Vendor`), and
 /// vendor-specific errors (`VE`).
@@ -39,7 +39,7 @@ pub struct NoCommands;
 ///   event.
 /// - Returns [`nb::Error::Other`]`(`[`Error::BLE`]`)` if there is an error deserializing the packet
 ///   (such as a mismatch between the packet length and the expected length of the event). See
-///   [`::event::Error`] for possible values of `e`.
+///   [`crate::event::Error`] for possible values of `e`.
 /// - Returns [`nb::Error::Other`]`(`[`Error::Comm`]`)` if there is an error reading from the
 ///   controller.
 pub trait Hci<E, Vendor, VE> {
@@ -52,18 +52,18 @@ pub trait Hci<E, Vendor, VE> {
     ///   to read the full event right now.
     /// - Returns [`nb::Error::Other`]`(`[`Error::BLE`]`)` if there is an error deserializing the
     ///   packet (such as a mismatch between the packet length and the expected length of the
-    ///   event). See [`::event::Error`] for possible values of `e`.
+    ///   event). See [`crate::event::Error`] for possible values of `e`.
     /// - Returns [`nb::Error::Other`]`(`[`Error::Comm`]`)` if there is an error reading from the
     ///   controller.
-    fn read(&mut self) -> nb::Result<::Event<Vendor>, Error<E, VE>>
+    fn read(&mut self) -> nb::Result<crate::Event<Vendor>, Error<E, VE>>
     where
-        Vendor: ::event::VendorEvent<Error = VE>;
+        Vendor: crate::event::VendorEvent<Error = VE>;
 }
 
 impl super::HciHeader for NoCommands {
     const HEADER_LENGTH: usize = 3;
 
-    fn new(_opcode: ::opcode::Opcode, _param_len: usize) -> NoCommands {
+    fn new(_opcode: crate::opcode::Opcode, _param_len: usize) -> NoCommands {
         NoCommands
     }
 
@@ -79,11 +79,11 @@ fn rewrap_error<E, VE>(e: nb::Error<E>) -> nb::Error<Error<E, VE>> {
 
 impl<E, Vendor, VE, T> Hci<E, Vendor, VE> for T
 where
-    T: ::Controller<Error = E, Header = NoCommands>,
+    T: crate::Controller<Error = E, Header = NoCommands>,
 {
-    fn read(&mut self) -> nb::Result<::Event<Vendor>, Error<E, VE>>
+    fn read(&mut self) -> nb::Result<crate::Event<Vendor>, Error<E, VE>>
     where
-        Vendor: ::event::VendorEvent<Error = VE>,
+        Vendor: crate::event::VendorEvent<Error = VE>,
     {
         const MAX_EVENT_LENGTH: usize = 255;
         const EVENT_HEADER_LENGTH: usize = 2;
@@ -95,7 +95,9 @@ where
         self.read_into(&mut buf[..EVENT_HEADER_LENGTH + param_len])
             .map_err(rewrap_error)?;
 
-        ::Event::new(::event::Packet(&buf[..EVENT_HEADER_LENGTH + param_len]))
-            .map_err(|e| nb::Error::Other(Error::BLE(e)))
+        crate::Event::new(crate::event::Packet(
+            &buf[..EVENT_HEADER_LENGTH + param_len],
+        ))
+        .map_err(|e| nb::Error::Other(Error::BLE(e)))
     }
 }

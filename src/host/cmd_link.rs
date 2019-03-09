@@ -13,14 +13,14 @@ use byteorder::{ByteOrder, LittleEndian};
 
 /// Header for HCI Commands.
 pub struct Header {
-    opcode: ::opcode::Opcode,
+    opcode: crate::opcode::Opcode,
     param_len: u8,
 }
 
 impl super::HciHeader for Header {
     const HEADER_LENGTH: usize = 3;
 
-    fn new(opcode: ::opcode::Opcode, param_len: usize) -> Header {
+    fn new(opcode: crate::opcode::Opcode, param_len: usize) -> Header {
         Header {
             opcode: opcode,
             param_len: param_len as u8,

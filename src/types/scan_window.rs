@@ -10,7 +10,7 @@ use core::time::Duration;
 ///
 /// The minimum time range is 2.5 ms, and the maximum is 10.24 s. The window must be shorter than or
 /// equal to the interval.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ScanWindow {
     interval_width: Duration,
     window_width: Duration,

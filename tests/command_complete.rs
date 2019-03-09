@@ -1,5 +1,3 @@
-#![feature(try_from)]
-
 extern crate bluetooth_hci as hci;
 
 use hci::event::command::*;
@@ -236,11 +234,9 @@ fn read_local_supported_commands() {
                             | CommandFlags::WRITE_EXTENDED_PAGE_TIMEOUT
                     );
                     assert!(params.supported_commands.is_set(CommandFlags::INQUIRY));
-                    assert!(
-                        params.supported_commands.contains(
-                            CommandFlags::INQUIRY | CommandFlags::REJECT_CONNECTION_REQUEST
-                        )
-                    );
+                    assert!(params
+                        .supported_commands
+                        .contains(CommandFlags::INQUIRY | CommandFlags::REJECT_CONNECTION_REQUEST));
                 }
                 other => panic!(
                     "Did not get Read Supported Commands return params: {:?}",
@@ -322,11 +318,9 @@ fn read_local_supported_commands() {
                             | CommandFlags::LE_READ_MAXIMUM_DATA_LENGTH
                     );
                     assert!(params.supported_commands.is_set(CommandFlags::INQUIRY));
-                    assert!(
-                        params.supported_commands.contains(
-                            CommandFlags::INQUIRY | CommandFlags::REJECT_CONNECTION_REQUEST
-                        )
-                    );
+                    assert!(params
+                        .supported_commands
+                        .contains(CommandFlags::INQUIRY | CommandFlags::REJECT_CONNECTION_REQUEST));
                 }
                 other => panic!(
                     "Did not get Read Supported Commands return params: {:?}",
@@ -411,11 +405,9 @@ fn read_local_supported_commands() {
                             | CommandFlags::LE_READ_PERIODIC_ADVERTISER_LIST_SIZE_COMMAND
                     );
                     assert!(params.supported_commands.is_set(CommandFlags::INQUIRY));
-                    assert!(
-                        params.supported_commands.contains(
-                            CommandFlags::INQUIRY | CommandFlags::REJECT_CONNECTION_REQUEST
-                        )
-                    );
+                    assert!(params
+                        .supported_commands
+                        .contains(CommandFlags::INQUIRY | CommandFlags::REJECT_CONNECTION_REQUEST));
                 }
                 other => panic!(
                     "Did not get Read Supported Commands return params: {:?}",

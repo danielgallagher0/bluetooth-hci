@@ -18,7 +18,7 @@ pub enum Error<E, VE> {
     /// type byte. Contains the value of the byte.
     BadPacketType(u8),
     /// There was an error deserializing an event. Contains the underlying error.
-    BLE(::event::Error<VE>),
+    BLE(crate::event::Error<VE>),
     /// There was a communication error. Contains the underlying error.
     Comm(E),
 }
@@ -27,24 +27,24 @@ pub enum Error<E, VE> {
 #[derive(Clone, Debug)]
 pub enum Packet<Vendor>
 where
-    Vendor: ::event::VendorEvent,
+    Vendor: crate::event::VendorEvent,
 {
     // AclData(AclData),
     // SyncData(SyncData),
     /// The HCI Event Packet is used by the Controller to notify the Host when events
     /// occur. The event is specialized to support vendor-specific events.
-    Event(::Event<Vendor>),
+    Event(crate::Event<Vendor>),
 }
 
 /// Header for HCI Commands.
 pub struct CommandHeader {
-    opcode: ::opcode::Opcode,
+    opcode: crate::opcode::Opcode,
     param_len: u8,
 }
 
 /// Trait for reading packets from the controller.
 ///
-/// Implementors must also implement [`::host::Hci`], which provides all of the functions to write
+/// Implementors must also implement [`crate::host::Hci`], which provides all of the functions to write
 /// commands to the controller. This trait adds the ability to read packets back from the
 /// controller.
 ///
@@ -62,18 +62,18 @@ pub trait Hci<E, Vendor, VE>: super::Hci<E> {
     ///   packet type.
     /// - Returns [`nb::Error::Other`]`(`[`Error::BLE`]`)` if there is an error deserializing the
     ///   packet (such as a mismatch between the packet length and the expected length of the
-    ///   event). See [`::event::Error`] for possible values of `e`.
+    ///   event). See [`crate::event::Error`] for possible values of `e`.
     /// - Returns [`nb::Error::Other`]`(`[`Error::Comm`]`)` if there is an error reading from the
     ///   controller.
     fn read(&mut self) -> nb::Result<Packet<Vendor>, Error<E, VE>>
     where
-        Vendor: ::event::VendorEvent<Error = VE>;
+        Vendor: crate::event::VendorEvent<Error = VE>;
 }
 
 impl super::HciHeader for CommandHeader {
     const HEADER_LENGTH: usize = 4;
 
-    fn new(opcode: ::opcode::Opcode, param_len: usize) -> CommandHeader {
+    fn new(opcode: crate::opcode::Opcode, param_len: usize) -> CommandHeader {
         CommandHeader {
             opcode: opcode,
             param_len: param_len as u8,
@@ -94,10 +94,12 @@ fn rewrap_error<E, VE>(e: nb::Error<E>) -> nb::Error<Error<E, VE>> {
     }
 }
 
-fn read_event<E, T, Vendor, VE>(controller: &mut T) -> nb::Result<::Event<Vendor>, Error<E, VE>>
+fn read_event<E, T, Vendor, VE>(
+    controller: &mut T,
+) -> nb::Result<crate::Event<Vendor>, Error<E, VE>>
 where
-    T: ::Controller<Error = E>,
-    Vendor: ::event::VendorEvent<Error = VE>,
+    T: crate::Controller<Error = E>,
+    Vendor: crate::event::VendorEvent<Error = VE>,
 {
     const MAX_EVENT_LENGTH: usize = 255;
     const PACKET_HEADER_LENGTH: usize = 1;
@@ -111,18 +113,19 @@ where
         .read_into(&mut buf[..EVENT_PACKET_HEADER_LENGTH + param_len])
         .map_err(rewrap_error)?;
 
-    ::event::Event::new(::event::Packet(
+    crate::event::Event::new(crate::event::Packet(
         &buf[PACKET_HEADER_LENGTH..EVENT_PACKET_HEADER_LENGTH + param_len],
-    )).map_err(|e| nb::Error::Other(Error::BLE(e)))
+    ))
+    .map_err(|e| nb::Error::Other(Error::BLE(e)))
 }
 
 impl<E, Vendor, VE, T> Hci<E, Vendor, VE> for T
 where
-    T: ::Controller<Error = E, Header = CommandHeader>,
+    T: crate::Controller<Error = E, Header = CommandHeader>,
 {
     fn read(&mut self) -> nb::Result<Packet<Vendor>, Error<E, VE>>
     where
-        Vendor: ::event::VendorEvent<Error = VE>,
+        Vendor: crate::event::VendorEvent<Error = VE>,
     {
         match self.peek(0).map_err(rewrap_error)? {
             PACKET_TYPE_HCI_EVENT => Ok(Packet::Event(read_event(self)?)),

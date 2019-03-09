@@ -1,4 +1,5 @@
 [package]
+edition = "2018"
 name = "bluetooth-hci"
 version = "0.0.4"
 authors = ["Daniel Gallagher <pdanielgallagher@gmail.com>"]
@@ -18,7 +19,7 @@ version = "1"
 default-features = false
 
 [features]
-default-features = ["version-4-1"]
+default = ["version-4-1"]
 version-4-1 = []
 version-4-2 = []
 version-5-0 = []
