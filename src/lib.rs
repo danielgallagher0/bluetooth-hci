@@ -117,8 +117,8 @@ pub trait Controller {
     type Error;
 
     /// The type of header sent to the controller for HCI commands.  Should be either
-    /// [`host::uart::CommandHeader`], [`host::cmd_link::Header`], or [`host::event_link::NoCommands`], depending on
-    /// the controller implementation.
+    /// [`host::uart::CommandHeader`], [`host::cmd_link::Header`], or
+    /// [`host::event_link::NoCommands`], depending on the controller implementation.
     type Header;
 
     /// Type containing vendor-specific extensions for the controller, including vendor-specific

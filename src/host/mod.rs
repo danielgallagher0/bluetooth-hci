@@ -99,8 +99,8 @@ pub trait Hci<E> {
     ///
     /// Note: No Command Complete event will be sent by the Controller to indicate that this command
     /// has been completed. Instead, the [Disconnection
-    /// Complete](crate::event::Event::DisconnectionComplete) event will indicate that this command has
-    /// been completed.
+    /// Complete](crate::event::Event::DisconnectionComplete) event will indicate that this command
+    /// has been completed.
     fn disconnect(
         &mut self,
         conn_handle: ConnectionHandle,
@@ -119,8 +119,8 @@ pub trait Hci<E> {
     /// # Generated Events
     ///
     /// When the Controller receives the Read Remote Version Information command, the Controller
-    /// shall send the [Command Status](crate::event::Event::CommandStatus) event to the Host. When the
-    /// Link Manager or Link Layer has completed the sequence to determine the remote version
+    /// shall send the [Command Status](crate::event::Event::CommandStatus) event to the Host. When
+    /// the Link Manager or Link Layer has completed the sequence to determine the remote version
     /// information, the local Controller shall send a [Read Remote Version Information
     /// Complete](crate::event::Event::ReadRemoteVersionInformationComplete) event to the Host. That
     /// event contains the status of this command, and parameters describing the version and
@@ -128,8 +128,8 @@ pub trait Hci<E> {
     ///
     /// Note: No Command Complete event will be sent by the Controller to indicate that this command
     /// has been completed. Instead, the [Read Remote Version Information
-    /// Complete](crate::event::Event::ReadRemoteVersionInformationComplete) event will indicate that
-    /// this command has been completed.
+    /// Complete](crate::event::Event::ReadRemoteVersionInformationComplete) event will indicate
+    /// that this command has been completed.
     fn read_remote_version_information(
         &mut self,
         conn_handle: ConnectionHandle,
@@ -149,7 +149,8 @@ pub trait Hci<E> {
     ///
     /// # Generated Events
     ///
-    /// A [Command Complete](crate::event::command::ReturnParameters::SetEventMask) event is generated.
+    /// A [Command Complete](crate::event::command::ReturnParameters::SetEventMask) event is
+    /// generated.
     fn set_event_mask(&mut self, mask: EventFlags) -> nb::Result<(), E>;
 
     /// Resets the Controller and the Link Manager on the BR/EDR Controller, the PAL on an AMP
@@ -210,8 +211,8 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Comand Complete](crate::event::command::ReturnParameters::ReadLocalVersionInformation) event
-    /// is generated.
+    /// A [Comand Complete](crate::event::command::ReturnParameters::ReadLocalVersionInformation)
+    /// event is generated.
     fn read_local_version_information(&mut self) -> nb::Result<(), E>;
 
     /// Reads the list of HCI commands supported for the local Controller.
@@ -229,8 +230,8 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](crate::event::command::ReturnParameters::ReadLocalSupportedCommands) event
-    /// is generated.
+    /// A [Command Complete](crate::event::command::ReturnParameters::ReadLocalSupportedCommands)
+    /// event is generated.
     fn read_local_supported_commands(&mut self) -> nb::Result<(), E>;
 
     /// Requests a list of the supported features for the local BR/EDR Controller.
@@ -245,8 +246,8 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](crate::event::command::ReturnParameters::ReadLocalSupportedFeatures) event
-    /// is generated.
+    /// A [Command Complete](crate::event::command::ReturnParameters::ReadLocalSupportedFeatures)
+    /// event is generated.
     fn read_local_supported_features(&mut self) -> nb::Result<(), E>;
 
     /// On a BR/EDR Controller, this command reads the Bluetooth Controller address (BD_ADDR).
@@ -265,7 +266,8 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](crate::event::command::ReturnParameters::ReadBdAddr) event is generated.
+    /// A [Command Complete](crate::event::command::ReturnParameters::ReadBdAddr) event is
+    /// generated.
     fn read_bd_addr(&mut self) -> nb::Result<(), E>;
 
     /// Reads the Received Signal Strength Indication (RSSI) value from a Controller.
@@ -365,8 +367,8 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](crate::event::command::ReturnParameters::LeReadLocalSupportedFeatures) event
-    /// is generated.
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeReadLocalSupportedFeatures)
+    /// event is generated.
     fn le_read_local_supported_features(&mut self) -> nb::Result<(), E>;
 
     /// Sets the LE Random Device Address in the Controller.
@@ -425,8 +427,8 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](crate::event::command::ReturnParameters::LeSetAdvertisingParameters) event
-    /// is generated.
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeSetAdvertisingParameters)
+    /// event is generated.
     ///
     /// The Host shall not issue this command when advertising is enabled in the Controller; if it
     /// is the [Command Disallowed](Status::CommandDisallowed) error code shall be used.
@@ -445,8 +447,9 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](crate::event::command::ReturnParameters::LeReadAdvertisingChannelTxPower)
-    /// event is generated.
+    /// A [Command
+    /// Complete](crate::event::command::ReturnParameters::LeReadAdvertisingChannelTxPower) event is
+    /// generated.
     fn le_read_advertising_channel_tx_power(&mut self) -> nb::Result<(), E>;
 
     /// Sets the data used in advertising packets that have a data field.
@@ -492,8 +495,8 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](crate::event::command::ReturnParameters::LeSetScanResponseData) event is
-    /// generated.
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeSetScanResponseData) event
+    /// is generated.
     fn le_set_scan_response_data(&mut self, data: &[u8]) -> nb::Result<(), Error<E, Self::VS>>;
 
     /// Requests the Controller to start or stop advertising. The Controller manages the timing of
@@ -522,15 +525,15 @@ pub trait Hci<E> {
     /// If the [advertising type](AdvertisingInterval::for_type) is
     /// [`ConnectableDirectedHighDutyCycle`](AdvertisingType::ConnectableDirectedHighDutyCycle) and
     /// the directed advertising fails to create a connection, an [LE Connection
-    /// Complete](crate::event::Event::LeConnectionComplete) event shall be generated with the Status
-    /// code set to [`AdvertisingTimeout`](Status::AdvertisingTimeout).
+    /// Complete](crate::event::Event::LeConnectionComplete) event shall be generated with the
+    /// Status code set to [`AdvertisingTimeout`](Status::AdvertisingTimeout).
     ///
     /// If the [advertising type](AdvertisingInterval::for_type) is
     /// [`ConnectableUndirected`](AdvertisingType::ConnectableUndirected),
     /// [`ConnectableDirectedHighDutyCycle`](AdvertisingType::ConnectableDirectedHighDutyCycle), or
     /// [`ConnectableDirectedLowDutyCycle`](AdvertisingType::ConnectableDirectedLowDutyCycle) and a
-    /// connection is established, an [LE Connection Complete](crate::event::Event::LeConnectionComplete)
-    /// event shall be generated.
+    /// connection is established, an [LE Connection
+    /// Complete](crate::event::Event::LeConnectionComplete) event shall be generated.
     ///
     /// Note: There is a possible race condition if `enable` is set to false (Disable) and the
     /// [advertising type](AdvertisingInterval::for_type) is
@@ -577,21 +580,22 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](crate::event::command::ReturnParameters::LeSetAdvertisingEnable) event is
-    /// generated.
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeSetAdvertisingEnable) event
+    /// is generated.
     ///
     /// If [`advertising_type`](crate::types::AdvertisingInterval::_advertising_type) is
     /// [`ConnectableDirectedHighDutyCycle`](AdvertisingType::ConnectableDirectedHighDutyCycle) and
     /// the directed advertising fails to create a connection, an [LE Connection
-    /// Complete](crate::event::Event::LeConnectionComplete) event shall be generated with the Status
-    /// code set to [`AdvertisingTimeout`](Status::AdvertisingTimeout).
+    /// Complete](crate::event::Event::LeConnectionComplete) event shall be generated with the
+    /// Status code set to [`AdvertisingTimeout`](Status::AdvertisingTimeout).
     ///
     /// If [`advertising_type`](crate::types::AdvertisingInterval::_advertising_type) is
     /// [`ConnectableUndirected`](AdvertisingType::ConnectableUndirected),
     /// [`ConnectableDirectedHighDutyCycle`](AdvertisingType::ConnectableDirectedHighDutyCycle), or
     /// [`ConnectableDirectedLowDutyCycle`](AdvertisingType::ConnectableDirectedLowDutyCycle) and a
-    /// connection is created, an [LE Connection Complete](crate::event::Event::LeConnectionComplete) or
-    /// LE Enhanced Connection Complete event shall be generated.
+    /// connection is created, an [LE Connection
+    /// Complete](crate::event::Event::LeConnectionComplete) or LE Enhanced Connection Complete
+    /// event shall be generated.
     ///
     /// Note: There is a possible race condition if `enable` is set to false (Disable) and
     /// [`advertising_type`](crate::types::AdvertisingInterval::_advertising_type) is
@@ -649,9 +653,10 @@ pub trait Hci<E> {
     /// A [Command Complete](crate::event::command::ReturnParameters::LeSetScanEnable) event is
     /// generated.
     ///
-    /// Zero or more [LE Advertising Reports](crate::event::Event::LeAdvertisingReport) are generated by
-    /// the Controller based on advertising packets received and the duplicate filtering. More than
-    /// one advertising packet may be reported in each LE Advertising Report event.
+    /// Zero or more [LE Advertising Reports](crate::event::Event::LeAdvertisingReport) are
+    /// generated by the Controller based on advertising packets received and the duplicate
+    /// filtering. More than one advertising packet may be reported in each LE Advertising Report
+    /// event.
     fn le_set_scan_enable(&mut self, enable: bool, filter_duplicates: bool) -> nb::Result<(), E>;
 
     /// Creates a Link Layer connection to a connectable advertiser.
@@ -668,10 +673,10 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// The Controller sends the [Command Status](crate::event::Event::CommandStatus) event to the Host
-    /// when the event is received.  An [LE Connection
-    /// Complete](crate::event::Event::LeConnectionComplete) event shall be generated when a connection
-    /// is created or the connection creation procedure is cancelled.
+    /// The Controller sends the [Command Status](crate::event::Event::CommandStatus) event to the
+    /// Host when the event is received.  An [LE Connection
+    /// Complete](crate::event::Event::LeConnectionComplete) event shall be generated when a
+    /// connection is created or the connection creation procedure is cancelled.
     ///
     /// Note: No Command Complete event is sent by the Controller to indicate that this command has
     /// been completed. Instead, the LE Connection Complete event indicates that this command has
@@ -693,16 +698,16 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](crate::event::command::ReturnParameters::LeCreateConnectionCancel) event
-    /// shall be generated.
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeCreateConnectionCancel)
+    /// event shall be generated.
     ///
     /// If this command is sent to the Controller without a preceding
     /// [`le_create_connection`](Hci::le_create_connection) command, the Controller shall return a
-    /// [Command Complete](crate::event::command::ReturnParameters::LeCreateConnectionCancel) event with
-    /// the error code [`CommandDisallowed`](Status::CommandDisallowed).
+    /// [Command Complete](crate::event::command::ReturnParameters::LeCreateConnectionCancel) event
+    /// with the error code [`CommandDisallowed`](Status::CommandDisallowed).
     ///
-    /// The [LE Connection Complete](crate::event::Event::LeConnectionComplete) event with the error code
-    /// [`UnknownConnectionId`](Status::UnknownConnectionId) shall be sent after the Command
+    /// The [LE Connection Complete](crate::event::Event::LeConnectionComplete) event with the error
+    /// code [`UnknownConnectionId`](Status::UnknownConnectionId) shall be sent after the Command
     /// Complete event for this command if the cancellation was successful.
     fn le_create_connection_cancel(&mut self) -> nb::Result<(), E>;
 
@@ -760,9 +765,9 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](crate::event::command::ReturnParameters::LeAddDeviceToWhiteList) event is
-    /// generated. When a Controller cannot add a device to the White List because there is no space
-    /// available, it shall return [`OutOfMemory`](Status::OutOfMemory).
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeAddDeviceToWhiteList) event
+    /// is generated. When a Controller cannot add a device to the White List because there is no
+    /// space available, it shall return [`OutOfMemory`](Status::OutOfMemory).
     fn le_add_device_to_white_list(&mut self, addr: crate::BdAddrType) -> nb::Result<(), E>;
 
     /// Adds anonymous devices sending advertisements to the white list stored in the Controller.
@@ -781,8 +786,8 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](crate::event::command::ReturnParameters::LeAddDeviceToWhiteList) event is
-    /// generated.  When a Controller cannot add a device to the White List because there is no
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeAddDeviceToWhiteList) event
+    /// is generated.  When a Controller cannot add a device to the White List because there is no
     /// space available, it shall return [`OutOfMemory`](Status::OutOfMemory).
     #[cfg(feature = "version-5-0")]
     fn le_add_anon_advertising_devices_to_white_list(&mut self) -> nb::Result<(), E>;
@@ -803,8 +808,8 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](crate::event::command::ReturnParameters::LeRemoveDeviceFromWhiteList) event
-    /// is generated.
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeRemoveDeviceFromWhiteList)
+    /// event is generated.
     fn le_remove_device_from_white_list(&mut self, addr: crate::BdAddrType) -> nb::Result<(), E>;
 
     /// Removes anonymous devices sending advertisements from the white list stored in the
@@ -824,8 +829,8 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](crate::event::command::ReturnParameters::LeRemoveDeviceFromWhiteList) event
-    /// is generated.
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeRemoveDeviceFromWhiteList)
+    /// event is generated.
     #[cfg(feature = "version-5-0")]
     fn le_remove_anon_advertising_devices_from_white_list(&mut self) -> nb::Result<(), E>;
 
@@ -845,8 +850,8 @@ pub trait Hci<E> {
     ///
     /// When the Controller receives the command, the Controller sends the [Command
     /// Status](crate::event::Event::CommandStatus) event to the Host. The [LE Connection Update
-    /// Complete](crate::event::Event::LeConnectionUpdateComplete) event shall be generated after the
-    /// connection parameters have been applied by the Controller.
+    /// Complete](crate::event::Event::LeConnectionUpdateComplete) event shall be generated after
+    /// the connection parameters have been applied by the Controller.
     ///
     /// Note: a Command Complete event is not sent by the Controller to indicate that this command
     /// has been completed. Instead, the LE Connection Update Complete event indicates that this
@@ -873,8 +878,9 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](crate::event::command::ReturnParameters::LeSetHostChannelClassification)
-    /// event is generated.
+    /// A [Command
+    /// Complete](crate::event::command::ReturnParameters::LeSetHostChannelClassification) event is
+    /// generated.
     fn le_set_host_channel_classification(
         &mut self,
         channels: crate::ChannelClassification,
@@ -911,13 +917,14 @@ pub trait Hci<E> {
     /// # Generated events
     ///
     /// When the Controller receives this command, the Controller shall send the [Command
-    /// Status](`crate::event::Event::CommandStatus) event to the Host. When the Controller has completed
-    /// the procedure to determine the remote features, the Controller shall send a [LE Read Remote
-    /// Used Features Complete](crate::event::Event::LeReadRemoteUsedFeaturesComplete) event to the Host.
+    /// Status](`crate::event::Event::CommandStatus) event to the Host. When the Controller has
+    /// completed the procedure to determine the remote features, the Controller shall send a [LE
+    /// Read Remote Used Features Complete](crate::event::Event::LeReadRemoteUsedFeaturesComplete)
+    /// event to the Host.
     ///
     /// The [LE Read Remote Used Features
-    /// Complete](crate::event::Event::LeReadRemoteUsedFeaturesComplete) event contains the status of
-    /// this command, and the parameter describing the used features of the remote device.
+    /// Complete](crate::event::Event::LeReadRemoteUsedFeaturesComplete) event contains the status
+    /// of this command, and the parameter describing the used features of the remote device.
     ///
     /// Note: A Command Complete event is not sent by the Controller to indicate that this command
     /// has been completed. Instead, the LE Read Remote Used Features Complete event indicates that
@@ -977,20 +984,20 @@ pub trait Hci<E> {
     /// # Generated events
     ///
     /// When the Controller receives this command it shall send the [Command
-    /// Status](crate::event::Event::CommandStatus) event to the Host. If the connection is not encrypted
-    /// when this command is issued, an [Encryption Change](crate::event::Event::EncryptionChange) event
-    /// shall occur when encryption has been started for the connection. If the connection is
-    /// encrypted when this command is issued, an [Encryption Key Refresh
-    /// Complete](crate::event::Event::EncryptionKeyRefreshComplete) event shall occur when encryption
-    /// has been resumed.
+    /// Status](crate::event::Event::CommandStatus) event to the Host. If the connection is not
+    /// encrypted when this command is issued, an [Encryption
+    /// Change](crate::event::Event::EncryptionChange) event shall occur when encryption has been
+    /// started for the connection. If the connection is encrypted when this command is issued, an
+    /// [Encryption Key Refresh Complete](crate::event::Event::EncryptionKeyRefreshComplete) event
+    /// shall occur when encryption has been resumed.
     ///
     /// Note: A Command Complete event is not sent by the Controller to indicate that this command
     /// has been completed. Instead, the Encryption Change or Encryption Key Refresh Complete events
     /// indicate that this command has been completed.
     fn le_start_encryption(&mut self, params: &EncryptionParameters) -> nb::Result<(), E>;
 
-    /// Replies to an [LE Long Term Key Request](crate::event::Event::LeLongTermKeyRequest) event from
-    /// the Controller, and specifies the long term key parameter that shall be used for this
+    /// Replies to an [LE Long Term Key Request](crate::event::Event::LeLongTermKeyRequest) event
+    /// from the Controller, and specifies the long term key parameter that shall be used for this
     /// connection handle.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.25.
@@ -1001,16 +1008,16 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](crate::event::command::ReturnParameters::LeLongTermKeyRequestReply) event is
-    /// generated.
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeLongTermKeyRequestReply)
+    /// event is generated.
     fn le_long_term_key_request_reply(
         &mut self,
         conn_handle: ConnectionHandle,
         key: &EncryptionKey,
     ) -> nb::Result<(), E>;
 
-    /// Replies to an [LE Long Term Key Request](crate::event::Event::LeLongTermKeyRequest) event from
-    /// the Controller if the Host cannot provide a Long Term Key for this connection handle.
+    /// Replies to an [LE Long Term Key Request](crate::event::Event::LeLongTermKeyRequest) event
+    /// from the Controller if the Host cannot provide a Long Term Key for this connection handle.
     ///
     /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.26.
     ///
@@ -1020,8 +1027,9 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](crate::event::command::ReturnParameters::LeLongTermKeyRequestNegativeReply)
-    /// event is generated.
+    /// A [Command
+    /// Complete](crate::event::command::ReturnParameters::LeLongTermKeyRequestNegativeReply) event
+    /// is generated.
     fn le_long_term_key_request_negative_reply(
         &mut self,
         conn_handle: ConnectionHandle,
@@ -1037,8 +1045,8 @@ pub trait Hci<E> {
     ///
     /// # Generated events
     ///
-    /// A [Command Complete](crate::event::command::ReturnParameters::LeReadSupportedStates) event is
-    /// generated.
+    /// A [Command Complete](crate::event::command::ReturnParameters::LeReadSupportedStates) event
+    /// is generated.
     fn le_read_supported_states(&mut self) -> nb::Result<(), E>;
 
     /// Starts a test where the DUT receives test reference packets at a fixed interval. The tester

@@ -44,8 +44,8 @@ pub struct CommandHeader {
 
 /// Trait for reading packets from the controller.
 ///
-/// Implementors must also implement [`crate::host::Hci`], which provides all of the functions to write
-/// commands to the controller. This trait adds the ability to read packets back from the
+/// Implementors must also implement [`crate::host::Hci`], which provides all of the functions to
+/// write commands to the controller. This trait adds the ability to read packets back from the
 /// controller.
 ///
 /// Must be specialized for communication errors (`E`), vendor-specific events (`Vendor`), and

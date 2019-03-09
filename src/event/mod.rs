@@ -530,8 +530,8 @@ pub struct RemoteVersionInformation<VS> {
     pub status: Status<VS>,
 
     /// Connection Handle which was used for the
-    /// [`read_remote_version_information`](crate::host::Hci::read_remote_version_information) command.
-    /// The connection handle shall be for an ACL connection.
+    /// [`read_remote_version_information`](crate::host::Hci::read_remote_version_information)
+    /// command.  The connection handle shall be for an ACL connection.
     pub conn_handle: ConnectionHandle,
 
     /// Version of the Current LMP in the remote Controller. See [LMP] version and [Link Layer]

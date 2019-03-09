@@ -51,14 +51,13 @@ where
     ///
     /// # Errors
     ///
-    /// - [`BadLength`](crate::event::Error::BadLength) if the buffer is not large enough to contain a
-    ///   parameter length (1 byte) and opcode (2 bytes)
-    /// - Returns errors that may be generated when deserializing specific events. This may be
-    ///   [`BadLength`](crate::event::Error::BadLength), which indicates the buffer was not large enough
-    ///   to contain all of the required data for the event. Some commands define other errors that
-    ///   indicate parameter values are invalid. The error type must be specialized on potential
-    ///   vendor-specific errors, though vendor-specific errors are never returned by this
-    ///   function.
+    /// - [`BadLength`](crate::event::Error::BadLength) if the buffer is not large enough to contain
+    /// a parameter length (1 byte) and opcode (2 bytes) - Returns errors that may be generated when
+    /// deserializing specific events. This may be [`BadLength`](crate::event::Error::BadLength),
+    /// which indicates the buffer was not large enough to contain all of the required data for the
+    /// event. Some commands define other errors that indicate parameter values are invalid. The
+    /// error type must be specialized on potential vendor-specific errors, though vendor-specific
+    /// errors are never returned by this function.
     pub fn new(bytes: &[u8]) -> Result<CommandComplete<V>, crate::event::Error<V::Error>> {
         require_len_at_least!(bytes, 3);
 
@@ -178,8 +177,8 @@ where
     }
 }
 
-/// Commands that may generate the [Command Complete](crate::event::Event::CommandComplete) event.  If
-/// the commands have defined return parameters, they are included in this enum.
+/// Commands that may generate the [Command Complete](crate::event::Event::CommandComplete) event.
+/// If the commands have defined return parameters, they are included in this enum.
 #[derive(Copy, Clone, Debug)]
 pub enum ReturnParameters<V>
 where
@@ -219,14 +218,16 @@ where
     /// Status returned by the [LE Set Event Mask](crate::host::Hci::le_set_event_mask) command.
     LeSetEventMask(Status<V::Status>),
 
-    /// Parameters returned by the [LE Read Buffer Size](crate::host::Hci::le_read_buffer_size) command.
+    /// Parameters returned by the [LE Read Buffer Size](crate::host::Hci::le_read_buffer_size)
+    /// command.
     LeReadBufferSize(LeReadBufferSize<V::Status>),
 
     /// Parameters returned by the [LE Read Local Supported
     /// Features](crate::host::Hci::le_read_local_supported_features) command.
     LeReadLocalSupportedFeatures(LeSupportedFeatures<V::Status>),
 
-    /// Status returned by the [LE Set Random Address](crate::host::Hci::le_set_random_address) command.
+    /// Status returned by the [LE Set Random Address](crate::host::Hci::le_set_random_address)
+    /// command.
     LeSetRandomAddress(Status<V::Status>),
 
     /// Status returned by the [LE Set Advertising
@@ -241,8 +242,8 @@ where
     /// command.
     LeSetAdvertisingData(Status<V::Status>),
 
-    /// Status returned by the [LE Set Scan Response Data](crate::host::Hci::le_set_scan_response_data)
-    /// command.
+    /// Status returned by the [LE Set Scan Response
+    /// Data](crate::host::Hci::le_set_scan_response_data) command.
     LeSetScanResponseData(Status<V::Status>),
 
     /// Status returned by the [LE Set Advertise Enable](crate::host::Hci::le_set_advertise_enable)
@@ -250,8 +251,8 @@ where
     #[cfg(not(feature = "version-5-0"))]
     LeSetAdvertiseEnable(Status<V::Status>),
 
-    /// Status returned by the [LE Set Advertising Enable](crate::host::Hci::le_set_advertising_enable)
-    /// command.
+    /// Status returned by the [LE Set Advertising
+    /// Enable](crate::host::Hci::le_set_advertising_enable) command.
     #[cfg(feature = "version-5-0")]
     LeSetAdvertisingEnable(Status<V::Status>),
 
@@ -285,7 +286,8 @@ where
     /// Classification](crate::host::Hci::le_set_host_channel_classification) command.
     LeSetHostChannelClassification(Status<V::Status>),
 
-    /// Parameters returned by the [LE Read Channel Map](crate::host::Hci::le_read_channel_map) command.
+    /// Parameters returned by the [LE Read Channel Map](crate::host::Hci::le_read_channel_map)
+    /// command.
     LeReadChannelMap(ChannelMapParameters<V::Status>),
 
     /// Parameters returned by the [LE Encrypt](crate::host::Hci::le_encrypt) command.
@@ -326,7 +328,8 @@ where
     bytes[0].try_into().map_err(super::rewrap_bad_status)
 }
 
-/// Values returned by the [Read Transmit Power Level](crate::host::Hci::read_tx_power_level) command.
+/// Values returned by the [Read Transmit Power Level](crate::host::Hci::read_tx_power_level)
+/// command.
 #[derive(Copy, Clone, Debug)]
 pub struct TxPowerLevel<VS> {
     /// Did the command fail, and if so, how?
@@ -353,8 +356,8 @@ where
     })
 }
 
-/// Values returned by [Read Local Version Information](crate::host::Hci::read_local_version_information)
-/// command.
+/// Values returned by [Read Local Version
+/// Information](crate::host::Hci::read_local_version_information) command.
 #[derive(Copy, Clone, Debug)]
 pub struct LocalVersionInfo<VS> {
     /// Did the command fail, and if so, how?
@@ -1529,8 +1532,8 @@ where
     })
 }
 
-/// Parameters returned by the [LE LTK Request Reply](crate::host::Hci::le_long_term_key_request_reply)
-/// command.
+/// Parameters returned by the [LE LTK Request
+/// Reply](crate::host::Hci::le_long_term_key_request_reply) command.
 #[derive(Copy, Clone, Debug)]
 pub struct LeLongTermRequestReply<VS> {
     /// Did the command fail, and if so, how?
@@ -1554,8 +1557,8 @@ where
     })
 }
 
-/// Parameters returned by the [LE Read Supported States](crate::host::Hci::le_read_supported_states)
-/// command.
+/// Parameters returned by the [LE Read Supported
+/// States](crate::host::Hci::le_read_supported_states) command.
 #[derive(Copy, Clone, Debug)]
 pub struct LeReadSupportedStates<VS> {
     /// Did the command fail, and if so, how?
