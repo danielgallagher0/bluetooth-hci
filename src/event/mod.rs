@@ -29,8 +29,8 @@ macro_rules! require_len_at_least {
 }
 
 /// Converts a specific generic enum value between specializations.  This is used below to convert
-/// from [`Error<!>`] to [`Error<VendorError>`] in various places where only one error value is
-/// possible (such as from `try_into`).
+/// from [`Error<NeverError>`] to [`Error<VendorError>`] in various places where only one error
+/// value is possible (such as from `try_into`).
 macro_rules! self_convert {
     ($val:path) => {
         |e| {
@@ -371,8 +371,13 @@ pub enum LinkType {
     Acl,
 }
 
+/// [TODO](https://doc.rust-lang.org/std/primitive.never.html): Replace NeverError with the
+/// language's never type (!).
+#[derive(Debug)]
+pub enum NeverError {}
+
 impl TryFrom<u8> for LinkType {
-    type Error = Error<!>;
+    type Error = Error<NeverError>;
 
     fn try_from(value: u8) -> Result<LinkType, Self::Error> {
         match value {
@@ -403,7 +408,7 @@ where
     })
 }
 
-fn try_into_encryption_enabled(value: u8) -> Result<bool, Error<!>> {
+fn try_into_encryption_enabled(value: u8) -> Result<bool, Error<NeverError>> {
     match value {
         0 => Ok(false),
         1 => Ok(true),
@@ -496,7 +501,7 @@ pub enum Encryption {
 }
 
 impl TryFrom<u8> for Encryption {
-    type Error = Error<!>;
+    type Error = Error<NeverError>;
     fn try_from(value: u8) -> Result<Encryption, Self::Error> {
         match value {
             0x00 => Ok(Encryption::Off),
@@ -825,7 +830,7 @@ pub enum ConnectionRole {
 }
 
 impl TryFrom<u8> for ConnectionRole {
-    type Error = Error<!>;
+    type Error = Error<NeverError>;
     fn try_from(value: u8) -> Result<ConnectionRole, Self::Error> {
         match value {
             0 => Ok(ConnectionRole::Central),
@@ -859,7 +864,7 @@ pub enum CentralClockAccuracy {
 }
 
 impl TryFrom<u8> for CentralClockAccuracy {
-    type Error = Error<!>;
+    type Error = Error<NeverError>;
     fn try_from(value: u8) -> Result<CentralClockAccuracy, Self::Error> {
         match value {
             0 => Ok(CentralClockAccuracy::Ppm500),
@@ -982,7 +987,7 @@ impl Debug for LeAdvertisingReport {
 /// Iterator over the individual LE advertisement responses in the [LE Advertising
 /// Report](Event::LeAdvertisingReport) event.
 pub struct LeAdvertisingReportIterator<'a> {
-    inner_iter: LeAdvertisingReportInnerIterator<'a, !>,
+    inner_iter: LeAdvertisingReportInnerIterator<'a, NeverError>,
 }
 
 struct LeAdvertisingReportInnerIterator<'a, VE> {
@@ -1075,7 +1080,7 @@ pub enum AdvertisementEvent {
 }
 
 impl TryFrom<u8> for AdvertisementEvent {
-    type Error = Error<!>;
+    type Error = Error<NeverError>;
 
     fn try_from(value: u8) -> Result<AdvertisementEvent, Self::Error> {
         match value {

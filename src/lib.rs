@@ -75,8 +75,6 @@
 //! [`bluenrg`]: https://github.com/danielgallagher0/bluenrg
 
 #![no_std]
-#![feature(const_fn)]
-#![feature(never_type)]
 #![deny(missing_docs)]
 
 #[macro_use]
@@ -146,7 +144,6 @@ pub trait Controller {
     ///
     /// // host calls:
     ///
-    /// # #![feature(try_from)]
     /// # extern crate nb;
     /// # extern crate bluetooth_hci;
     /// # use bluetooth_hci::Controller as HciController;
@@ -238,7 +235,6 @@ pub trait Controller {
     /// read. For example, the code to read an HCI event looks like this:
     ///
     /// ```
-    /// # #![feature(try_from)]
     /// # extern crate nb;
     /// # extern crate bluetooth_hci;
     /// # use bluetooth_hci::Controller as HciController;

@@ -1045,7 +1045,7 @@ impl Debug for CommandFlags {
 }
 
 impl<'a> TryFrom<&'a [u8]> for CommandFlags {
-    type Error = crate::event::Error<!>;
+    type Error = crate::event::Error<crate::event::NeverError>;
     fn try_from(value: &[u8]) -> Result<CommandFlags, Self::Error> {
         require_len!(value, COMMAND_FLAGS_SIZE);
 
