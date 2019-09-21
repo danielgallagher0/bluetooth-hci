@@ -239,6 +239,7 @@ pub trait Controller {
     /// # extern crate bluetooth_hci;
     /// # use bluetooth_hci::Controller as HciController;
     /// # struct Controller;
+    /// # #[derive(Debug)]
     /// # struct Error;
     /// # struct Header;
     /// # struct Vendor;
@@ -293,10 +294,7 @@ pub trait Controller {
     /// #         Ok(0)
     /// #     }
     /// # }
-    /// # fn main() {
-    /// # do_stuff();
-    /// # }
-    /// # fn do_stuff() -> nb::Result<(), Error> {
+    /// # fn main() -> nb::Result<(), Error> {
     /// # const PACKET_TYPE_HCI_EVENT: u8 = 4;
     /// # let mut controller = Controller;
     /// const MAX_EVENT_LENGTH: usize = 255;

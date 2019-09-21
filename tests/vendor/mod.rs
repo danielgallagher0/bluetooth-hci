@@ -101,7 +101,7 @@ impl RecordingSink {
         }
     }
 
-    pub fn as_controller(&mut self) -> &mut Hci<RecordingSinkError, VS = VendorStatus> {
-        self as &mut Hci<RecordingSinkError, VS = VendorStatus>
+    pub fn as_controller(&mut self) -> &mut dyn Hci<RecordingSinkError, VS = VendorStatus> {
+        self as &mut dyn Hci<RecordingSinkError, VS = VendorStatus>
     }
 }
