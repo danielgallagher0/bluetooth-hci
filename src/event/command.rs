@@ -52,12 +52,13 @@ where
     /// # Errors
     ///
     /// - [`BadLength`](crate::event::Error::BadLength) if the buffer is not large enough to contain
-    /// a parameter length (1 byte) and opcode (2 bytes) - Returns errors that may be generated when
-    /// deserializing specific events. This may be [`BadLength`](crate::event::Error::BadLength),
-    /// which indicates the buffer was not large enough to contain all of the required data for the
-    /// event. Some commands define other errors that indicate parameter values are invalid. The
-    /// error type must be specialized on potential vendor-specific errors, though vendor-specific
-    /// errors are never returned by this function.
+    ///   a parameter length (1 byte) and opcode (2 bytes)
+    /// - Returns errors that may be generated when deserializing specific events. This may be
+    ///   [`BadLength`](crate::event::Error::BadLength), which indicates the buffer was not large
+    ///   enough to contain all of the required data for the event. Some commands define other
+    ///   errors that indicate parameter values are invalid. The error type must be specialized on
+    ///   potential vendor-specific errors, though vendor-specific errors are never returned by this
+    ///   function.
     pub fn new(bytes: &[u8]) -> Result<CommandComplete<V>, crate::event::Error<V::Error>> {
         require_len_at_least!(bytes, 3);
 
