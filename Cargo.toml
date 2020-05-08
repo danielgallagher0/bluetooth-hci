@@ -11,8 +11,8 @@ repository = "https://github.com/danielgallagher0/bluetooth-hci"
 readme = "README.md"
 
 [dependencies]
-nb = "0.1.1"
-bitflags = "1.0"
+nb = "0.1.2"
+bitflags = "1.2"
 
 [dependencies.byteorder]
 version = "1"
