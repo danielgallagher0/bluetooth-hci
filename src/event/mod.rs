@@ -110,6 +110,12 @@ where
     /// Vol 2, Part E, Section 7.7.65.5
     LeLongTermKeyRequest(LeLongTermKeyRequest),
 
+    /// Vol 2, Part E, Section 7.7.65.7
+    LeDataLengthChangeEvent(LeDataLengthChangeEvent),
+
+    /// Vol 2, Part E, Section 7.7.65.12
+    LePhyUpdateComplete(LePhyUpdateComplete<V::Status>),
+
     /// Vendor-specific events (opcode 0xFF)
     Vendor(V),
 }
@@ -235,6 +241,10 @@ pub enum Error<V> {
     /// bytes of flags.
     BadRemoteUsedFeatureFlag(u64),
 
+    /// For the [LE PHY Update Complete](Event::LePhyUpdateComplete) event: The PHY type was not
+    /// recognized. Includes the unrecognized byte.
+    BadPhy(u8),
+
     /// A vendor-specific error was detected when deserializing a vendor-specific event.
     Vendor(V),
 }
@@ -338,6 +348,12 @@ where
             to_le_read_remote_used_features_complete(payload)?,
         )),
         0x05 => Ok(Event::LeLongTermKeyRequest(to_le_ltk_request(payload)?)),
+        0x07 => Ok(Event::LeDataLengthChangeEvent(
+            to_le_data_length_change_event(payload)?,
+        )),
+        0x0C => Ok(Event::LePhyUpdateComplete(to_le_phy_update_complete(
+            payload,
+        )?)),
         _ => Err(Error::UnknownEvent(payload[0])),
     }
 }
@@ -1211,5 +1227,105 @@ fn to_le_ltk_request<VE>(payload: &[u8]) -> Result<LeLongTermKeyRequest, Error<V
         conn_handle: ConnectionHandle(LittleEndian::read_u16(&payload[1..])),
         random_value: LittleEndian::read_u64(&payload[3..]),
         encrypted_diversifier: LittleEndian::read_u16(&payload[11..]),
+    })
+}
+
+/// Indicates that either the maximum Payload length of a LL DATA PDU
+/// has changed or the maximum transmission time of packets which contain
+/// LL Data PDUs.
+///
+/// This event is only generated if any of the values have changed.
+///
+/// Defined in Vol 2, Part E, Section 7.7.65.7 of the spec.
+#[derive(Copy, Clone, Debug)]
+pub struct LeDataLengthChangeEvent {
+    /// Connection handle to be used to identify a connection between two Bluetooth devices.
+    pub conn_handle: ConnectionHandle,
+    /// Maximum number of octets in a PDU that the lcoal controller
+    /// will send.
+    pub max_tx_octets: u16,
+    /// Maximum time that the local controller will take to send a link
+    /// layer packet.
+    pub max_tx_time: u16,
+    /// Maximum number of octets in a PDU that the local controller
+    /// expects to receive.
+    pub max_rx_octets: u16,
+    /// Maximum time that the local controller expects to take to receive a link
+    /// layer packet.
+    pub max_rx_time: u16,
+}
+
+fn to_le_data_length_change_event<VE>(
+    payload: &[u8],
+) -> Result<LeDataLengthChangeEvent, Error<VE>> {
+    require_len!(payload, 11);
+
+    Ok(LeDataLengthChangeEvent {
+        conn_handle: ConnectionHandle(LittleEndian::read_u16(&payload[1..])),
+
+        max_tx_octets: LittleEndian::read_u16(&payload[3..]),
+        max_tx_time: LittleEndian::read_u16(&payload[5..]),
+
+        max_rx_octets: LittleEndian::read_u16(&payload[7..]),
+        max_rx_time: LittleEndian::read_u16(&payload[9..]),
+    })
+}
+
+/// PHY types supported by Bluetooth LE.
+///
+/// See Vol 1, Part A, Section 3.2.2 of the spec.
+#[derive(Copy, Clone, Debug)]
+pub enum Phy {
+    /// The LE 1M PHY supports a datarate of 1 MBit/s.
+    Le1M,
+    /// The LE 2M PHY supports a datarate of 2 MBit/s.
+    Le2M,
+    /// The LE Coded PHY supports a datarate of either 125 kBit/s or 500 kBit/s.
+    LeCoded,
+}
+
+impl TryFrom<u8> for Phy {
+    type Error = Error<NeverError>;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Phy::Le1M),
+            1 => Ok(Phy::Le2M),
+            2 => Ok(Phy::LeCoded),
+            other => Err(Error::BadPhy(other)),
+        }
+    }
+}
+
+/// Indicates that the controller has changed the transmitter
+/// or receiver PHY in use.
+///
+/// This is either sent in response to a LE Set Phy command,
+/// or when the controller does an autonomous PHY update.
+///
+/// Defined in Vol 4, Part E, Section 7.7.65.12 of the spec.
+#[derive(Copy, Clone, Debug)]
+pub struct LePhyUpdateComplete<VS> {
+    /// Connection handle to be used to identify a connection between two Bluetooth devices.
+    pub conn_handle: ConnectionHandle,
+    /// Status of the PHY update.
+    pub status: Status<VS>,
+    /// PHY used for transmission.
+    pub tx_phy: Phy,
+    /// PHY used for reception.
+    pub rx_phy: Phy,
+}
+
+fn to_le_phy_update_complete<VS, VE>(payload: &[u8]) -> Result<LePhyUpdateComplete<VS>, Error<VE>>
+where
+    Status<VS>: TryFrom<u8, Error = BadStatusError>,
+{
+    require_len!(payload, 6);
+
+    Ok(LePhyUpdateComplete {
+        status: payload[1].try_into().map_err(rewrap_bad_status)?,
+        conn_handle: ConnectionHandle(LittleEndian::read_u16(&payload[2..])),
+        tx_phy: Phy::try_from(payload[4]).map_err(self_convert!(Error::BadPhy))?,
+        rx_phy: Phy::try_from(payload[5]).map_err(self_convert!(Error::BadPhy))?,
     })
 }
