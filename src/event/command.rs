@@ -168,7 +168,7 @@ where
                     return Err(crate::event::Error::UnknownOpcode(other));
                 }
 
-                ReturnParameters::Vendor(V::ReturnParameters::new(&bytes)?)
+                ReturnParameters::Vendor(V::ReturnParameters::new(bytes)?)
             }
         };
         Ok(CommandComplete::<V> {
@@ -1504,7 +1504,7 @@ where
     let mut block = [0; 16];
     block.copy_from_slice(&bytes[1..]);
     Ok(EncryptedReturnParameters {
-        status: to_status(&bytes)?,
+        status: to_status(bytes)?,
         encrypted_data: EncryptedBlock(block),
     })
 }
@@ -1526,7 +1526,7 @@ where
     require_len!(bytes, 9);
 
     Ok(LeRandom {
-        status: to_status(&bytes)?,
+        status: to_status(bytes)?,
         random_number: LittleEndian::read_u64(&bytes[1..]),
     })
 }
@@ -1551,7 +1551,7 @@ where
     require_len!(bytes, 3);
 
     Ok(LeLongTermRequestReply {
-        status: to_status(&bytes)?,
+        status: to_status(bytes)?,
         conn_handle: ConnectionHandle(LittleEndian::read_u16(&bytes[1..])),
     })
 }

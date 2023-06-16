@@ -1173,7 +1173,7 @@ where
     let mut header = [0; MAX_HEADER_LENGTH];
     Header::new(opcode, params.len()).copy_into_slice(&mut header);
 
-    controller.write(&header[..Header::HEADER_LENGTH], &params)
+    controller.write(&header[..Header::HEADER_LENGTH], params)
 }
 
 fn set_outbound_data<Header, T, E, VS>(

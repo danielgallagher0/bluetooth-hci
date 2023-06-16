@@ -4,7 +4,6 @@ extern crate bluetooth_hci as hci;
 extern crate nb;
 
 use hci::host::*;
-use std;
 
 pub struct RecordingSink {
     pub written_data: Vec<u8>,
@@ -43,9 +42,9 @@ impl std::convert::TryFrom<u8> for VendorStatus {
     }
 }
 
-impl std::convert::Into<u8> for VendorStatus {
-    fn into(self) -> u8 {
-        match self {
+impl std::convert::From<VendorStatus> for u8 {
+    fn from(val: VendorStatus) -> Self {
+        match val {
             VendorStatus::FourFive => 0x45,
             VendorStatus::FiveZero => 0x50,
         }

@@ -22,7 +22,7 @@ fn connection_complete() {
                 hci::BdAddr([0x03, 0x04, 0x05, 0x06, 0x07, 0x08])
             );
             assert_eq!(event.link_type, LinkType::Sco);
-            assert_eq!(event.encryption_enabled, false);
+            assert!(!event.encryption_enabled);
         }
         other => panic!("Did not get connection complete event: {:?}", other),
     }

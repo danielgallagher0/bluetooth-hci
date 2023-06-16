@@ -9,28 +9,28 @@ pub enum Advertisement<'a> {
     /// Complete local name of the device.
     CompleteLocalName(&'a str),
     /// Service data with 16-bit UUID.
-    /// 
+    ///
     /// The first parameter is the UUID, the second parameter is the payload.
-    /// 
+    ///
     /// The payload may be up to 27 bytes for legacy advertising mode.
     ServiceData16BitUuid(u16, &'a [u8]),
     /// Service data with 32-bit UUID
     ///
     /// The first parameter is the UUID, the second parameter is the payload.
-    /// 
+    ///
     /// The payload may be up to 25 bytes for legacy advertising mode.
     ServiceData32BitUuid(u32, &'a [u8]),
     /// Service data with 128-bit UUID
-    /// 
+    ///
     /// The first parameter is the UUID, the second parameter is the payload.
-    /// 
+    ///
     /// The payload may be up to 13 bytes for legacy advertising mode.
     ServiceData128BitUuid(u128, &'a [u8]),
     /// Manufacturer-specific data
     ///
     /// The first parameter is the manufacturer ID, the second parameter is the
     /// payload.
-    /// 
+    ///
     /// The payload may be up to 27 bytes for legacy advertising mode.
     ManufacturerSpecificData(u16, &'a [u8]),
 }
@@ -39,6 +39,7 @@ impl Advertisement<'_> {
     /// Gets the length of the advertisement payload, in bytes.
     ///
     /// This includes the length byte itself.
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         use Advertisement::*;
         2 + match self {
@@ -65,7 +66,7 @@ impl Advertisement<'_> {
     /// of bytes written.
     ///
     /// The maximum length of advertisements in legacy mode is 31 bytes.
-    /// 
+    ///
     /// `bytes` must be at least [Self::len()] bytes.
     pub fn copy_into_slice(&self, bytes: &mut [u8]) -> usize {
         use Advertisement::*;

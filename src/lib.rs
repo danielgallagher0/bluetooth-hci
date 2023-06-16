@@ -83,7 +83,7 @@ extern crate byteorder;
 extern crate nb;
 
 #[macro_use]
-mod bitflag_array;
+pub mod bitflag_array;
 
 pub mod event;
 pub mod host;
@@ -606,12 +606,12 @@ where
     }
 }
 
-impl<V> core::convert::Into<u8> for Status<V>
+impl<V> core::convert::From<Status<V>> for u8
 where
     V: core::convert::Into<u8>,
 {
-    fn into(self) -> u8 {
-        match self {
+    fn from(val: Status<V>) -> Self {
+        match val {
             Status::Success => 0x00,
             Status::UnknownCommand => 0x01,
             Status::UnknownConnectionId => 0x02,
@@ -692,7 +692,7 @@ where
 
                 #[cfg(not(feature = "version-5-0"))]
                 {
-                    if let Status::Vendor(v) = self {
+                    if let Status::Vendor(v) = val {
                         v.into()
                     } else {
                         0xFF

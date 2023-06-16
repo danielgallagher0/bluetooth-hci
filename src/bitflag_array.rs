@@ -1,3 +1,6 @@
+//! Implements an arbitrary-length bitfield.  The implementation and interface is similar to and
+//! derived from [bitflags](https://crates.io/crates/bitflags).
+
 // Re-export libcore using an alias so that the macros can work without
 // requiring `extern crate core` downstream.
 #[doc(hidden)]
@@ -57,6 +60,7 @@ pub extern crate core as _core;
 /// assert!(letters.contains(Flags::BETA | Flags::THETA));
 /// # }
 /// ```
+#[macro_export]
 macro_rules! bitflag_array {
     {
         $(#[$inner:ident $($args:tt)*])*

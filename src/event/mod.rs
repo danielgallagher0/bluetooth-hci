@@ -961,8 +961,8 @@ pub mod test_helpers {
     /// Create an [`LeAdvertisingReport`] from a slice of [`LeAdvertisement`] structs.
     ///
     /// Panics if the resulting report would be too big to fit in a report event.
-    pub fn report_with_advertisements<'a>(
-        advertisements: &[LeAdvertisement<'a>],
+    pub fn report_with_advertisements(
+        advertisements: &[LeAdvertisement<'_>],
     ) -> LeAdvertisingReport {
         let mut data_len = 0;
         let mut data_buf = [0; MAX_ADVERTISING_REPORT_LEN];
@@ -1116,7 +1116,7 @@ fn to_le_advertising_report<VE>(payload: &[u8]) -> Result<LeAdvertisingReport, E
         next_index: 0,
         phantom: PhantomData,
     };
-    while let Some(_) = check_iter.next()? {}
+    while (check_iter.next()?).is_some() {}
 
     let data_len = payload.len() - 2;
     let mut data_buf = [0; MAX_ADVERTISING_REPORT_LEN];
