@@ -1,7 +1,5 @@
 //! Implementation of the HCI that includes the packet ID byte in the header.
 
-extern crate nb;
-
 use byteorder::{ByteOrder, LittleEndian};
 
 const PACKET_TYPE_HCI_COMMAND: u8 = 0x01;
@@ -65,7 +63,7 @@ pub trait Hci<E, Vendor, VE>: super::Hci<E> {
     ///   event). See [`crate::event::Error`] for possible values of `e`.
     /// - Returns [`nb::Error::Other`]`(`[`Error::Comm`]`)` if there is an error reading from the
     ///   controller.
-    fn read(&mut self) -> nb::Result<Packet<Vendor>, Error<E, VE>>
+    async fn read(&mut self) -> Result<Packet<Vendor>, Error<E, VE>>
     where
         Vendor: crate::event::VendorEvent<Error = VE>;
 }
@@ -87,16 +85,13 @@ impl super::HciHeader for CommandHeader {
     }
 }
 
-fn rewrap_error<E, VE>(e: nb::Error<E>) -> nb::Error<Error<E, VE>> {
-    match e {
-        nb::Error::WouldBlock => nb::Error::WouldBlock,
-        nb::Error::Other(err) => nb::Error::Other(Error::Comm(err)),
-    }
+fn rewrap_as_comm<E, VE>(e: E) -> Error<E, VE> {
+    Error::Comm(e)
 }
 
-fn read_event<E, T, Vendor, VE>(
+async fn read_event<E, T, Vendor, VE>(
     controller: &mut T,
-) -> nb::Result<crate::Event<Vendor>, Error<E, VE>>
+) -> Result<crate::Event<Vendor>, Error<E, VE>>
 where
     T: crate::Controller<Error = E>,
     Vendor: crate::event::VendorEvent<Error = VE>,
@@ -106,30 +101,34 @@ where
     const EVENT_PACKET_HEADER_LENGTH: usize = 3;
     const PARAM_LEN_BYTE: usize = 2;
 
-    let param_len = controller.peek(PARAM_LEN_BYTE).map_err(rewrap_error)? as usize;
+    let param_len = controller
+        .peek(PARAM_LEN_BYTE)
+        .await
+        .map_err(rewrap_as_comm)? as usize;
 
     let mut buf = [0; MAX_EVENT_LENGTH + EVENT_PACKET_HEADER_LENGTH];
     controller
         .read_into(&mut buf[..EVENT_PACKET_HEADER_LENGTH + param_len])
-        .map_err(rewrap_error)?;
+        .await
+        .map_err(rewrap_as_comm)?;
 
     crate::event::Event::new(crate::event::Packet(
         &buf[PACKET_HEADER_LENGTH..EVENT_PACKET_HEADER_LENGTH + param_len],
     ))
-    .map_err(|e| nb::Error::Other(Error::BLE(e)))
+    .map_err(|e| Error::BLE(e))
 }
 
 impl<E, Vendor, VE, T> Hci<E, Vendor, VE> for T
 where
     T: crate::Controller<Error = E, Header = CommandHeader>,
 {
-    fn read(&mut self) -> nb::Result<Packet<Vendor>, Error<E, VE>>
+    async fn read(&mut self) -> Result<Packet<Vendor>, Error<E, VE>>
     where
         Vendor: crate::event::VendorEvent<Error = VE>,
     {
-        match self.peek(0).map_err(rewrap_error)? {
-            PACKET_TYPE_HCI_EVENT => Ok(Packet::Event(read_event(self)?)),
-            x => Err(nb::Error::Other(Error::BadPacketType(x))),
+        match self.peek(0).await.map_err(rewrap_as_comm)? {
+            PACKET_TYPE_HCI_EVENT => Ok(Packet::Event(read_event(self).await?)),
+            x => Err(Error::BadPacketType(x)),
         }
     }
 }

@@ -76,11 +76,11 @@
 
 #![no_std]
 #![deny(missing_docs)]
+#![feature(async_fn_in_trait)]
 
 #[macro_use]
 extern crate bitflags;
 extern crate byteorder;
-extern crate nb;
 
 #[macro_use]
 pub mod bitflag_array;
@@ -126,7 +126,7 @@ pub trait Controller {
     /// Writes the bytes to the controller, in a single transaction if possible. All of `header`
     /// shall be written, followed by all of `payload`. `write` is allowed to block internally, but
     /// should return [`nb::Error::WouldBlock`] if the controller is not ready to receive the data.
-    fn write(&mut self, header: &[u8], payload: &[u8]) -> nb::Result<(), Self::Error>;
+    async fn write(&mut self, header: &[u8], payload: &[u8]) -> Result<(), Self::Error>;
 
     /// Reads data from the controller into the provided `buffer`. The length of the buffer
     /// indicates the number of bytes to read. The implementor must not return bytes in an order
@@ -225,7 +225,7 @@ pub trait Controller {
     /// [`nb::Error::WouldBlock`], or may attempt to read more data from the controller. If not
     /// enough data is available from the controller, the implementor shall return
     /// [`nb::Error::WouldBlock`].
-    fn read_into(&mut self, buffer: &mut [u8]) -> nb::Result<(), Self::Error>;
+    async fn read_into(&mut self, buffer: &mut [u8]) -> Result<(), Self::Error>;
 
     /// Looks ahead at the data coming from the Controller without consuming it. Implementors should
     /// be able to support values of `n` up to 5 to support all potential data types.
@@ -311,7 +311,7 @@ pub trait Controller {
     /// # Ok(())
     /// # }
     /// ```
-    fn peek(&mut self, n: usize) -> nb::Result<u8, Self::Error>;
+    async fn peek(&mut self, n: usize) -> Result<u8, Self::Error>;
 }
 
 /// Trait defining vendor-specific extensions for the Bluetooth Controller.

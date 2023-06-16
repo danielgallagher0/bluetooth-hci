@@ -1,5 +1,6 @@
+#![feature(async_fn_in_trait)]
+
 extern crate bluetooth_hci as hci;
-extern crate nb;
 
 mod vendor;
 
@@ -7,26 +8,26 @@ use hci::host::*;
 use std::time::Duration;
 use vendor::RecordingSink;
 
-#[test]
-fn disconnect() {
+#[tokio::test]
+async fn disconnect() {
     let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .disconnect(hci::ConnectionHandle(0x0201), hci::Status::AuthFailure)
+    sink.disconnect(hci::ConnectionHandle(0x0201), hci::Status::AuthFailure)
+        .await
         .unwrap();
     assert_eq!(sink.written_data, [1, 0x06, 0x04, 3, 0x01, 0x02, 0x05]);
 }
 
-#[test]
-fn disconnect_bad_reason() {
+#[tokio::test]
+async fn disconnect_bad_reason() {
     let mut sink = RecordingSink::new();
     let err = sink
-        .as_controller()
         .disconnect(hci::ConnectionHandle(0x0201), hci::Status::UnknownCommand)
+        .await
         .err()
         .unwrap();
     assert_eq!(
         err,
-        nb::Error::Other(Error::BadDisconnectionReason(hci::Status::UnknownCommand))
+        Error::BadDisconnectionReason(hci::Status::UnknownCommand)
     );
     assert_eq!(sink.written_data, []);
 }
@@ -38,11 +39,12 @@ macro_rules! conn_handle_only {
     } => {
         $(
             $(#[$inner $($args)*])*
-            #[test]
-            fn $fn() {
+            #[tokio::test]
+            async fn $fn() {
                 let mut sink = RecordingSink::new();
-                sink.as_controller()
+                sink
                     .$fn(hci::ConnectionHandle(0x0201))
+                    .await
                     .unwrap();
                 assert_eq!(sink.written_data, [1, $oc0, $oc1, 2, 0x01, 0x02]);
             }
@@ -65,11 +67,12 @@ macro_rules! no_params {
     } => {
         $(
             $(#[$inner $($args)*])*
-            #[test]
-            fn $fn() {
+            #[tokio::test]
+            async fn $fn() {
                 let mut sink = RecordingSink::new();
-                sink.as_controller()
+                sink
                     .$fn()
+                    .await
                     .unwrap();
                 assert_eq!(sink.written_data, [1, $oc0, $oc1, 0]);
             }
@@ -94,11 +97,11 @@ no_params! {
     le_test_end(0x1F, 0x20);
 }
 
-#[test]
-fn set_event_mask() {
+#[tokio::test]
+async fn set_event_mask() {
     let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .set_event_mask(EventFlags::INQUIRY_COMPLETE | EventFlags::AUTHENTICATION_COMPLETE)
+    sink.set_event_mask(EventFlags::INQUIRY_COMPLETE | EventFlags::AUTHENTICATION_COMPLETE)
+        .await
         .unwrap();
     assert_eq!(
         sink.written_data,
@@ -106,34 +109,34 @@ fn set_event_mask() {
     );
 }
 
-#[test]
-fn read_tx_power_level() {
+#[tokio::test]
+async fn read_tx_power_level() {
     let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .read_tx_power_level(hci::ConnectionHandle(0x0201), TxPowerLevel::Current)
+    sink.read_tx_power_level(hci::ConnectionHandle(0x0201), TxPowerLevel::Current)
+        .await
         .unwrap();
     assert_eq!(sink.written_data, [1, 0x2D, 0x0C, 3, 0x01, 0x02, 0x00])
 }
 
-#[test]
-fn le_set_event_mask() {
+#[tokio::test]
+async fn le_set_event_mask() {
     let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_set_event_mask(
-            LeEventFlags::CONNECTION_COMPLETE | LeEventFlags::REMOTE_CONNECTION_PARAMETER_REQUEST,
-        )
-        .unwrap();
+    sink.le_set_event_mask(
+        LeEventFlags::CONNECTION_COMPLETE | LeEventFlags::REMOTE_CONNECTION_PARAMETER_REQUEST,
+    )
+    .await
+    .unwrap();
     assert_eq!(
         sink.written_data,
         [1, 0x01, 0x20, 8, 0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
     );
 }
 
-#[test]
-fn le_set_random_address() {
+#[tokio::test]
+async fn le_set_random_address() {
     let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_set_random_address(hci::BdAddr([0x01, 0x02, 0x04, 0x08, 0x10, 0x20]))
+    sink.le_set_random_address(hci::BdAddr([0x01, 0x02, 0x04, 0x08, 0x10, 0x20]))
+        .await
         .unwrap();
     assert_eq!(
         sink.written_data,
@@ -141,8 +144,8 @@ fn le_set_random_address() {
     );
 }
 
-#[test]
-fn le_set_random_address_invalid_addr_type() {
+#[tokio::test]
+async fn le_set_random_address_invalid_addr_type() {
     let mut sink = RecordingSink::new();
     for bd_addr in [
         // The most significant bits of the BD ADDR must be either 11 (static address) or 00
@@ -166,34 +169,26 @@ fn le_set_random_address_invalid_addr_type() {
     ]
     .iter()
     {
-        let err = sink
-            .as_controller()
-            .le_set_random_address(*bd_addr)
-            .err()
-            .unwrap();
-        assert_eq!(err, nb::Error::Other(Error::BadRandomAddress(*bd_addr)));
+        let err = sink.le_set_random_address(*bd_addr).await.err().unwrap();
+        assert_eq!(err, Error::BadRandomAddress(*bd_addr));
     }
     assert_eq!(sink.written_data, []);
 }
 
-#[test]
-fn le_set_advertising_parameters() {
+#[tokio::test]
+async fn le_set_advertising_parameters() {
     let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_set_advertising_parameters(&AdvertisingParameters {
-            advertising_interval: AdvertisingInterval::for_type(
-                AdvertisingType::ConnectableUndirected,
-            )
+    sink.le_set_advertising_parameters(&AdvertisingParameters {
+        advertising_interval: AdvertisingInterval::for_type(AdvertisingType::ConnectableUndirected)
             .with_range(Duration::from_millis(21), Duration::from_millis(1000))
             .unwrap(),
-            own_address_type: OwnAddressType::Public,
-            peer_address: hci::BdAddrType::Random(hci::BdAddr([
-                0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
-            ])),
-            advertising_channel_map: Channels::CH_37 | Channels::CH_39,
-            advertising_filter_policy: AdvertisingFilterPolicy::AllowConnectionAndScan,
-        })
-        .unwrap();
+        own_address_type: OwnAddressType::Public,
+        peer_address: hci::BdAddrType::Random(hci::BdAddr([0x01, 0x02, 0x03, 0x04, 0x05, 0x06])),
+        advertising_channel_map: Channels::CH_37 | Channels::CH_39,
+        advertising_filter_policy: AdvertisingFilterPolicy::AllowConnectionAndScan,
+    })
+    .await
+    .unwrap();
     assert_eq!(
         sink.written_data,
         [
@@ -220,11 +215,10 @@ fn le_set_advertising_parameters() {
     );
 }
 
-#[test]
-fn le_set_advertising_parameters_bad_channel_map() {
+#[tokio::test]
+async fn le_set_advertising_parameters_bad_channel_map() {
     let mut sink = RecordingSink::new();
     let err = sink
-        .as_controller()
         .le_set_advertising_parameters(&AdvertisingParameters {
             advertising_interval: AdvertisingInterval::for_type(
                 AdvertisingType::ConnectableUndirected,
@@ -238,19 +232,17 @@ fn le_set_advertising_parameters_bad_channel_map() {
             advertising_channel_map: Channels::empty(),
             advertising_filter_policy: AdvertisingFilterPolicy::AllowConnectionAndScan,
         })
+        .await
         .err()
         .unwrap();
-    assert_eq!(
-        err,
-        nb::Error::Other(Error::BadChannelMap(Channels::empty()))
-    );
+    assert_eq!(err, Error::BadChannelMap(Channels::empty()));
     assert_eq!(sink.written_data, []);
 }
 
-#[test]
-fn le_set_advertising_data_empty() {
+#[tokio::test]
+async fn le_set_advertising_data_empty() {
     let mut sink = RecordingSink::new();
-    sink.as_controller().le_set_advertising_data(&[]).unwrap();
+    sink.le_set_advertising_data(&[]).await.unwrap();
     assert_eq!(
         sink.written_data,
         vec![
@@ -260,11 +252,11 @@ fn le_set_advertising_data_empty() {
     );
 }
 
-#[test]
-fn le_set_advertising_data_partial() {
+#[tokio::test]
+async fn le_set_advertising_data_partial() {
     let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_set_advertising_data(&[1, 2, 3, 4, 5, 6, 7, 8])
+    sink.le_set_advertising_data(&[1, 2, 3, 4, 5, 6, 7, 8])
+        .await
         .unwrap();
     assert_eq!(
         sink.written_data,
@@ -275,15 +267,15 @@ fn le_set_advertising_data_partial() {
     );
 }
 
-#[test]
-fn le_set_advertising_data_full() {
+#[tokio::test]
+async fn le_set_advertising_data_full() {
     let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_set_advertising_data(&[
-            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-            25, 26, 27, 28, 29, 30, 31,
-        ])
-        .unwrap();
+    sink.le_set_advertising_data(&[
+        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+        26, 27, 28, 29, 30, 31,
+    ])
+    .await
+    .unwrap();
     assert_eq!(
         sink.written_data,
         vec![
@@ -293,21 +285,17 @@ fn le_set_advertising_data_full() {
     );
 }
 
-#[test]
-fn le_set_advertising_data_too_long() {
+#[tokio::test]
+async fn le_set_advertising_data_too_long() {
     let mut sink = RecordingSink::new();
-    let err = sink
-        .as_controller()
-        .le_set_advertising_data(&[0; 32])
-        .err()
-        .unwrap();
-    assert_eq!(err, nb::Error::Other(Error::AdvertisingDataTooLong(32)));
+    let err = sink.le_set_advertising_data(&[0; 32]).await.err().unwrap();
+    assert_eq!(err, Error::AdvertisingDataTooLong(32));
 }
 
-#[test]
-fn le_set_scan_response_data_empty() {
+#[tokio::test]
+async fn le_set_scan_response_data_empty() {
     let mut sink = RecordingSink::new();
-    sink.as_controller().le_set_scan_response_data(&[]).unwrap();
+    sink.le_set_scan_response_data(&[]).await.unwrap();
     assert_eq!(
         sink.written_data,
         vec![
@@ -317,11 +305,11 @@ fn le_set_scan_response_data_empty() {
     );
 }
 
-#[test]
-fn le_set_scan_response_data_partial() {
+#[tokio::test]
+async fn le_set_scan_response_data_partial() {
     let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_set_scan_response_data(&[1, 2, 3, 4, 5, 6, 7, 8])
+    sink.le_set_scan_response_data(&[1, 2, 3, 4, 5, 6, 7, 8])
+        .await
         .unwrap();
     assert_eq!(
         sink.written_data,
@@ -332,15 +320,15 @@ fn le_set_scan_response_data_partial() {
     );
 }
 
-#[test]
-fn le_set_scan_response_data_full() {
+#[tokio::test]
+async fn le_set_scan_response_data_full() {
     let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_set_scan_response_data(&[
-            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-            25, 26, 27, 28, 29, 30, 31,
-        ])
-        .unwrap();
+    sink.le_set_scan_response_data(&[
+        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+        26, 27, 28, 29, 30, 31,
+    ])
+    .await
+    .unwrap();
     assert_eq!(
         sink.written_data,
         vec![
@@ -350,48 +338,46 @@ fn le_set_scan_response_data_full() {
     );
 }
 
-#[test]
-fn le_set_scan_response_data_too_long() {
+#[tokio::test]
+async fn le_set_scan_response_data_too_long() {
     let mut sink = RecordingSink::new();
     let err = sink
-        .as_controller()
         .le_set_scan_response_data(&[0; 32])
+        .await
         .err()
         .unwrap();
-    assert_eq!(err, nb::Error::Other(Error::AdvertisingDataTooLong(32)));
+    assert_eq!(err, Error::AdvertisingDataTooLong(32));
 }
 
 #[cfg(not(feature = "version-5-0"))]
-#[test]
-fn le_set_advertise_enable() {
+#[tokio::test]
+async fn le_set_advertise_enable() {
     let mut sink = RecordingSink::new();
-    sink.as_controller().le_set_advertise_enable(true).unwrap();
+    sink.le_set_advertise_enable(true).await.unwrap();
     assert_eq!(sink.written_data, [1, 0x0A, 0x20, 1, 1]);
 }
 
 #[cfg(feature = "version-5-0")]
-#[test]
-fn le_set_advertising_enable() {
+#[tokio::test]
+async fn le_set_advertising_enable() {
     let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_set_advertising_enable(true)
-        .unwrap();
+    sink.le_set_advertising_enable(true).unwrap();
     assert_eq!(sink.written_data, [1, 0x0A, 0x20, 1, 1]);
 }
 
-#[test]
-fn le_set_scan_parameters() {
+#[tokio::test]
+async fn le_set_scan_parameters() {
     let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_set_scan_parameters(&ScanParameters {
-            scan_type: ScanType::Passive,
-            scan_window: ScanWindow::start_every(Duration::from_millis(21))
-                .and_then(|b| b.open_for(Duration::from_millis(10)))
-                .unwrap(),
-            own_address_type: OwnAddressType::Public,
-            filter_policy: ScanFilterPolicy::AcceptAll,
-        })
-        .unwrap();
+    sink.le_set_scan_parameters(&ScanParameters {
+        scan_type: ScanType::Passive,
+        scan_window: ScanWindow::start_every(Duration::from_millis(21))
+            .and_then(|b| b.open_for(Duration::from_millis(10)))
+            .unwrap(),
+        own_address_type: OwnAddressType::Public,
+        filter_policy: ScanFilterPolicy::AcceptAll,
+    })
+    .await
+    .unwrap();
 
     // bytes 5-6: 0x21, 0x00 = 0x0021 = 33 ~= 21 ms / 0.625 ms
     // bytes 7-8: 0x10, 0x00 = 0x0010 = 16 = 10 ms / 0.625 ms
@@ -401,39 +387,37 @@ fn le_set_scan_parameters() {
     );
 }
 
-#[test]
-fn le_set_scan_enable() {
+#[tokio::test]
+async fn le_set_scan_enable() {
     let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_set_scan_enable(true, false)
-        .unwrap();
+    sink.le_set_scan_enable(true, false).await.unwrap();
     assert_eq!(sink.written_data, [1, 0x0C, 0x20, 2, 1, 0]);
 }
 
-#[test]
-fn le_create_connection_no_whitelist() {
+#[tokio::test]
+async fn le_create_connection_no_whitelist() {
     let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_create_connection(&ConnectionParameters {
-            scan_window: ScanWindow::start_every(Duration::from_millis(50))
-                .and_then(|b| b.open_for(Duration::from_millis(25)))
-                .unwrap(),
-            initiator_filter_policy: ConnectionFilterPolicy::UseAddress,
-            peer_address: PeerAddrType::PublicDeviceAddress(hci::BdAddr([1, 2, 3, 4, 5, 6])),
-            own_address_type: OwnAddressType::Public,
-            conn_interval: ConnectionIntervalBuilder::new()
-                .with_range(Duration::from_millis(50), Duration::from_millis(500))
-                .with_latency(10)
-                .with_supervision_timeout(Duration::from_secs(15))
-                .build()
-                .unwrap(),
-            expected_connection_length: ExpectedConnectionLength::new(
-                Duration::from_millis(200),
-                Duration::from_millis(500),
-            )
+    sink.le_create_connection(&ConnectionParameters {
+        scan_window: ScanWindow::start_every(Duration::from_millis(50))
+            .and_then(|b| b.open_for(Duration::from_millis(25)))
             .unwrap(),
-        })
-        .unwrap();
+        initiator_filter_policy: ConnectionFilterPolicy::UseAddress,
+        peer_address: PeerAddrType::PublicDeviceAddress(hci::BdAddr([1, 2, 3, 4, 5, 6])),
+        own_address_type: OwnAddressType::Public,
+        conn_interval: ConnectionIntervalBuilder::new()
+            .with_range(Duration::from_millis(50), Duration::from_millis(500))
+            .with_latency(10)
+            .with_supervision_timeout(Duration::from_secs(15))
+            .build()
+            .unwrap(),
+        expected_connection_length: ExpectedConnectionLength::new(
+            Duration::from_millis(200),
+            Duration::from_millis(500),
+        )
+        .unwrap(),
+    })
+    .await
+    .unwrap();
     assert_eq!(
         sink.written_data,
         vec![
@@ -443,30 +427,30 @@ fn le_create_connection_no_whitelist() {
     );
 }
 
-#[test]
-fn le_create_connection_use_whitelist() {
+#[tokio::test]
+async fn le_create_connection_use_whitelist() {
     let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_create_connection(&ConnectionParameters {
-            scan_window: ScanWindow::start_every(Duration::from_millis(50))
-                .and_then(|b| b.open_for(Duration::from_millis(25)))
-                .unwrap(),
-            initiator_filter_policy: ConnectionFilterPolicy::WhiteList,
-            peer_address: PeerAddrType::PublicDeviceAddress(hci::BdAddr([1, 2, 3, 4, 5, 6])),
-            own_address_type: OwnAddressType::Public,
-            conn_interval: ConnectionIntervalBuilder::new()
-                .with_range(Duration::from_millis(50), Duration::from_millis(500))
-                .with_latency(10)
-                .with_supervision_timeout(Duration::from_secs(15))
-                .build()
-                .unwrap(),
-            expected_connection_length: ExpectedConnectionLength::new(
-                Duration::from_millis(200),
-                Duration::from_millis(500),
-            )
+    sink.le_create_connection(&ConnectionParameters {
+        scan_window: ScanWindow::start_every(Duration::from_millis(50))
+            .and_then(|b| b.open_for(Duration::from_millis(25)))
             .unwrap(),
-        })
-        .unwrap();
+        initiator_filter_policy: ConnectionFilterPolicy::WhiteList,
+        peer_address: PeerAddrType::PublicDeviceAddress(hci::BdAddr([1, 2, 3, 4, 5, 6])),
+        own_address_type: OwnAddressType::Public,
+        conn_interval: ConnectionIntervalBuilder::new()
+            .with_range(Duration::from_millis(50), Duration::from_millis(500))
+            .with_latency(10)
+            .with_supervision_timeout(Duration::from_secs(15))
+            .build()
+            .unwrap(),
+        expected_connection_length: ExpectedConnectionLength::new(
+            Duration::from_millis(200),
+            Duration::from_millis(500),
+        )
+        .unwrap(),
+    })
+    .await
+    .unwrap();
     assert_eq!(
         sink.written_data,
         vec![
@@ -476,11 +460,11 @@ fn le_create_connection_use_whitelist() {
     );
 }
 
-#[test]
-fn le_add_device_to_white_list() {
+#[tokio::test]
+async fn le_add_device_to_white_list() {
     let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_add_device_to_white_list(hci::BdAddrType::Public(hci::BdAddr([1, 2, 3, 4, 5, 6])))
+    sink.le_add_device_to_white_list(hci::BdAddrType::Public(hci::BdAddr([1, 2, 3, 4, 5, 6])))
+        .await
         .unwrap();
     assert_eq!(
         sink.written_data,
@@ -489,11 +473,10 @@ fn le_add_device_to_white_list() {
 }
 
 #[cfg(feature = "version-5-0")]
-#[test]
-fn le_add_anon_advertising_devices_to_white_list() {
+#[tokio::test]
+async fn le_add_anon_advertising_devices_to_white_list() {
     let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_add_anon_advertising_devices_to_white_list()
+    sink.le_add_anon_advertising_devices_to_white_list()
         .unwrap();
     assert_eq!(
         sink.written_data,
@@ -501,11 +484,11 @@ fn le_add_anon_advertising_devices_to_white_list() {
     );
 }
 
-#[test]
-fn le_remove_device_from_white_list() {
+#[tokio::test]
+async fn le_remove_device_from_white_list() {
     let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_remove_device_from_white_list(hci::BdAddrType::Public(hci::BdAddr([1, 2, 3, 4, 5, 6])))
+    sink.le_remove_device_from_white_list(hci::BdAddrType::Public(hci::BdAddr([1, 2, 3, 4, 5, 6])))
+        .await
         .unwrap();
     assert_eq!(
         sink.written_data,
@@ -514,11 +497,10 @@ fn le_remove_device_from_white_list() {
 }
 
 #[cfg(feature = "version-5-0")]
-#[test]
-fn le_remove_anon_advertising_devices_from_white_list() {
+#[tokio::test]
+async fn le_remove_anon_advertising_devices_from_white_list() {
     let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_remove_anon_advertising_devices_from_white_list()
+    sink.le_remove_anon_advertising_devices_from_white_list()
         .unwrap();
     assert_eq!(
         sink.written_data,
@@ -526,25 +508,25 @@ fn le_remove_anon_advertising_devices_from_white_list() {
     );
 }
 
-#[test]
-fn le_connection_update() {
+#[tokio::test]
+async fn le_connection_update() {
     let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_connection_update(&ConnectionUpdateParameters {
-            conn_handle: hci::ConnectionHandle(0x0201),
-            conn_interval: ConnectionIntervalBuilder::new()
-                .with_range(Duration::from_millis(50), Duration::from_millis(500))
-                .with_latency(10)
-                .with_supervision_timeout(Duration::from_secs(15))
-                .build()
-                .unwrap(),
-            expected_connection_length: ExpectedConnectionLength::new(
-                Duration::from_millis(200),
-                Duration::from_millis(500),
-            )
+    sink.le_connection_update(&ConnectionUpdateParameters {
+        conn_handle: hci::ConnectionHandle(0x0201),
+        conn_interval: ConnectionIntervalBuilder::new()
+            .with_range(Duration::from_millis(50), Duration::from_millis(500))
+            .with_latency(10)
+            .with_supervision_timeout(Duration::from_secs(15))
+            .build()
             .unwrap(),
-        })
-        .unwrap();
+        expected_connection_length: ExpectedConnectionLength::new(
+            Duration::from_millis(200),
+            Duration::from_millis(500),
+        )
+        .unwrap(),
+    })
+    .await
+    .unwrap();
     assert_eq!(
         sink.written_data,
         vec![
@@ -554,55 +536,55 @@ fn le_connection_update() {
     );
 }
 
-#[test]
-fn le_set_host_channel_classification() {
+#[tokio::test]
+async fn le_set_host_channel_classification() {
     let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_set_host_channel_classification(
-            hci::ChannelClassification::CH_0
-                | hci::ChannelClassification::CH_4
-                | hci::ChannelClassification::CH_8
-                | hci::ChannelClassification::CH_12
-                | hci::ChannelClassification::CH_16
-                | hci::ChannelClassification::CH_20
-                | hci::ChannelClassification::CH_24
-                | hci::ChannelClassification::CH_28
-                | hci::ChannelClassification::CH_32
-                | hci::ChannelClassification::CH_36,
-        )
-        .unwrap();
+    sink.le_set_host_channel_classification(
+        hci::ChannelClassification::CH_0
+            | hci::ChannelClassification::CH_4
+            | hci::ChannelClassification::CH_8
+            | hci::ChannelClassification::CH_12
+            | hci::ChannelClassification::CH_16
+            | hci::ChannelClassification::CH_20
+            | hci::ChannelClassification::CH_24
+            | hci::ChannelClassification::CH_28
+            | hci::ChannelClassification::CH_32
+            | hci::ChannelClassification::CH_36,
+    )
+    .await
+    .unwrap();
     assert_eq!(
         sink.written_data,
         [1, 0x14, 0x20, 5, 0x11, 0x11, 0x11, 0x11, 0x11]
     );
 }
 
-#[test]
-fn le_set_host_channel_classification_failed_empty() {
+#[tokio::test]
+async fn le_set_host_channel_classification_failed_empty() {
     let mut sink = RecordingSink::new();
     let err = sink
-        .as_controller()
         .le_set_host_channel_classification(hci::ChannelClassification::empty())
+        .await
         .err()
         .unwrap();
-    assert_eq!(err, nb::Error::Other(Error::NoValidChannel));
+    assert_eq!(err, Error::NoValidChannel);
     assert_eq!(sink.written_data, []);
 }
 
-#[test]
-fn le_encrypt() {
+#[tokio::test]
+async fn le_encrypt() {
     let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_encrypt(&AesParameters {
-            key: EncryptionKey([
-                0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf,
-            ]),
-            plaintext_data: PlaintextBlock([
-                0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d,
-                0x1e, 0x1f,
-            ]),
-        })
-        .unwrap();
+    sink.le_encrypt(&AesParameters {
+        key: EncryptionKey([
+            0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf,
+        ]),
+        plaintext_data: PlaintextBlock([
+            0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d,
+            0x1e, 0x1f,
+        ]),
+    })
+    .await
+    .unwrap();
     assert_eq!(
         sink.written_data,
         vec![
@@ -613,19 +595,19 @@ fn le_encrypt() {
     );
 }
 
-#[test]
-fn le_start_encryption() {
+#[tokio::test]
+async fn le_start_encryption() {
     let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_start_encryption(&EncryptionParameters {
-            conn_handle: hci::ConnectionHandle(0x0201),
-            random_number: 0x0807_0605_0403_0201,
-            encrypted_diversifier: 0x0a09,
-            long_term_key: EncryptionKey([
-                0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf,
-            ]),
-        })
-        .unwrap();
+    sink.le_start_encryption(&EncryptionParameters {
+        conn_handle: hci::ConnectionHandle(0x0201),
+        random_number: 0x0807_0605_0403_0201,
+        encrypted_diversifier: 0x0a09,
+        long_term_key: EncryptionKey([
+            0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf,
+        ]),
+    })
+    .await
+    .unwrap();
     assert_eq!(
         sink.written_data,
         vec![
@@ -635,17 +617,17 @@ fn le_start_encryption() {
     );
 }
 
-#[test]
-fn le_long_term_key_request_reply() {
+#[tokio::test]
+async fn le_long_term_key_request_reply() {
     let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_long_term_key_request_reply(
-            hci::ConnectionHandle(0x0201),
-            &EncryptionKey([
-                0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf,
-            ]),
-        )
-        .unwrap();
+    sink.le_long_term_key_request_reply(
+        hci::ConnectionHandle(0x0201),
+        &EncryptionKey([
+            0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf,
+        ]),
+    )
+    .await
+    .unwrap();
     assert_eq!(
         sink.written_data,
         vec![
@@ -655,50 +637,50 @@ fn le_long_term_key_request_reply() {
     );
 }
 
-#[test]
-fn le_receiver_test() {
+#[tokio::test]
+async fn le_receiver_test() {
     let mut sink = RecordingSink::new();
-    sink.as_controller().le_receiver_test(0x27).unwrap();
+    sink.le_receiver_test(0x27).await.unwrap();
     assert_eq!(sink.written_data, [1, 0x1D, 0x20, 1, 0x27]);
 }
 
-#[test]
-fn le_receiver_test_out_of_range() {
+#[tokio::test]
+async fn le_receiver_test_out_of_range() {
     let mut sink = RecordingSink::new();
-    let err = sink.as_controller().le_receiver_test(0x28).err().unwrap();
-    assert_eq!(err, nb::Error::Other(Error::InvalidTestChannel(0x28)));
+    let err = sink.le_receiver_test(0x28).await.err().unwrap();
+    assert_eq!(err, Error::InvalidTestChannel(0x28));
     assert_eq!(sink.written_data, []);
 }
 
-#[test]
-fn le_transmitter_test() {
+#[tokio::test]
+async fn le_transmitter_test() {
     let mut sink = RecordingSink::new();
-    sink.as_controller()
-        .le_transmitter_test(0x27, 0x25, TestPacketPayload::PrbS9)
+    sink.le_transmitter_test(0x27, 0x25, TestPacketPayload::PrbS9)
+        .await
         .unwrap();
     assert_eq!(sink.written_data, [1, 0x1E, 0x20, 3, 0x27, 0x25, 0x00]);
 }
 
-#[test]
-fn le_transmitter_test_channel_out_of_range() {
+#[tokio::test]
+async fn le_transmitter_test_channel_out_of_range() {
     let mut sink = RecordingSink::new();
     let err = sink
-        .as_controller()
         .le_transmitter_test(0x28, 0x25, TestPacketPayload::PrbS9)
+        .await
         .err()
         .unwrap();
-    assert_eq!(err, nb::Error::Other(Error::InvalidTestChannel(0x28)));
+    assert_eq!(err, Error::InvalidTestChannel(0x28));
     assert_eq!(sink.written_data, []);
 }
 
-#[test]
-fn le_transmitter_test_length_out_of_range() {
+#[tokio::test]
+async fn le_transmitter_test_length_out_of_range() {
     let mut sink = RecordingSink::new();
     let err = sink
-        .as_controller()
         .le_transmitter_test(0x27, 0x26, TestPacketPayload::PrbS9)
+        .await
         .err()
         .unwrap();
-    assert_eq!(err, nb::Error::Other(Error::InvalidTestPayloadLength(0x26)));
+    assert_eq!(err, Error::InvalidTestPayloadLength(0x26));
     assert_eq!(sink.written_data, []);
 }

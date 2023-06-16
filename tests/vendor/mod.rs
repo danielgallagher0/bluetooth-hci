@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 
 extern crate bluetooth_hci as hci;
-extern crate nb;
 
 use hci::host::*;
 
@@ -74,7 +73,7 @@ impl hci::Controller for RecordingSink {
     type Header = uart::CommandHeader;
     type Vendor = MockVendor;
 
-    fn write(&mut self, header: &[u8], payload: &[u8]) -> nb::Result<(), Self::Error> {
+    async fn write(&mut self, header: &[u8], payload: &[u8]) -> Result<(), Self::Error> {
         self.written_data.resize(header.len() + payload.len(), 0);
         {
             let (h, p) = self.written_data.split_at_mut(header.len());
@@ -84,12 +83,12 @@ impl hci::Controller for RecordingSink {
         Ok(())
     }
 
-    fn read_into(&mut self, _buffer: &mut [u8]) -> nb::Result<(), Self::Error> {
-        Err(nb::Error::Other(RecordingSinkError {}))
+    async fn read_into(&mut self, _buffer: &mut [u8]) -> Result<(), Self::Error> {
+        Err(RecordingSinkError {})
     }
 
-    fn peek(&mut self, _n: usize) -> nb::Result<u8, Self::Error> {
-        Err(nb::Error::Other(RecordingSinkError {}))
+    async fn peek(&mut self, _n: usize) -> Result<u8, Self::Error> {
+        Err(RecordingSinkError {})
     }
 }
 
@@ -98,9 +97,5 @@ impl RecordingSink {
         RecordingSink {
             written_data: Vec::new(),
         }
-    }
-
-    pub fn as_controller(&mut self) -> &mut dyn Hci<RecordingSinkError, VS = VendorStatus> {
-        self as &mut dyn Hci<RecordingSinkError, VS = VendorStatus>
     }
 }

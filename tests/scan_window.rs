@@ -1,3 +1,5 @@
+#![feature(async_fn_in_trait)]
+
 extern crate bluetooth_hci as hci;
 
 use hci::types::{ScanWindow, ScanWindowError};

@@ -1,3 +1,5 @@
+#![feature(async_fn_in_trait)]
+
 use hci::types::Advertisement;
 
 extern crate bluetooth_hci as hci;

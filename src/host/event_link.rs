@@ -9,8 +9,6 @@
 //! However, there don't seem to be any implementations where the HCI packets are _not_ sent "via a
 //! common physical interface", so this module may be unnecessary.
 
-extern crate nb;
-
 /// Potential errors from reading events from the controller.
 #[derive(Copy, Clone, Debug)]
 pub enum Error<E, VError> {
@@ -55,7 +53,7 @@ pub trait Hci<E, Vendor, VE> {
     ///   event). See [`crate::event::Error`] for possible values of `e`.
     /// - Returns [`nb::Error::Other`]`(`[`Error::Comm`]`)` if there is an error reading from the
     ///   controller.
-    fn read(&mut self) -> nb::Result<crate::Event<Vendor>, Error<E, VE>>
+    async fn read(&mut self) -> Result<crate::Event<Vendor>, Error<E, VE>>
     where
         Vendor: crate::event::VendorEvent<Error = VE>;
 }
@@ -70,18 +68,15 @@ impl super::HciHeader for NoCommands {
     fn copy_into_slice(&self, _buffer: &mut [u8]) {}
 }
 
-fn rewrap_error<E, VE>(e: nb::Error<E>) -> nb::Error<Error<E, VE>> {
-    match e {
-        nb::Error::WouldBlock => nb::Error::WouldBlock,
-        nb::Error::Other(err) => nb::Error::Other(Error::Comm(err)),
-    }
+fn rewrap_as_comm<E, VE>(e: E) -> Error<E, VE> {
+    Error::Comm(e)
 }
 
 impl<E, Vendor, VE, T> Hci<E, Vendor, VE> for T
 where
     T: crate::Controller<Error = E, Header = NoCommands>,
 {
-    fn read(&mut self) -> nb::Result<crate::Event<Vendor>, Error<E, VE>>
+    async fn read(&mut self) -> Result<crate::Event<Vendor>, Error<E, VE>>
     where
         Vendor: crate::event::VendorEvent<Error = VE>,
     {
@@ -89,15 +84,16 @@ where
         const EVENT_HEADER_LENGTH: usize = 2;
         const PARAM_LEN_BYTE: usize = 1;
 
-        let param_len = self.peek(PARAM_LEN_BYTE).map_err(rewrap_error)? as usize;
+        let param_len = self.peek(PARAM_LEN_BYTE).await.map_err(rewrap_as_comm)? as usize;
 
         let mut buf = [0; MAX_EVENT_LENGTH + EVENT_HEADER_LENGTH];
         self.read_into(&mut buf[..EVENT_HEADER_LENGTH + param_len])
-            .map_err(rewrap_error)?;
+            .await
+            .map_err(rewrap_as_comm)?;
 
         crate::Event::new(crate::event::Packet(
             &buf[..EVENT_HEADER_LENGTH + param_len],
         ))
-        .map_err(|e| nb::Error::Other(Error::BLE(e)))
+        .map_err(|e| Error::BLE(e))
     }
 }

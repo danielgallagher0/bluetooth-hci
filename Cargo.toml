@@ -11,12 +11,14 @@ repository = "https://github.com/danielgallagher0/bluetooth-hci"
 readme = "README.md"
 
 [dependencies]
-nb = "0.1.2"
 bitflags = "1.2"
 
 [dependencies.byteorder]
 version = "1"
 default-features = false
+
+[dev-dependencies]
+tokio = { version = "1.28.2", features = ["rt", "macros"] }
 
 [features]
 default = ["version-4-1"]
