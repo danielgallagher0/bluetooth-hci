@@ -1362,6 +1362,7 @@ where
             crate::opcode::LE_SET_ADVERTISE_ENABLE,
             &[enable as u8],
         )
+        .await
     }
 
     async fn le_set_scan_parameters(&mut self, params: &ScanParameters) -> Result<(), E> {
@@ -1411,6 +1412,7 @@ where
             crate::opcode::LE_ADD_DEVICE_TO_WHITE_LIST,
             &[0xFF, 0, 0, 0, 0, 0, 0],
         )
+        .await
     }
 
     async fn le_remove_device_from_white_list(&mut self, addr: crate::BdAddrType) -> Result<(), E> {
@@ -1431,6 +1433,7 @@ where
             crate::opcode::LE_REMOVE_DEVICE_FROM_WHITE_LIST,
             &[0xFF, 0, 0, 0, 0, 0, 0],
         )
+        .await
     }
 
     async fn le_connection_update(&mut self, params: &ConnectionUpdateParameters) -> Result<(), E> {
@@ -2075,7 +2078,7 @@ impl PeerAddrType {
     ///
     /// `bytes` must be 7 bytes long.
     #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
-    pub async fn copy_into_slice(&self, bytes: &mut [u8]) {
+    pub fn copy_into_slice(&self, bytes: &mut [u8]) {
         assert_eq!(bytes.len(), 7);
         match *self {
             PeerAddrType::PublicDeviceAddress(bd_addr) => {

@@ -676,7 +676,7 @@ where
             _ => {
                 #[cfg(feature = "version-5-0")]
                 {
-                    match self {
+                    match val {
                         Status::Type0SubmapNotDefined => 0x41,
                         Status::UnknownAdvertisingId => 0x42,
                         Status::LimitReached => 0x43,
