@@ -33,12 +33,10 @@ pub struct NoCommands;
 ///
 /// # Errors
 ///
-/// - Returns [`nb::Error::WouldBlock`] if the controller does not have enough bytes to read an
-///   event.
-/// - Returns [`nb::Error::Other`]`(`[`Error::BLE`]`)` if there is an error deserializing the packet
+/// - Returns [`Error::BLE`] if there is an error deserializing the packet
 ///   (such as a mismatch between the packet length and the expected length of the event). See
 ///   [`crate::event::Error`] for possible values of `e`.
-/// - Returns [`nb::Error::Other`]`(`[`Error::Comm`]`)` if there is an error reading from the
+/// - Returns [`Error::Comm`] if there is an error reading from the
 ///   controller.
 pub trait Hci<E, Vendor, VE> {
     /// Reads and returns an event from the controller. Consumes exactly enough bytes to read the
@@ -46,12 +44,10 @@ pub trait Hci<E, Vendor, VE> {
     ///
     /// # Errors
     ///
-    /// - Returns [`nb::Error::WouldBlock`] if the controller does not have enough bytes available
-    ///   to read the full event right now.
-    /// - Returns [`nb::Error::Other`]`(`[`Error::BLE`]`)` if there is an error deserializing the
+    /// - Returns [`Error::BLE`] if there is an error deserializing the
     ///   packet (such as a mismatch between the packet length and the expected length of the
     ///   event). See [`crate::event::Error`] for possible values of `e`.
-    /// - Returns [`nb::Error::Other`]`(`[`Error::Comm`]`)` if there is an error reading from the
+    /// - Returns [`Error::Comm`] if there is an error reading from the
     ///   controller.
     async fn read(&mut self) -> Result<crate::Event<Vendor>, Error<E, VE>>
     where

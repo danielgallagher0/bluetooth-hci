@@ -18,7 +18,7 @@ version = "1"
 default-features = false
 
 [dev-dependencies]
-tokio = { version = "1.28.2", features = ["rt", "macros"] }
+tokio = { version = "1.28.2", features = ["rt", "rt-multi-thread", "macros"] }
 
 [features]
 default = ["version-4-1"]

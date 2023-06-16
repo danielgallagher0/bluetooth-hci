@@ -12,7 +12,8 @@
 //!
 //! Like other core embedded crates (e.g, [`embedded-hal`]), this crate uses traits to be agnostic
 //! about the specific Bluetooth module. It provides a default implementation of the HCI for devices
-//! that implement the core [`Controller`] trait. The traits also make use of the [`nb`] crate to
+//! that implement the core [`Controller`] trait. The traits also make use of async in traits, so the
+//! #![feature(async_fn_in_trait)] feature is required.
 //! support different asynchronous or synchronous operation modes.
 //!
 //! ## Commands
@@ -71,7 +72,6 @@
 //!
 //! [`Bluetooth`]: https://www.bluetooth.com/specifications/bluetooth-core-specification
 //! [`embedded-hal`]: https://crates.io/crates/embedded-hal
-//! [`nb`]: https://crates.io/crates/nb
 //! [`bluenrg`]: https://github.com/danielgallagher0/bluenrg
 
 #![no_std]
@@ -124,8 +124,7 @@ pub trait Controller {
     type Vendor: Vendor;
 
     /// Writes the bytes to the controller, in a single transaction if possible. All of `header`
-    /// shall be written, followed by all of `payload`. `write` is allowed to block internally, but
-    /// should return [`nb::Error::WouldBlock`] if the controller is not ready to receive the data.
+    /// shall be written, followed by all of `payload`.
     async fn write(&mut self, header: &[u8], payload: &[u8]) -> Result<(), Self::Error>;
 
     /// Reads data from the controller into the provided `buffer`. The length of the buffer
@@ -144,7 +143,7 @@ pub trait Controller {
     ///
     /// // host calls:
     ///
-    /// # extern crate nb;
+    /// # #![feature(async_fn_in_trait)]
     /// # extern crate bluetooth_hci;
     /// # use bluetooth_hci::Controller as HciController;
     /// # struct Controller;
@@ -192,13 +191,13 @@ pub trait Controller {
     /// #     type Error = Error;
     /// #     type Header = Header;
     /// #     type Vendor = Vendor;
-    /// #     fn write(&mut self, _header: &[u8], _payload: &[u8]) -> nb::Result<(), Self::Error> {
+    /// #     async fn write(&mut self, _header: &[u8], _payload: &[u8]) -> Result<(), Self::Error> {
     /// #         Ok(())
     /// #     }
-    /// #     fn read_into(&mut self, _buffer: &mut [u8]) -> nb::Result<(), Self::Error> {
+    /// #     async fn read_into(&mut self, _buffer: &mut [u8]) -> Result<(), Self::Error> {
     /// #         Ok(())
     /// #     }
-    /// #     fn peek(&mut self, _n: usize) -> nb::Result<u8, Self::Error> {
+    /// #     async fn peek(&mut self, _n: usize) -> Result<u8, Self::Error> {
     /// #         Ok(0)
     /// #     }
     /// # }
@@ -221,10 +220,6 @@ pub trait Controller {
     /// // +------+------+------+------+
     /// # }
     /// ```
-    /// If the next call to `read_into` requests more than 1 byte, the controller may return
-    /// [`nb::Error::WouldBlock`], or may attempt to read more data from the controller. If not
-    /// enough data is available from the controller, the implementor shall return
-    /// [`nb::Error::WouldBlock`].
     async fn read_into(&mut self, buffer: &mut [u8]) -> Result<(), Self::Error>;
 
     /// Looks ahead at the data coming from the Controller without consuming it. Implementors should
@@ -235,7 +230,7 @@ pub trait Controller {
     /// read. For example, the code to read an HCI event looks like this:
     ///
     /// ```
-    /// # extern crate nb;
+    /// # #![feature(async_fn_in_trait)]
     /// # extern crate bluetooth_hci;
     /// # use bluetooth_hci::Controller as HciController;
     /// # struct Controller;
@@ -284,29 +279,30 @@ pub trait Controller {
     /// #     type Error = Error;
     /// #     type Header = Header;
     /// #     type Vendor = Vendor;
-    /// #     fn write(&mut self, _header: &[u8], _payload: &[u8]) -> nb::Result<(), Self::Error> {
+    /// #     async fn write(&mut self, _header: &[u8], _payload: &[u8]) -> Result<(), Self::Error> {
     /// #         Ok(())
     /// #     }
-    /// #     fn read_into(&mut self, _buffer: &mut [u8]) -> nb::Result<(), Self::Error> {
+    /// #     async fn read_into(&mut self, _buffer: &mut [u8]) -> Result<(), Self::Error> {
     /// #         Ok(())
     /// #     }
-    /// #     fn peek(&mut self, _n: usize) -> nb::Result<u8, Self::Error> {
+    /// #     async fn peek(&mut self, _n: usize) -> Result<u8, Self::Error> {
     /// #         Ok(0)
     /// #     }
     /// # }
-    /// # fn main() -> nb::Result<(), Error> {
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<(), Error> {
     /// # const PACKET_TYPE_HCI_EVENT: u8 = 4;
     /// # let mut controller = Controller;
     /// const MAX_EVENT_LENGTH: usize = 255;
     /// const HEADER_LENGTH: usize = 2;
     /// let mut buffer = [0; MAX_EVENT_LENGTH + HEADER_LENGTH];
-    /// let packet_type = controller.peek(0)?;
+    /// let packet_type = controller.peek(0).await?;
     /// if packet_type == PACKET_TYPE_HCI_EVENT {
     ///     // Byte 3 has the parameter length in HCI events
-    ///     let param_len = controller.peek(3)? as usize;
+    ///     let param_len = controller.peek(3).await? as usize;
     ///
     ///     // We want to consume the full HCI Event packet, and we now know the length.
-    ///     controller.read_into(&mut buffer[..HEADER_LENGTH + param_len])?;
+    ///     controller.read_into(&mut buffer[..HEADER_LENGTH + param_len]).await?;
     /// }
     /// # Ok(())
     /// # }

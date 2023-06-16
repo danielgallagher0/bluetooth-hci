@@ -54,14 +54,12 @@ pub trait Hci<E, Vendor, VE>: super::Hci<E> {
     ///
     /// # Errors
     ///
-    /// - Returns [`nb::Error::WouldBlock`] if the controller does not have enough bytes available
-    ///   to read the full packet right now.
-    /// - Returns [`nb::Error::Other`]`(`[`Error::BadPacketType`]`)` if the next byte is not a valid
+    /// - Returns [`Error::BadPacketType`] if the next byte is not a valid
     ///   packet type.
-    /// - Returns [`nb::Error::Other`]`(`[`Error::BLE`]`)` if there is an error deserializing the
+    /// - Returns [`Error::BLE`] if there is an error deserializing the
     ///   packet (such as a mismatch between the packet length and the expected length of the
     ///   event). See [`crate::event::Error`] for possible values of `e`.
-    /// - Returns [`nb::Error::Other`]`(`[`Error::Comm`]`)` if there is an error reading from the
+    /// - Returns [`Error::Comm`] if there is an error reading from the
     ///   controller.
     async fn read(&mut self) -> Result<Packet<Vendor>, Error<E, VE>>
     where
