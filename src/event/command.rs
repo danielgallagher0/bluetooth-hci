@@ -1088,6 +1088,7 @@ pub struct LocalSupportedFeatures<VS> {
 
 bitflags! {
     /// See the Bluetooth Specification, v4.1 or later, Vol 2, Part C, Section 3.3 (Table 3.2).
+    #[derive(Default, Copy, Clone, Debug, PartialEq, Eq)]
     pub struct LmpFeatures : u64 {
         /// 3-slot packets
         const THREE_SLOT_PACKETS = 1 << 0;
@@ -1331,6 +1332,7 @@ bitflags! {
     /// Features](::host::Hci::le_read_local_supported_features) command.  See the Bluetooth
     /// specification, Vol 6, Part B, Section 4.6.  See Table 4.3 (v4.1 of the spec), Table 4.4
     /// (v4.2 and v5.0).
+    #[derive(Default, Copy, Clone, Debug, PartialEq, Eq)]
     pub struct LeFeatures : u64 {
         /// LE Encryption.  Valid from controller to controller.
         const ENCRYPTION = 1 << 0;
@@ -1571,6 +1573,7 @@ pub struct LeReadSupportedStates<VS> {
 bitflags! {
     /// Possible LE states or state combinations for the [LE Read Supported
     /// States](::host::Hci::le_read_supported_states) command.
+    #[derive(Default, Copy, Clone, Debug, PartialEq, Eq)]
     pub struct LeStates : u64 {
         /// Non-connectable advertising state alone.
         const NON_CONNECTABLE_ADVERTISING = 1 << 0;

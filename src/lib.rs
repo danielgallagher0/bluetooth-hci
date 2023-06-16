@@ -759,7 +759,7 @@ bitflags! {
     ///
     /// Fields are defined in Vol 6, Part B, Section 4.6 of the spec.  See Table 4.3 (version 4.1)
     /// or Table 4.4 (version 4.2 and 5.0).
-    #[derive(Default)]
+    #[derive(Default, Copy, Clone, Debug, PartialEq, Eq)]
     pub struct LinkLayerFeature : u64 {
         /// See section 4.6.1
         const LE_ENCRYPTION = 1 << 0;

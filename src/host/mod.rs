@@ -1845,6 +1845,7 @@ pub enum OwnAddressType {
 
 bitflags! {
     /// The advertising channels that shall be used when transmitting advertising packets.
+    #[derive(Copy, Clone, Debug, PartialEq)]
     pub struct Channels : u8 {
         /// Channel 37 shall be used
         const CH_37 = 0b0000_0001;
