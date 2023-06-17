@@ -18,7 +18,9 @@ byteorder = { version = "1.4.3", default_features = false }
 tokio = { version = "1.28.2", features = ["rt", "rt-multi-thread", "macros"] }
 
 [features]
-default = ["version-4-1"]
+default = ["version-4-1", "vendor-stm32wb"]
 version-4-1 = []
 version-4-2 = []
 version-5-0 = []
+
+vendor-stm32wb = []
