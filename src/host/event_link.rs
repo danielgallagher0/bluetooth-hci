@@ -64,10 +64,6 @@ impl super::HciHeader for NoCommands {
     fn copy_into_slice(&self, _buffer: &mut [u8]) {}
 }
 
-fn rewrap_as_comm<E, VE>(e: E) -> Error<E, VE> {
-    Error::Comm(e)
-}
-
 impl<E, Vendor, VE, T> Hci<E, Vendor, VE> for T
 where
     T: crate::Controller<Error = E, Header = NoCommands>,
@@ -80,12 +76,12 @@ where
         const EVENT_HEADER_LENGTH: usize = 2;
         const PARAM_LEN_BYTE: usize = 1;
 
-        let param_len = self.peek(PARAM_LEN_BYTE).await.map_err(rewrap_as_comm)? as usize;
+        let param_len = self.peek(PARAM_LEN_BYTE).await.map_err(Error::Comm)? as usize;
 
         let mut buf = [0; MAX_EVENT_LENGTH + EVENT_HEADER_LENGTH];
         self.read_into(&mut buf[..EVENT_HEADER_LENGTH + param_len])
             .await
-            .map_err(rewrap_as_comm)?;
+            .map_err(Error::Comm)?;
 
         crate::Event::new(crate::event::Packet(
             &buf[..EVENT_HEADER_LENGTH + param_len],

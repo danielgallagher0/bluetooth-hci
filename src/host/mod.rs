@@ -25,7 +25,7 @@ pub use super::types::{
 
 use crate::Status;
 
-const MAX_HEADER_LENGTH: usize = 5;
+const MAX_HEADER_LENGTH: usize = 4;
 
 /// Trait to define a command packet header.
 ///
@@ -1155,10 +1155,6 @@ pub enum Error<E, VS> {
     Comm(E),
 }
 
-fn rewrap_as_comm<E, VS>(err: E) -> Error<E, VS> {
-    Error::Comm(err)
-}
-
 async fn write_command<Header, T, E>(
     controller: &mut T,
     opcode: crate::opcode::Opcode,
@@ -1171,7 +1167,7 @@ where
     let mut header = [0; MAX_HEADER_LENGTH];
     Header::new(opcode, params.len()).copy_into_slice(&mut header);
 
-    controller.write(opcode, params).await
+    controller.write(&header, params).await
 }
 
 async fn set_outbound_data<Header, T, E, VS>(
@@ -1192,7 +1188,7 @@ where
     params[1..=data.len()].copy_from_slice(data);
     write_command::<Header, T, E>(controller, opcode, &params)
         .await
-        .map_err(rewrap_as_comm)
+        .map_err(Error::Comm)
 }
 
 impl<E, T, Header> Hci<E> for T
@@ -1223,7 +1219,7 @@ where
         params[2] = reason.into();
         write_command::<Header, T, E>(self, crate::opcode::DISCONNECT, &params)
             .await
-            .map_err(rewrap_as_comm)
+            .map_err(Error::Comm)
     }
 
     async fn read_remote_version_information(
@@ -1302,7 +1298,7 @@ where
         validate_random_address(bd_addr)?;
         write_command::<Header, T, E>(self, crate::opcode::LE_SET_RANDOM_ADDRESS, &bd_addr.0)
             .await
-            .map_err(rewrap_as_comm)
+            .map_err(Error::Comm)
     }
 
     async fn le_set_advertising_parameters(
@@ -1313,7 +1309,7 @@ where
         params.copy_into_slice(&mut bytes)?;
         write_command::<Header, T, E>(self, crate::opcode::LE_SET_ADVERTISING_PARAMETERS, &bytes)
             .await
-            .map_err(rewrap_as_comm)
+            .map_err(Error::Comm)
     }
 
     async fn le_read_advertising_channel_tx_power(&mut self) -> Result<(), E> {
@@ -1456,7 +1452,7 @@ where
             &bytes,
         )
         .await
-        .map_err(rewrap_as_comm)
+        .map_err(Error::Comm)
     }
 
     async fn le_read_channel_map(&mut self, conn_handle: ConnectionHandle) -> Result<(), E> {
@@ -1527,7 +1523,7 @@ where
 
         write_command::<Header, T, E>(self, crate::opcode::LE_RECEIVER_TEST, &[channel])
             .await
-            .map_err(rewrap_as_comm)
+            .map_err(Error::Comm)
     }
 
     async fn le_transmitter_test(
@@ -1551,7 +1547,7 @@ where
             &[channel, payload_length as u8, payload as u8],
         )
         .await
-        .map_err(rewrap_as_comm)
+        .map_err(Error::Comm)
     }
 
     async fn le_test_end(&mut self) -> Result<(), E> {

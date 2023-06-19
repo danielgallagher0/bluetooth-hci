@@ -74,6 +74,9 @@ impl hci::Controller for RecordingSink {
     type Vendor = MockVendor;
 
     async fn write(&mut self, header: &[u8], payload: &[u8]) -> Result<(), Self::Error> {
+        println!("header {:?}", header);
+        println!("payload {:?}", payload);
+
         self.written_data.resize(header.len() + payload.len(), 0);
         {
             let (h, p) = self.written_data.split_at_mut(header.len());

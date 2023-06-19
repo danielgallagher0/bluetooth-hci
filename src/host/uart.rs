@@ -83,10 +83,6 @@ impl super::HciHeader for CommandHeader {
     }
 }
 
-fn rewrap_as_comm<E, VE>(e: E) -> Error<E, VE> {
-    Error::Comm(e)
-}
-
 async fn read_event<E, T, Vendor, VE>(
     controller: &mut T,
 ) -> Result<crate::Event<Vendor>, Error<E, VE>>
@@ -99,16 +95,13 @@ where
     const EVENT_PACKET_HEADER_LENGTH: usize = 3;
     const PARAM_LEN_BYTE: usize = 2;
 
-    let param_len = controller
-        .peek(PARAM_LEN_BYTE)
-        .await
-        .map_err(rewrap_as_comm)? as usize;
+    let param_len = controller.peek(PARAM_LEN_BYTE).await.map_err(Error::Comm)? as usize;
 
     let mut buf = [0; MAX_EVENT_LENGTH + EVENT_PACKET_HEADER_LENGTH];
     controller
         .read_into(&mut buf[..EVENT_PACKET_HEADER_LENGTH + param_len])
         .await
-        .map_err(rewrap_as_comm)?;
+        .map_err(Error::Comm)?;
 
     crate::event::Event::new(crate::event::Packet(
         &buf[PACKET_HEADER_LENGTH..EVENT_PACKET_HEADER_LENGTH + param_len],
@@ -124,7 +117,7 @@ where
     where
         Vendor: crate::event::VendorEvent<Error = VE>,
     {
-        match self.peek(0).await.map_err(rewrap_as_comm)? {
+        match self.peek(0).await.map_err(Error::Comm)? {
             PACKET_TYPE_HCI_EVENT => Ok(Packet::Event(read_event(self).await?)),
             x => Err(Error::BadPacketType(x)),
         }

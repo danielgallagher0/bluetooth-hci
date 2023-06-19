@@ -1,10 +1,27 @@
+use crate::{
+    host::{uart::CommandHeader, HciHeader},
+    Controller, Opcode,
+};
+
+pub async fn write_command<C: Controller>(
+    controller: &mut C,
+    opcode: Opcode,
+    params: &[u8],
+) -> Result<(), C::Error> {
+    const HEADER_LEN: usize = 4;
+    let mut header = [0; HEADER_LEN];
+    CommandHeader::new(opcode, params.len()).copy_into_slice(&mut header);
+
+    controller.write(&header, params).await
+}
+
 macro_rules! impl_params {
     ($method:ident, $param_type:ident, $opcode:path) => {
         async fn $method(&mut self, params: &$param_type) -> Result<(), Self::Error> {
             let mut bytes = [0; $param_type::LENGTH];
             params.copy_into_slice(&mut bytes);
 
-            self.write($opcode, &bytes).await
+            super::write_command(self, $opcode, &bytes).await
         }
     };
 }
@@ -15,7 +32,7 @@ macro_rules! impl_value_params {
             let mut bytes = [0; $param_type::LENGTH];
             params.copy_into_slice(&mut bytes);
 
-            self.write($opcode, &bytes).await
+            super::write_command(self, $opcode, &bytes).await
         }
     };
 }
@@ -28,9 +45,9 @@ macro_rules! impl_validate_params {
             let mut bytes = [0; $param_type::LENGTH];
             params.copy_into_slice(&mut bytes);
 
-            self.write($opcode, &bytes)
+            super::write_command(self, $opcode, &bytes)
                 .await
-                .map_err(|e| Error::Comm(e))
+                .map_err(Error::Comm)
         }
     };
 }
@@ -39,9 +56,9 @@ macro_rules! impl_variable_length_params {
     ($method:ident, $param_type:ident, $opcode:path) => {
         async fn $method(&mut self, params: &$param_type) -> Result<(), Self::Error> {
             let mut bytes = [0; $param_type::MAX_LENGTH];
-            let len = params.copy_into_slice(&mut bytes);
+            params.copy_into_slice(&mut bytes);
 
-            self.write($opcode, &bytes[..len]).await
+            super::write_command(self, $opcode, &bytes).await
         }
     };
 }
@@ -66,10 +83,9 @@ macro_rules! impl_validate_variable_length_params {
             params.validate()?;
 
             let mut bytes = [0; $param_type::MAX_LENGTH];
-            let len = params.copy_into_slice(&mut bytes);
+            params.copy_into_slice(&mut bytes);
 
-            self.write($opcode, &bytes[..len]).await
-                .map_err(|e| Error::Comm(e))
+            super::write_command(self, $opcode, &bytes).await.map_err(Error::Comm)
         }
     };
 }
