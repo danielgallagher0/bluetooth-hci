@@ -10,9 +10,6 @@ use byteorder::{ByteOrder, LittleEndian};
 
 /// L2Cap-specific commands for the [`ActiveBlueNRG`](crate::ActiveBlueNRG).
 pub trait L2capCommands {
-    /// Type of communication errors.
-    type Error;
-
     /// Send an L2CAP connection parameter update request from the peripheral to the central
     /// device.
     ///
@@ -29,7 +26,7 @@ pub trait L2capCommands {
     async fn connection_parameter_update_request(
         &mut self,
         params: &ConnectionParameterUpdateRequest,
-    ) -> Result<(), Self::Error>;
+    );
 
     /// This command should be sent in response to the
     /// [`L2CapConnectionUpdateResponse`](crate::event::BlueNRGEvent::L2CapConnectionUpdateResponse)
@@ -48,12 +45,10 @@ pub trait L2capCommands {
     async fn connection_parameter_update_response(
         &mut self,
         params: &ConnectionParameterUpdateResponse,
-    ) -> Result<(), Self::Error>;
+    );
 }
 
 impl<T: Controller> L2capCommands for T {
-    type Error = T::Error;
-
     impl_params!(
         connection_parameter_update_request,
         ConnectionParameterUpdateRequest,

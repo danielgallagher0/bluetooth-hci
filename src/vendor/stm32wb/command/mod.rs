@@ -3,11 +3,7 @@ use crate::{
     Controller, Opcode,
 };
 
-pub async fn write_command<C: Controller>(
-    controller: &mut C,
-    opcode: Opcode,
-    params: &[u8],
-) -> Result<(), C::Error> {
+pub async fn write_command(controller: &mut impl Controller, opcode: Opcode, params: &[u8]) {
     const HEADER_LEN: usize = 4;
     let mut header = [0; HEADER_LEN];
     CommandHeader::new(opcode, params.len()).copy_into_slice(&mut header);
@@ -17,7 +13,7 @@ pub async fn write_command<C: Controller>(
 
 macro_rules! impl_params {
     ($method:ident, $param_type:ident, $opcode:path) => {
-        async fn $method(&mut self, params: &$param_type) -> Result<(), Self::Error> {
+        async fn $method(&mut self, params: &$param_type) {
             let mut bytes = [0; $param_type::LENGTH];
             params.copy_into_slice(&mut bytes);
 
@@ -28,7 +24,7 @@ macro_rules! impl_params {
 
 macro_rules! impl_value_params {
     ($method:ident, $param_type:ident, $opcode:path) => {
-        async fn $method(&mut self, params: $param_type) -> Result<(), Self::Error> {
+        async fn $method(&mut self, params: $param_type) {
             let mut bytes = [0; $param_type::LENGTH];
             params.copy_into_slice(&mut bytes);
 
@@ -39,22 +35,22 @@ macro_rules! impl_value_params {
 
 macro_rules! impl_validate_params {
     ($method:ident, $param_type:ident, $opcode:path) => {
-        async fn $method(&mut self, params: &$param_type) -> Result<(), Error<Self::Error>> {
+        async fn $method(&mut self, params: &$param_type) -> Result<(), Error> {
             params.validate()?;
 
             let mut bytes = [0; $param_type::LENGTH];
             params.copy_into_slice(&mut bytes);
 
-            super::write_command(self, $opcode, &bytes)
-                .await
-                .map_err(Error::Comm)
+            super::write_command(self, $opcode, &bytes).await;
+
+            Ok(())
         }
     };
 }
 
 macro_rules! impl_variable_length_params {
     ($method:ident, $param_type:ident, $opcode:path) => {
-        async fn $method(&mut self, params: &$param_type) -> Result<(), Self::Error> {
+        async fn $method(&mut self, params: &$param_type) {
             let mut bytes = [0; $param_type::MAX_LENGTH];
             params.copy_into_slice(&mut bytes);
 
@@ -65,7 +61,7 @@ macro_rules! impl_variable_length_params {
 
 macro_rules! impl_validate_variable_length_params {
     ($method:ident, $param_type:ident, $opcode:path) => {
-        async fn $method(&mut self, params: &$param_type) -> Result<(), Error<Self::Error>> {
+        async fn $method(&mut self, params: &$param_type) -> Result<(), Error> {
             params.validate().map_err(nb::Error::Other)?;
 
             let mut bytes = [0; $param_type::MAX_LENGTH];
@@ -79,13 +75,15 @@ macro_rules! impl_validate_variable_length_params {
         async fn $method<$($genlife),*>(
             &mut self,
             params: &$param_type<$($lifetime),*>
-        ) -> Result<(), Error<Self::Error>> {
+        ) -> Result<(), Error> {
             params.validate()?;
 
             let mut bytes = [0; $param_type::MAX_LENGTH];
             params.copy_into_slice(&mut bytes);
 
-            super::write_command(self, $opcode, &bytes).await.map_err(Error::Comm)
+            super::write_command(self, $opcode, &bytes).await;
+
+            Ok(())
         }
     };
 }

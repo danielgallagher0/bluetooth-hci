@@ -103,29 +103,9 @@ use core::fmt::Debug;
 /// which enables full access to all of the functions and events of the HCI through [`host::Hci`]
 /// and [`host::uart::Hci`], respectively.
 pub trait Controller {
-    /// Enumeration of [`Controller`] errors. These typically will be specializations of
-    /// [`host::uart::Error`] that specify both the vendor-specific error type _and_ a communication
-    /// error type. The communication error type in turn will depend on the bus used to communicate
-    /// with the controller as well as the device crate (e.g., [`linux-embedded-hal::Spidev`] uses
-    /// [`std::io::Error`]).
-    ///
-    /// [`linux-embedded-hal::Spidev`]:
-    /// https://docs.rs/linux-embedded-hal/0.1.1/linux_embedded_hal/struct.Spidev.html
-    /// [`std::io::Error`]: https://doc.rust-lang.org/nightly/std/io/struct.Error.html
-    type Error;
-
-    /// The type of header sent to the controller for HCI commands.  Should be either
-    /// [`host::uart::CommandHeader`], [`host::cmd_link::Header`], or
-    /// [`host::event_link::NoCommands`], depending on the controller implementation.
-    type Header;
-
-    /// Type containing vendor-specific extensions for the controller, including vendor-specific
-    /// errors, events, and status codes.
-    type Vendor: Vendor;
-
     /// Writes the bytes to the controller, in a single transaction if possible. All of `header`
     /// shall be written, followed by all of `payload`.
-    async fn write(&mut self, header: &[u8], payload: &[u8]) -> Result<(), Self::Error>;
+    async fn write(&mut self, header: &[u8], payload: &[u8]);
 
     /// Reads data from the controller into the provided `buffer`. The length of the buffer
     /// indicates the number of bytes to read. The implementor must not return bytes in an order
@@ -188,17 +168,10 @@ pub trait Controller {
     /// #     }
     /// # }
     /// # impl HciController for Controller {
-    /// #     type Error = Error;
-    /// #     type Header = Header;
-    /// #     type Vendor = Vendor;
-    /// #     async fn write(&mut self, _header: &[u8], _payload: &[u8]) -> Result<(), Self::Error> {
-    /// #         Ok(())
-    /// #     }
-    /// #     async fn read_into(&mut self, _buffer: &mut [u8]) -> Result<(), Self::Error> {
-    /// #         Ok(())
-    /// #     }
-    /// #     async fn peek(&mut self, _n: usize) -> Result<u8, Self::Error> {
-    /// #         Ok(0)
+    /// #     async fn write(&mut self, _header: &[u8], _payload: &[u8]) {}
+    /// #     async fn read_into(&mut self, _buffer: &mut [u8]) {}
+    /// #     async fn peek(&mut self, _n: usize) -> u8 {
+    /// #         0
     /// #     }
     /// # }
     /// # fn main() {
@@ -220,7 +193,7 @@ pub trait Controller {
     /// // +------+------+------+------+
     /// # }
     /// ```
-    async fn read_into(&mut self, buffer: &mut [u8]) -> Result<(), Self::Error>;
+    async fn read_into(&mut self, buffer: &mut [u8]);
 
     /// Looks ahead at the data coming from the Controller without consuming it. Implementors should
     /// be able to support values of `n` up to 5 to support all potential data types.
@@ -276,17 +249,10 @@ pub trait Controller {
     /// #     }
     /// # }
     /// # impl HciController for Controller {
-    /// #     type Error = Error;
-    /// #     type Header = Header;
-    /// #     type Vendor = Vendor;
-    /// #     async fn write(&mut self, _header: &[u8], _payload: &[u8]) -> Result<(), Self::Error> {
-    /// #         Ok(())
-    /// #     }
-    /// #     async fn read_into(&mut self, _buffer: &mut [u8]) -> Result<(), Self::Error> {
-    /// #         Ok(())
-    /// #     }
-    /// #     async fn peek(&mut self, _n: usize) -> Result<u8, Self::Error> {
-    /// #         Ok(0)
+    /// #     async fn write(&mut self, _header: &[u8], _payload: &[u8]) {}
+    /// #     async fn read_into(&mut self, _buffer: &mut [u8]) {}
+    /// #     async fn peek(&mut self, _n: usize) -> u8 {
+    /// #         0
     /// #     }
     /// # }
     /// # #[tokio::main]
@@ -296,18 +262,18 @@ pub trait Controller {
     /// const MAX_EVENT_LENGTH: usize = 255;
     /// const HEADER_LENGTH: usize = 2;
     /// let mut buffer = [0; MAX_EVENT_LENGTH + HEADER_LENGTH];
-    /// let packet_type = controller.peek(0).await?;
+    /// let packet_type = controller.peek(0).await;
     /// if packet_type == PACKET_TYPE_HCI_EVENT {
     ///     // Byte 3 has the parameter length in HCI events
-    ///     let param_len = controller.peek(3).await? as usize;
+    ///     let param_len = controller.peek(3).await as usize;
     ///
     ///     // We want to consume the full HCI Event packet, and we now know the length.
-    ///     controller.read_into(&mut buffer[..HEADER_LENGTH + param_len]).await?;
+    ///     controller.read_into(&mut buffer[..HEADER_LENGTH + param_len]).await;
     /// }
     /// # Ok(())
     /// # }
     /// ```
-    async fn peek(&mut self, n: usize) -> Result<u8, Self::Error>;
+    async fn peek(&mut self, n: usize) -> u8;
 }
 
 /// Trait defining vendor-specific extensions for the Bluetooth Controller.

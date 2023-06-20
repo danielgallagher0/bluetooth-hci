@@ -11,9 +11,6 @@ use core::time::Duration;
 
 /// GAP-specific commands for the [`ActiveBlueNRG`](crate::ActiveBlueNRG).
 pub trait GapCommands {
-    /// Type of communication errors.
-    type Error;
-
     /// Set the device in non-discoverable mode. This command will disable the LL advertising and
     /// put the device in standby state.
     ///
@@ -25,7 +22,7 @@ pub trait GapCommands {
     ///
     /// A [Command Complete](crate::vendor::stm32wb::event::command::ReturnParameters::GapSetNonDiscoverable) event
     /// is generated.
-    async fn set_nondiscoverable(&mut self) -> Result<(), Self::Error>;
+    async fn set_nondiscoverable(&mut self);
 
     /// Set the device in limited discoverable mode.
     ///
@@ -60,7 +57,7 @@ pub trait GapCommands {
     async fn set_limited_discoverable(
         &mut self,
         params: &DiscoverableParameters<'_, '_>,
-    ) -> Result<(), Error<Self::Error>>;
+    ) -> Result<(), Error>;
 
     /// Set the device in discoverable mode.
     ///
@@ -91,7 +88,7 @@ pub trait GapCommands {
     async fn set_discoverable(
         &mut self,
         params: &DiscoverableParameters<'_, '_>,
-    ) -> Result<(), Error<Self::Error>>;
+    ) -> Result<(), Error>;
 
     /// Set the device in direct connectable mode.
     ///
@@ -127,7 +124,7 @@ pub trait GapCommands {
     async fn set_direct_connectable(
         &mut self,
         params: &DirectConnectableParameters,
-    ) -> Result<(), Error<Self::Error>>;
+    ) -> Result<(), Error>;
 
     /// Set the IO capabilities of the device.
     ///
@@ -141,7 +138,7 @@ pub trait GapCommands {
     ///
     /// A [Command Complete](crate::vendor::stm32wb::event::command::ReturnParameters::GapSetIoCapability) event is
     /// generated.
-    async fn set_io_capability(&mut self, capability: IoCapability) -> Result<(), Self::Error>;
+    async fn set_io_capability(&mut self, capability: IoCapability);
 
     /// Set the authentication requirements for the device.
     ///
@@ -167,7 +164,7 @@ pub trait GapCommands {
     async fn set_authentication_requirement(
         &mut self,
         requirements: &AuthenticationRequirements,
-    ) -> Result<(), Error<Self::Error>>;
+    ) -> Result<(), Error>;
 
     /// Set the authorization requirements of the device.
     ///
@@ -189,7 +186,7 @@ pub trait GapCommands {
         &mut self,
         conn_handle: crate::ConnectionHandle,
         authorization_required: bool,
-    ) -> Result<(), Self::Error>;
+    );
 
     /// This command should be send by the host in response to the [GAP Pass Key
     /// Request](crate::vendor::stm32wb::event::BlueNRGEvent::GapPassKeyRequest) event.
@@ -211,7 +208,7 @@ pub trait GapCommands {
         &mut self,
         conn_handle: crate::ConnectionHandle,
         pin: u32,
-    ) -> Result<(), Error<Self::Error>>;
+    ) -> Result<(), Error>;
 
     /// This command should be send by the host in response to the [GAP Authorization
     /// Request](crate::vendor::stm32wb::event::BlueNRGEvent::GapAuthorizationRequest) event.
@@ -228,7 +225,7 @@ pub trait GapCommands {
         &mut self,
         conn_handle: crate::ConnectionHandle,
         authorization: Authorization,
-    ) -> Result<(), Self::Error>;
+    );
 
     /// Register the GAP service with the GATT.
     ///
@@ -243,12 +240,7 @@ pub trait GapCommands {
     /// # Generated events
     ///
     /// A [Command Complete](crate::vendor::stm32wb::event::command::ReturnParameters::GapInit) event is generated.
-    async fn init(
-        &mut self,
-        role: Role,
-        privacy_enabled: bool,
-        dev_name_characteristic_len: u8,
-    ) -> Result<(), Self::Error>;
+    async fn init(&mut self, role: Role, privacy_enabled: bool, dev_name_characteristic_len: u8);
 
     /// Register the GAP service with the GATT.
     ///
@@ -258,7 +250,7 @@ pub trait GapCommands {
         role: Role,
         privacy_enabled: bool,
         dev_name_characteristic_len: u8,
-    ) -> Result<(), Self::Error> {
+    ) {
         self.init(role, privacy_enabled, dev_name_characteristic_len)
             .await
     }
@@ -287,7 +279,7 @@ pub trait GapCommands {
         &mut self,
         advertising_type: AdvertisingType,
         address_type: AddressType,
-    ) -> Result<(), Error<Self::Error>>;
+    ) -> Result<(), Error>;
 
     /// Put the device into undirected connectable mode.
     ///
@@ -310,7 +302,7 @@ pub trait GapCommands {
         &mut self,
         filter_policy: AdvertisingFilterPolicy,
         address_type: AddressType,
-    ) -> Result<(), Error<Self::Error>>;
+    ) -> Result<(), Error>;
 
     /// This command has to be issued to notify the central device of the security requirements of
     /// the peripheral.
@@ -326,10 +318,7 @@ pub trait GapCommands {
     /// successfully transmitted to the master, a [GAP Peripheral Security
     /// Initiated](crate::vendor::stm32wb::event::BlueNRGEvent::GapPeripheralSecurityInitiated) vendor-specific event
     /// will be generated.
-    async fn peripheral_security_request(
-        &mut self,
-        params: &SecurityRequestParameters,
-    ) -> Result<(), Self::Error>;
+    async fn peripheral_security_request(&mut self, params: &SecurityRequestParameters);
 
     /// This command can be used to update the advertising data for a particular AD type. If the AD
     /// type specified does not exist, then it is added to the advertising data. If the overall
@@ -346,7 +335,7 @@ pub trait GapCommands {
     ///
     /// A [Command Complete](crate::vendor::stm32wb::event::command::ReturnParameters::GapUpdateAdvertisingData)
     /// event is generated.
-    async fn update_advertising_data(&mut self, data: &[u8]) -> Result<(), Error<Self::Error>>;
+    async fn update_advertising_data(&mut self, data: &[u8]) -> Result<(), Error>;
 
     /// This command can be used to delete the specified AD type from the advertisement data if
     /// present.
@@ -359,7 +348,7 @@ pub trait GapCommands {
     ///
     /// A [Command Complete](crate::vendor::stm32wb::event::command::ReturnParameters::GapDeleteAdType) event is
     /// generated.
-    async fn delete_ad_type(&mut self, ad_type: AdvertisingDataType) -> Result<(), Self::Error>;
+    async fn delete_ad_type(&mut self, ad_type: AdvertisingDataType);
 
     /// This command can be used to get the current security settings of the device.
     ///
@@ -371,7 +360,7 @@ pub trait GapCommands {
     ///
     /// A [Command Complete](crate::vendor::stm32wb::event::command::ReturnParameters::GapGetSecurityLevel) event is
     /// generated.
-    async fn get_security_level(&mut self) -> Result<(), Self::Error>;
+    async fn get_security_level(&mut self);
 
     /// Allows masking events from the GAP.
     ///
@@ -385,13 +374,13 @@ pub trait GapCommands {
     ///
     /// A [Command Complete](crate::vendor::stm32wb::event::command::ReturnParameters::GapSetEventMask) event is
     /// generated.
-    async fn set_event_mask(&mut self, flags: EventFlags) -> Result<(), Self::Error>;
+    async fn set_event_mask(&mut self, flags: EventFlags);
 
     /// Allows masking events from the GAP.
     ///
     /// This function exists to prevent name conflicts with other Commands traits' set_event_mask
     /// methods.
-    async fn set_gap_event_mask(&mut self, flags: EventFlags) -> Result<(), Self::Error> {
+    async fn set_gap_event_mask(&mut self, flags: EventFlags) {
         self.set_event_mask(flags).await
     }
 
@@ -406,7 +395,7 @@ pub trait GapCommands {
     ///
     /// A [Command Complete](crate::vendor::stm32wb::event::command::ReturnParameters::GapConfigureWhiteList) event
     /// is generated.
-    async fn configure_white_list(&mut self) -> Result<(), Self::Error>;
+    async fn configure_white_list(&mut self);
 
     /// Command the controller to terminate the connection.
     ///
@@ -433,7 +422,7 @@ pub trait GapCommands {
         &mut self,
         conn_handle: crate::ConnectionHandle,
         reason: crate::Status<crate::vendor::stm32wb::event::Status>,
-    ) -> Result<(), Error<Self::Error>>;
+    ) -> Result<(), Error>;
 
     /// Clear the security database. All the devices in the security database will be removed.
     ///
@@ -445,7 +434,7 @@ pub trait GapCommands {
     ///
     /// A [Command Complete](crate::vendor::stm32wb::event::command::ReturnParameters::GapClearSecurityDatabase)
     /// event is generated.
-    async fn clear_security_database(&mut self) -> Result<(), Self::Error>;
+    async fn clear_security_database(&mut self);
 
     #[cfg(not(feature = "ms"))]
     /// This command should be given by the application when it receives the
@@ -462,7 +451,7 @@ pub trait GapCommands {
     /// A [Command Complete](::event::command::ReturnParameters::GapAllowRebond) event is
     /// generated. Even if the command is given when it is not valid, success will be returned but
     /// internally it will have no effect.
-    async fn allow_rebond(&mut self) -> Result<(), Self::Error>;
+    async fn allow_rebond(&mut self);
 
     #[cfg(feature = "ms")]
     /// This command should be given by the application when it receives the [GAP Bond
@@ -479,10 +468,7 @@ pub trait GapCommands {
     /// A [Command Complete](crate::vendor::stm32wb::event::command::ReturnParameters::GapAllowRebond) event is
     /// generated. Even if the command is given when it is not valid, success will be returned but
     /// internally it will have no effect.
-    async fn allow_rebond(
-        &mut self,
-        conn_handle: crate::ConnectionHandle,
-    ) -> Result<(), Self::Error>;
+    async fn allow_rebond(&mut self, conn_handle: crate::ConnectionHandle);
 
     /// Start the limited discovery procedure.
     ///
@@ -509,10 +495,7 @@ pub trait GapCommands {
     ///
     /// The device found when the procedure is ongoing is returned to the upper layers through the
     /// [LeAdvertisingReport](crate::event::Event::LeAdvertisingReport) event.
-    async fn start_limited_discovery_procedure(
-        &mut self,
-        params: &DiscoveryProcedureParameters,
-    ) -> Result<(), Self::Error>;
+    async fn start_limited_discovery_procedure(&mut self, params: &DiscoveryProcedureParameters);
 
     /// Start the general discovery procedure. The controller is commanded to start active scanning.
     ///
@@ -535,10 +518,7 @@ pub trait GapCommands {
     ///
     /// The device found when the procedure is ongoing is returned to the upper layers through the
     /// [LeAdvertisingReport](crate::event::Event::LeAdvertisingReport) event.
-    async fn start_general_discovery_procedure(
-        &mut self,
-        params: &DiscoveryProcedureParameters,
-    ) -> Result<(), Self::Error>;
+    async fn start_general_discovery_procedure(&mut self, params: &DiscoveryProcedureParameters);
 
     /// Start the name discovery procedure.
     ///
@@ -564,10 +544,7 @@ pub trait GapCommands {
     /// procedure, a [ProcedureComplete](crate::vendor::stm32wb::event::BlueNRGEvent::GapProcedureComplete) event is
     /// returned with the procedure code set to
     /// [NameDiscovery](crate::vendor::stm32wb::event::GapProcedure::NameDiscovery).
-    async fn start_name_discovery_procedure(
-        &mut self,
-        params: &NameDiscoveryProcedureParameters,
-    ) -> Result<(), Self::Error>;
+    async fn start_name_discovery_procedure(&mut self, params: &NameDiscoveryProcedureParameters);
 
     /// Start the auto connection establishment procedure.
     ///
@@ -589,7 +566,7 @@ pub trait GapCommands {
     async fn start_auto_connection_establishment(
         &mut self,
         params: &AutoConnectionEstablishmentParameters<'_>,
-    ) -> Result<(), Error<Self::Error>>;
+    ) -> Result<(), Error>;
 
     /// Start a general connection establishment procedure.
     ///
@@ -611,7 +588,7 @@ pub trait GapCommands {
     async fn start_general_connection_establishment(
         &mut self,
         params: &GeneralConnectionEstablishmentParameters,
-    ) -> Result<(), Self::Error>;
+    );
 
     /// Start a selective connection establishment procedure.
     ///
@@ -633,7 +610,7 @@ pub trait GapCommands {
     async fn start_selective_connection_establishment(
         &mut self,
         params: &SelectiveConnectionEstablishmentParameters<'_>,
-    ) -> Result<(), Error<Self::Error>>;
+    ) -> Result<(), Error>;
 
     /// Start the direct connection establishment procedure.
     ///
@@ -661,8 +638,7 @@ pub trait GapCommands {
     /// command [`terminate_procedure`](Commands::terminate_procedure) with the procedure_code set
     /// to
     /// [DirectConnectionEstablishment](crate::vendor::stm32wb::event::GapProcedure::DirectConnectionEstablishment).
-    async fn create_connection(&mut self, params: &ConnectionParameters)
-        -> Result<(), Self::Error>;
+    async fn create_connection(&mut self, params: &ConnectionParameters);
 
     /// The GAP procedure(s) specified is terminated.
     ///
@@ -678,8 +654,7 @@ pub trait GapCommands {
     /// will be [Success](crate::Status::Success) and a
     /// [ProcedureCompleted](crate::vendor::stm32wb::event::BlueNRGEvent::GapProcedureComplete) event is returned
     /// with the procedure code set to the corresponding procedure.
-    async fn terminate_procedure(&mut self, procedure: Procedure)
-        -> Result<(), Error<Self::Error>>;
+    async fn terminate_procedure(&mut self, procedure: Procedure) -> Result<(), Error>;
 
     /// Start the connection update procedure.
     ///
@@ -697,10 +672,7 @@ pub trait GapCommands {
     /// connection update, a
     /// [LeConnectionUpdateComplete](crate::event::Event::LeConnectionUpdateComplete) event is
     /// returned to the upper layer.
-    async fn start_connection_update(
-        &mut self,
-        params: &ConnectionUpdateParameters,
-    ) -> Result<(), Self::Error>;
+    async fn start_connection_update(&mut self, params: &ConnectionUpdateParameters);
 
     /// Send the SM pairing request to start a pairing process. The authentication requirements and
     /// I/O capabilities should be set before issuing this command using the
@@ -718,7 +690,7 @@ pub trait GapCommands {
     /// received. If [Success](crate::Status::Success) is returned in the command status event, a
     /// [Pairing Complete](crate::vendor::stm32wb::event::BlueNRGEvent::GapPairingComplete) event is returned after
     /// the pairing process is completed.
-    async fn send_pairing_request(&mut self, params: &PairingRequest) -> Result<(), Self::Error>;
+    async fn send_pairing_request(&mut self, params: &PairingRequest);
 
     /// This command tries to resolve the address provided with the IRKs present in its database.
     ///
@@ -735,7 +707,7 @@ pub trait GapCommands {
     /// A [command complete](crate::vendor::stm32wb::event::command::ReturnParameters::GapResolvePrivateAddress)
     /// event is generated. If [Success](crate::Status::Success) is returned as the status, then the
     /// address is also returned in the event.
-    async fn resolve_private_address(&mut self, addr: crate::BdAddr) -> Result<(), Self::Error>;
+    async fn resolve_private_address(&mut self, addr: crate::BdAddr);
 
     /// This command gets the list of the devices which are bonded. It returns the number of
     /// addresses and the corresponding address types and values.
@@ -748,7 +720,7 @@ pub trait GapCommands {
     ///
     /// A [command complete](crate::vendor::stm32wb::event::command::ReturnParameters::GapGetBondedDevices) event is
     /// generated.
-    async fn get_bonded_devices(&mut self) -> Result<(), Self::Error>;
+    async fn get_bonded_devices(&mut self);
 
     #[cfg(feature = "ms")]
     /// This command puts the device into broadcast mode.
@@ -769,10 +741,7 @@ pub trait GapCommands {
     ///
     /// A [command complete](crate::vendor::stm32wb::event::command::ReturnParameters::GapSetBroadcastMode) event is
     /// returned where the status indicates whether the command was successful.
-    async fn set_broadcast_mode(
-        &mut self,
-        params: &BroadcastModeParameters,
-    ) -> Result<(), Error<Self::Error>>;
+    async fn set_broadcast_mode(&mut self, params: &BroadcastModeParameters) -> Result<(), Error>;
 
     #[cfg(feature = "ms")]
     /// Starts an Observation procedure, when the device is in Observer Role.
@@ -789,10 +758,7 @@ pub trait GapCommands {
     ///
     /// A [command complete](crate::vendor::stm32wb::event::command::ReturnParameters::GapStartObservationProcedure)
     /// event is generated.
-    async fn start_observation_procedure(
-        &mut self,
-        params: &ObservationProcedureParameters,
-    ) -> Result<(), Self::Error>;
+    async fn start_observation_procedure(&mut self, params: &ObservationProcedureParameters);
 
     /// The command finds whether the device, whose address is specified in the command, is
     /// bonded. If the device is using a resolvable private address and it has been bonded, then the
@@ -806,16 +772,11 @@ pub trait GapCommands {
     ///
     /// A [command complete](crate::vendor::stm32wb::event::command::ReturnParameters::GapIsDeviceBonded) event is
     /// generated.
-    async fn is_device_bonded(
-        &mut self,
-        addr: crate::host::PeerAddrType,
-    ) -> Result<(), Self::Error>;
+    async fn is_device_bonded(&mut self, addr: crate::host::PeerAddrType);
 }
 
 impl<T: Controller> GapCommands for T {
-    type Error = T::Error;
-
-    async fn set_nondiscoverable(&mut self) -> Result<(), Self::Error> {
+    async fn set_nondiscoverable(&mut self) {
         super::write_command(
             self,
             crate::vendor::stm32wb::opcode::GAP_SET_NONDISCOVERABLE,
@@ -842,7 +803,7 @@ impl<T: Controller> GapCommands for T {
         crate::vendor::stm32wb::opcode::GAP_SET_DIRECT_CONNECTABLE
     );
 
-    async fn set_io_capability(&mut self, capability: IoCapability) -> Result<(), Self::Error> {
+    async fn set_io_capability(&mut self, capability: IoCapability) {
         super::write_command(
             self,
             crate::vendor::stm32wb::opcode::GAP_SET_IO_CAPABILITY,
@@ -861,7 +822,7 @@ impl<T: Controller> GapCommands for T {
         &mut self,
         conn_handle: crate::ConnectionHandle,
         authorization_required: bool,
-    ) -> Result<(), Self::Error> {
+    ) {
         let mut bytes = [0; 3];
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
         bytes[2] = authorization_required as u8;
@@ -878,7 +839,7 @@ impl<T: Controller> GapCommands for T {
         &mut self,
         conn_handle: crate::ConnectionHandle,
         pin: u32,
-    ) -> Result<(), Error<Self::Error>> {
+    ) -> Result<(), Error> {
         if pin > 999_999 {
             return Err(Error::BadFixedPin(pin));
         }
@@ -892,15 +853,16 @@ impl<T: Controller> GapCommands for T {
             crate::vendor::stm32wb::opcode::GAP_PASS_KEY_RESPONSE,
             &bytes,
         )
-        .await
-        .map_err(rewrap_into_comm)
+        .await;
+
+        Ok(())
     }
 
     async fn authorization_response(
         &mut self,
         conn_handle: crate::ConnectionHandle,
         authorization: Authorization,
-    ) -> Result<(), Self::Error> {
+    ) {
         let mut bytes = [0; 3];
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
         bytes[2] = authorization as u8;
@@ -913,12 +875,7 @@ impl<T: Controller> GapCommands for T {
         .await
     }
 
-    async fn init(
-        &mut self,
-        role: Role,
-        privacy_enabled: bool,
-        dev_name_characteristic_len: u8,
-    ) -> Result<(), Self::Error> {
+    async fn init(&mut self, role: Role, privacy_enabled: bool, dev_name_characteristic_len: u8) {
         let mut bytes = [0; 3];
         bytes[0] = role.bits();
         bytes[1] = privacy_enabled as u8;
@@ -931,7 +888,7 @@ impl<T: Controller> GapCommands for T {
         &mut self,
         advertising_type: AdvertisingType,
         address_type: AddressType,
-    ) -> Result<(), Error<Self::Error>> {
+    ) -> Result<(), Error> {
         match advertising_type {
             AdvertisingType::ScannableUndirected | AdvertisingType::NonConnectableUndirected => (),
             _ => {
@@ -944,15 +901,16 @@ impl<T: Controller> GapCommands for T {
             crate::vendor::stm32wb::opcode::GAP_SET_NONCONNECTABLE,
             &[advertising_type as u8, address_type as u8],
         )
-        .await
-        .map_err(rewrap_into_comm)
+        .await;
+
+        Ok(())
     }
 
     async fn set_undirected_connectable(
         &mut self,
         filter_policy: AdvertisingFilterPolicy,
         address_type: AddressType,
-    ) -> Result<(), Error<Self::Error>> {
+    ) -> Result<(), Error> {
         match filter_policy {
             AdvertisingFilterPolicy::AllowConnectionAndScan
             | AdvertisingFilterPolicy::WhiteListConnectionAndScan => (),
@@ -966,8 +924,9 @@ impl<T: Controller> GapCommands for T {
             crate::vendor::stm32wb::opcode::GAP_SET_UNDIRECTED_CONNECTABLE,
             &[filter_policy as u8, address_type as u8],
         )
-        .await
-        .map_err(rewrap_into_comm)
+        .await;
+
+        Ok(())
     }
 
     impl_params!(
@@ -976,7 +935,7 @@ impl<T: Controller> GapCommands for T {
         crate::vendor::stm32wb::opcode::GAP_PERIPHERAL_SECURITY_REQUEST
     );
 
-    async fn update_advertising_data(&mut self, data: &[u8]) -> Result<(), Error<Self::Error>> {
+    async fn update_advertising_data(&mut self, data: &[u8]) -> Result<(), Error> {
         const MAX_LENGTH: usize = 31;
         if data.len() > MAX_LENGTH {
             return Err(Error::BadAdvertisingDataLength(data.len()));
@@ -991,11 +950,12 @@ impl<T: Controller> GapCommands for T {
             crate::vendor::stm32wb::opcode::GAP_UPDATE_ADVERTISING_DATA,
             &bytes[0..=data.len()],
         )
-        .await
-        .map_err(rewrap_into_comm)
+        .await;
+
+        Ok(())
     }
 
-    async fn delete_ad_type(&mut self, ad_type: AdvertisingDataType) -> Result<(), Self::Error> {
+    async fn delete_ad_type(&mut self, ad_type: AdvertisingDataType) {
         super::write_command(
             self,
             crate::vendor::stm32wb::opcode::GAP_DELETE_AD_TYPE,
@@ -1004,7 +964,7 @@ impl<T: Controller> GapCommands for T {
         .await
     }
 
-    async fn get_security_level(&mut self) -> Result<(), Self::Error> {
+    async fn get_security_level(&mut self) {
         super::write_command(
             self,
             crate::vendor::stm32wb::opcode::GAP_GET_SECURITY_LEVEL,
@@ -1013,7 +973,7 @@ impl<T: Controller> GapCommands for T {
         .await
     }
 
-    async fn set_event_mask(&mut self, flags: EventFlags) -> Result<(), Self::Error> {
+    async fn set_event_mask(&mut self, flags: EventFlags) {
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes, flags.bits());
 
@@ -1025,7 +985,7 @@ impl<T: Controller> GapCommands for T {
         .await
     }
 
-    async fn configure_white_list(&mut self) -> Result<(), Self::Error> {
+    async fn configure_white_list(&mut self) {
         super::write_command(
             self,
             crate::vendor::stm32wb::opcode::GAP_CONFIGURE_WHITE_LIST,
@@ -1038,7 +998,7 @@ impl<T: Controller> GapCommands for T {
         &mut self,
         conn_handle: crate::ConnectionHandle,
         reason: crate::Status<crate::vendor::stm32wb::event::Status>,
-    ) -> Result<(), Error<Self::Error>> {
+    ) -> Result<(), Error> {
         match reason {
             crate::Status::AuthFailure
             | crate::Status::RemoteTerminationByUser
@@ -1054,12 +1014,12 @@ impl<T: Controller> GapCommands for T {
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
         bytes[2] = reason.into();
 
-        super::write_command(self, crate::vendor::stm32wb::opcode::GAP_TERMINATE, &bytes)
-            .await
-            .map_err(rewrap_into_comm)
+        super::write_command(self, crate::vendor::stm32wb::opcode::GAP_TERMINATE, &bytes).await;
+
+        Ok(())
     }
 
-    async fn clear_security_database(&mut self) -> Result<(), Self::Error> {
+    async fn clear_security_database(&mut self) {
         super::write_command(
             self,
             crate::vendor::stm32wb::opcode::GAP_CLEAR_SECURITY_DATABASE,
@@ -1069,15 +1029,12 @@ impl<T: Controller> GapCommands for T {
     }
 
     #[cfg(not(feature = "ms"))]
-    async fn allow_rebond(&mut self) -> Result<(), Self::Error> {
+    async fn allow_rebond(&mut self) {
         super::write_command(self, crate::vendor::stm32wb::opcode::GAP_ALLOW_REBOND, &[]).await
     }
 
     #[cfg(feature = "ms")]
-    async fn allow_rebond(
-        &mut self,
-        conn_handle: crate::ConnectionHandle,
-    ) -> Result<(), Self::Error> {
+    async fn allow_rebond(&mut self, conn_handle: crate::ConnectionHandle) {
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes, conn_handle.0);
         super::write_command(
@@ -1129,10 +1086,7 @@ impl<T: Controller> GapCommands for T {
         crate::vendor::stm32wb::opcode::GAP_CREATE_CONNECTION
     );
 
-    async fn terminate_procedure(
-        &mut self,
-        procedure: Procedure,
-    ) -> Result<(), Error<Self::Error>> {
+    async fn terminate_procedure(&mut self, procedure: Procedure) -> Result<(), Error> {
         if procedure.is_empty() {
             return Err(Error::NoProcedure);
         }
@@ -1142,8 +1096,9 @@ impl<T: Controller> GapCommands for T {
             crate::vendor::stm32wb::opcode::GAP_TERMINATE_PROCEDURE,
             &[procedure.bits()],
         )
-        .await
-        .map_err(rewrap_into_comm)
+        .await;
+
+        Ok(())
     }
 
     impl_params!(
@@ -1158,7 +1113,7 @@ impl<T: Controller> GapCommands for T {
         crate::vendor::stm32wb::opcode::GAP_SEND_PAIRING_REQUEST
     );
 
-    async fn resolve_private_address(&mut self, addr: crate::BdAddr) -> Result<(), Self::Error> {
+    async fn resolve_private_address(&mut self, addr: crate::BdAddr) {
         super::write_command(
             self,
             crate::vendor::stm32wb::opcode::GAP_RESOLVE_PRIVATE_ADDRESS,
@@ -1167,7 +1122,7 @@ impl<T: Controller> GapCommands for T {
         .await
     }
 
-    async fn get_bonded_devices(&mut self) -> Result<(), Self::Error> {
+    async fn get_bonded_devices(&mut self) {
         super::write_command(
             self,
             crate::vendor::stm32wb::opcode::GAP_GET_BONDED_DEVICES,
@@ -1190,10 +1145,7 @@ impl<T: Controller> GapCommands for T {
         crate::vendor::stm32wb::opcode::GAP_START_OBSERVATION_PROCEDURE
     );
 
-    async fn is_device_bonded(
-        &mut self,
-        addr: crate::host::PeerAddrType,
-    ) -> Result<(), Self::Error> {
+    async fn is_device_bonded(&mut self, addr: crate::host::PeerAddrType) {
         let mut bytes = [0; 7];
         addr.copy_into_slice(&mut bytes);
 
@@ -1212,7 +1164,7 @@ impl<T: Controller> GapCommands for T {
 /// enumerates the potential validation errors. Must be specialized on the types of communication
 /// errors.
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum Error<E> {
+pub enum Error {
     /// For the [GAP Set Limited Discoverable](Commands::set_limited_discoverable) and
     /// [GAP Set Discoverable](Commands::set_discoverable) commands, the connection
     /// interval is inverted (the min is greater than the max).  Return the provided min as the
@@ -1271,13 +1223,6 @@ pub enum Error<E> {
     /// For the [GAP Terminate Procedure](Commands::terminate_procedure) command, the
     /// provided bitfield had no bits set.
     NoProcedure,
-
-    /// Underlying communication error.
-    Comm(E),
-}
-
-fn rewrap_into_comm<E>(e: E) -> Error<E> {
-    Error::Comm(e)
 }
 
 fn to_conn_interval_value(d: Duration) -> u16 {
@@ -1340,7 +1285,7 @@ impl<'a, 'b> DiscoverableParameters<'a, 'b> {
     // 14 fixed-size parameters, one parameter of up to 31 bytes, and one of up to 248 bytes.
     const MAX_LENGTH: usize = 14 + 31 + 248;
 
-    fn validate<E>(&self) -> Result<(), Error<E>> {
+    fn validate(&self) -> Result<(), Error> {
         match self.advertising_type {
             AdvertisingType::ConnectableUndirected
             | AdvertisingType::ScannableUndirected
@@ -1486,7 +1431,7 @@ impl DirectConnectableParameters {
     #[cfg(feature = "ms")]
     const LENGTH: usize = 13;
 
-    fn validate<E>(&self) -> Result<(), Error<E>> {
+    fn validate(&self) -> Result<(), Error> {
         #[cfg(feature = "ms")]
         {
             const MIN_DURATION: Duration = Duration::from_millis(20);
@@ -1577,7 +1522,7 @@ pub struct AuthenticationRequirements {
 impl AuthenticationRequirements {
     const LENGTH: usize = 26;
 
-    fn validate<E>(&self) -> Result<(), Error<E>> {
+    fn validate(&self) -> Result<(), Error> {
         if self.encryption_key_size_range.0 > self.encryption_key_size_range.1 {
             return Err(Error::BadEncryptionKeySizeRange(
                 self.encryption_key_size_range.0,
@@ -1855,7 +1800,7 @@ pub struct AutoConnectionEstablishmentParameters<'a> {
 impl<'a> AutoConnectionEstablishmentParameters<'a> {
     const MAX_LENGTH: usize = 249;
 
-    fn validate<E>(&self) -> Result<(), Error<E>> {
+    fn validate(&self) -> Result<(), Error> {
         const MAX_WHITE_LIST_LENGTH: usize = 33;
         if self.white_list.len() > MAX_WHITE_LIST_LENGTH - if cfg!(feature = "ms") { 0 } else { 1 }
         {
@@ -1969,7 +1914,7 @@ pub struct SelectiveConnectionEstablishmentParameters<'a> {
 impl<'a> SelectiveConnectionEstablishmentParameters<'a> {
     const MAX_LENGTH: usize = 252;
 
-    fn validate<E>(&self) -> Result<(), Error<E>> {
+    fn validate(&self) -> Result<(), Error> {
         const MAX_WHITE_LIST_LENGTH: usize = 35;
         if self.white_list.len() > MAX_WHITE_LIST_LENGTH {
             return Err(Error::WhiteListTooLong);
@@ -2112,7 +2057,7 @@ pub struct BroadcastModeParameters<'a, 'b> {
 impl<'a, 'b> BroadcastModeParameters<'a, 'b> {
     const MAX_LENGTH: usize = 255;
 
-    fn validate<E>(&self) -> Result<(), Error<E>> {
+    fn validate(&self) -> Result<(), Error> {
         const MAX_ADVERTISING_DATA_LENGTH: usize = 31;
 
         match self.advertising_interval.advertising_type() {

@@ -2,8 +2,6 @@
 
 extern crate bluetooth_hci_async as hci;
 
-use hci::host::*;
-
 pub struct RecordingSink {
     pub written_data: Vec<u8>,
 }
@@ -69,11 +67,7 @@ impl hci::event::VendorReturnParameters for VendorReturnParameters {
 }
 
 impl hci::Controller for RecordingSink {
-    type Error = RecordingSinkError;
-    type Header = uart::CommandHeader;
-    type Vendor = MockVendor;
-
-    async fn write(&mut self, header: &[u8], payload: &[u8]) -> Result<(), Self::Error> {
+    async fn write(&mut self, header: &[u8], payload: &[u8]) {
         println!("header {:?}", header);
         println!("payload {:?}", payload);
 
@@ -83,15 +77,12 @@ impl hci::Controller for RecordingSink {
             h.copy_from_slice(header);
             p.copy_from_slice(payload);
         }
-        Ok(())
     }
 
-    async fn read_into(&mut self, _buffer: &mut [u8]) -> Result<(), Self::Error> {
-        Err(RecordingSinkError {})
-    }
+    async fn read_into(&mut self, _buffer: &mut [u8]) {}
 
-    async fn peek(&mut self, _n: usize) -> Result<u8, Self::Error> {
-        Err(RecordingSinkError {})
+    async fn peek(&mut self, _n: usize) -> u8 {
+        0
     }
 }
 

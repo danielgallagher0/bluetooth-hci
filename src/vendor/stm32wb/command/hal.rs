@@ -8,9 +8,6 @@ use crate::Controller;
 
 /// Vendor-specific HCI commands for the [`ActiveBlueNRG`](crate::ActiveBlueNRG).
 pub trait HalCommands {
-    /// Type of communication errors.
-    type Error;
-
     /// This command is intended to retrieve the firmware revision number.
     ///
     /// # Errors
@@ -21,7 +18,7 @@ pub trait HalCommands {
     ///
     /// The controller will generate a [command
     /// complete](crate::event::command::ReturnParameters::HalGetFirmwareRevision) event.
-    async fn get_firmware_revision(&mut self) -> Result<(), Self::Error>;
+    async fn get_firmware_revision(&mut self);
 
     /// This command writes a value to a low level configure data structure. It is useful to setup
     /// directly some low level parameters for the system in the runtime.
@@ -34,7 +31,7 @@ pub trait HalCommands {
     ///
     /// The controller will generate a [command
     /// complete](crate::event::command::ReturnParameters::HalWriteConfigData) event.
-    async fn write_config_data(&mut self, config: &ConfigData) -> Result<(), Self::Error>;
+    async fn write_config_data(&mut self, config: &ConfigData);
 
     /// This command requests the value in the low level configure data structure.
     ///
@@ -46,7 +43,7 @@ pub trait HalCommands {
     ///
     /// The controller will generate a [command
     /// complete](crate::event::command::ReturnParameters::HalReadConfigData) event.
-    async fn read_config_data(&mut self, param: ConfigParameter) -> Result<(), Self::Error>;
+    async fn read_config_data(&mut self, param: ConfigParameter);
 
     /// This command sets the TX power level of the BlueNRG-MS.
     ///
@@ -68,7 +65,7 @@ pub trait HalCommands {
     ///
     /// The controller will generate a [command
     /// complete](crate::event::command::ReturnParameters::HalSetTxPowerLevel) event.
-    async fn set_tx_power_level(&mut self, level: PowerLevel) -> Result<(), Self::Error>;
+    async fn set_tx_power_level(&mut self, level: PowerLevel);
 
     /// Puts the device in standby mode.
     ///
@@ -92,7 +89,7 @@ pub trait HalCommands {
     ///
     /// The command is only accepted when there is no other Bluetooth activity. Otherwise an error
     /// code [command disallowed](crate::Status::CommandDisallowed) will return.
-    async fn device_standby(&mut self) -> Result<(), Self::Error>;
+    async fn device_standby(&mut self);
 
     /// Retrieve the number of packets sent in the last TX direct test.
     ///
@@ -115,7 +112,7 @@ pub trait HalCommands {
     ///
     /// The controller will generate a [command
     /// complete](crate::event::command::ReturnParameters::HalGetTxTestPacketCount) event.
-    async fn get_tx_test_packet_count(&mut self) -> Result<(), Self::Error>;
+    async fn get_tx_test_packet_count(&mut self);
 
     /// This command starts a carrier frequency, i.e. a tone, on a specific channel.
     ///
@@ -135,7 +132,7 @@ pub trait HalCommands {
     ///
     /// The controller will generate a [command
     /// complete](crate::event::command::ReturnParameters::HalStartTone) event.
-    async fn start_tone(&mut self, channel: u8) -> Result<(), Error<Self::Error>>;
+    async fn start_tone(&mut self, channel: u8) -> Result<(), Error>;
 
     /// Stops the previously started by the [`start_tone`](Commands::start_tone) command.
     ///
@@ -147,7 +144,7 @@ pub trait HalCommands {
     ///
     /// The controller will generate a [command
     /// complete](crate::event::command::ReturnParameters::HalStopTone) event.
-    async fn stop_tone(&mut self) -> Result<(), Self::Error>;
+    async fn stop_tone(&mut self);
 
     /// This command is intended to return the Link Layer Status and Connection Handles.
     ///
@@ -159,7 +156,7 @@ pub trait HalCommands {
     ///
     /// The controller will generate a [command
     /// complete](crate::event::command::ReturnParameters::HalGetLinkStatus) event.
-    async fn get_link_status(&mut self) -> Result<(), Self::Error>;
+    async fn get_link_status(&mut self);
 
     /// This command is intended to retrieve information about the current Anchor Interval and
     /// allocable timing slots.
@@ -172,13 +169,11 @@ pub trait HalCommands {
     ///
     /// The controller will generate a [command
     /// complete](crate::event::command::ReturnParameters::HalGetAnchorPeriod) event.
-    async fn get_anchor_period(&mut self) -> Result<(), Self::Error>;
+    async fn get_anchor_period(&mut self);
 }
 
 impl<T: Controller> HalCommands for T {
-    type Error = T::Error;
-
-    async fn get_firmware_revision(&mut self) -> Result<(), Self::Error> {
+    async fn get_firmware_revision(&mut self) {
         super::write_command(
             self,
             crate::vendor::stm32wb::opcode::HAL_GET_FIRMWARE_REVISION,
@@ -193,7 +188,7 @@ impl<T: Controller> HalCommands for T {
         crate::vendor::stm32wb::opcode::HAL_WRITE_CONFIG_DATA
     );
 
-    async fn read_config_data(&mut self, param: ConfigParameter) -> Result<(), Self::Error> {
+    async fn read_config_data(&mut self, param: ConfigParameter) {
         super::write_command(
             self,
             crate::vendor::stm32wb::opcode::HAL_READ_CONFIG_DATA,
@@ -202,7 +197,7 @@ impl<T: Controller> HalCommands for T {
         .await
     }
 
-    async fn set_tx_power_level(&mut self, level: PowerLevel) -> Result<(), Self::Error> {
+    async fn set_tx_power_level(&mut self, level: PowerLevel) {
         // Byte 0: enable high power mode - deprecated and ignored on STM32WB
         // Byte 1: PA level
         let mut bytes = [0; 2];
@@ -216,7 +211,7 @@ impl<T: Controller> HalCommands for T {
         .await
     }
 
-    async fn device_standby(&mut self) -> Result<(), Self::Error> {
+    async fn device_standby(&mut self) {
         super::write_command(
             self,
             crate::vendor::stm32wb::opcode::HAL_DEVICE_STANDBY,
@@ -225,7 +220,7 @@ impl<T: Controller> HalCommands for T {
         .await
     }
 
-    async fn get_tx_test_packet_count(&mut self) -> Result<(), Self::Error> {
+    async fn get_tx_test_packet_count(&mut self) {
         super::write_command(
             self,
             crate::vendor::stm32wb::opcode::HAL_TX_TEST_PACKET_COUNT,
@@ -234,7 +229,7 @@ impl<T: Controller> HalCommands for T {
         .await
     }
 
-    async fn start_tone(&mut self, channel: u8) -> Result<(), Error<Self::Error>> {
+    async fn start_tone(&mut self, channel: u8) -> Result<(), Error> {
         const MAX_CHANNEL: u8 = 39;
         if channel > MAX_CHANNEL {
             return Err(Error::InvalidChannel(channel));
@@ -245,15 +240,16 @@ impl<T: Controller> HalCommands for T {
             crate::vendor::stm32wb::opcode::HAL_START_TONE,
             &[channel],
         )
-        .await
-        .map_err(rewrap_into_comm)
+        .await;
+
+        Ok(())
     }
 
-    async fn stop_tone(&mut self) -> Result<(), Self::Error> {
+    async fn stop_tone(&mut self) {
         super::write_command(self, crate::vendor::stm32wb::opcode::HAL_STOP_TONE, &[]).await
     }
 
-    async fn get_link_status(&mut self) -> Result<(), Self::Error> {
+    async fn get_link_status(&mut self) {
         super::write_command(
             self,
             crate::vendor::stm32wb::opcode::HAL_GET_LINK_STATUS,
@@ -262,7 +258,7 @@ impl<T: Controller> HalCommands for T {
         .await
     }
 
-    async fn get_anchor_period(&mut self) -> Result<(), Self::Error> {
+    async fn get_anchor_period(&mut self) {
         super::write_command(
             self,
             crate::vendor::stm32wb::opcode::HAL_GET_ANCHOR_PERIOD,
@@ -278,17 +274,10 @@ impl<T: Controller> HalCommands for T {
 /// enumerates the potential validation errors. Must be specialized on the types of communication
 /// errors.
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum Error<E> {
+pub enum Error {
     /// For the [Start Tone](Commands::start_tone) command, the channel was greater than the maximum
     /// allowed channel (39). The invalid channel is returned.
     InvalidChannel(u8),
-
-    /// Underlying communication error.
-    Comm(E),
-}
-
-fn rewrap_into_comm<E>(e: E) -> Error<E> {
-    Error::Comm(e)
 }
 
 /// Low-level configuration parameters for the controller.

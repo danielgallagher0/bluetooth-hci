@@ -44,8 +44,7 @@ macro_rules! conn_handle_only {
                 let mut sink = RecordingSink::new();
                 sink
                     .$fn(hci::ConnectionHandle(0x0201))
-                    .await
-                    .unwrap();
+                    .await;
                 assert_eq!(sink.written_data, [1, $oc0, $oc1, 2, 0x01, 0x02]);
             }
         )*
@@ -72,8 +71,7 @@ macro_rules! no_params {
                 let mut sink = RecordingSink::new();
                 sink
                     .$fn()
-                    .await
-                    .unwrap();
+                    .await;
                 assert_eq!(sink.written_data, [1, $oc0, $oc1, 0]);
             }
         )*
@@ -101,8 +99,7 @@ no_params! {
 async fn set_event_mask() {
     let mut sink = RecordingSink::new();
     sink.set_event_mask(EventFlags::INQUIRY_COMPLETE | EventFlags::AUTHENTICATION_COMPLETE)
-        .await
-        .unwrap();
+        .await;
     assert_eq!(
         sink.written_data,
         [1, 0x01, 0x0C, 8, 0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
@@ -113,8 +110,7 @@ async fn set_event_mask() {
 async fn read_tx_power_level() {
     let mut sink = RecordingSink::new();
     sink.read_tx_power_level(hci::ConnectionHandle(0x0201), TxPowerLevel::Current)
-        .await
-        .unwrap();
+        .await;
     assert_eq!(sink.written_data, [1, 0x2D, 0x0C, 3, 0x01, 0x02, 0x00])
 }
 
@@ -124,8 +120,7 @@ async fn le_set_event_mask() {
     sink.le_set_event_mask(
         LeEventFlags::CONNECTION_COMPLETE | LeEventFlags::REMOTE_CONNECTION_PARAMETER_REQUEST,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(
         sink.written_data,
         [1, 0x01, 0x20, 8, 0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
@@ -353,7 +348,7 @@ async fn le_set_scan_response_data_too_long() {
 #[tokio::test]
 async fn le_set_advertise_enable() {
     let mut sink = RecordingSink::new();
-    sink.le_set_advertise_enable(true).await.unwrap();
+    sink.le_set_advertise_enable(true).await;
     assert_eq!(sink.written_data, [1, 0x0A, 0x20, 1, 1]);
 }
 
@@ -361,7 +356,7 @@ async fn le_set_advertise_enable() {
 #[tokio::test]
 async fn le_set_advertising_enable() {
     let mut sink = RecordingSink::new();
-    sink.le_set_advertising_enable(true).await.unwrap();
+    sink.le_set_advertising_enable(true).await;
     assert_eq!(sink.written_data, [1, 0x0A, 0x20, 1, 1]);
 }
 
@@ -376,8 +371,7 @@ async fn le_set_scan_parameters() {
         own_address_type: OwnAddressType::Public,
         filter_policy: ScanFilterPolicy::AcceptAll,
     })
-    .await
-    .unwrap();
+    .await;
 
     // bytes 5-6: 0x21, 0x00 = 0x0021 = 33 ~= 21 ms / 0.625 ms
     // bytes 7-8: 0x10, 0x00 = 0x0010 = 16 = 10 ms / 0.625 ms
@@ -390,7 +384,7 @@ async fn le_set_scan_parameters() {
 #[tokio::test]
 async fn le_set_scan_enable() {
     let mut sink = RecordingSink::new();
-    sink.le_set_scan_enable(true, false).await.unwrap();
+    sink.le_set_scan_enable(true, false).await;
     assert_eq!(sink.written_data, [1, 0x0C, 0x20, 2, 1, 0]);
 }
 
@@ -416,8 +410,7 @@ async fn le_create_connection_no_whitelist() {
         )
         .unwrap(),
     })
-    .await
-    .unwrap();
+    .await;
     assert_eq!(
         sink.written_data,
         vec![
@@ -449,8 +442,7 @@ async fn le_create_connection_use_whitelist() {
         )
         .unwrap(),
     })
-    .await
-    .unwrap();
+    .await;
     assert_eq!(
         sink.written_data,
         vec![
@@ -464,8 +456,7 @@ async fn le_create_connection_use_whitelist() {
 async fn le_add_device_to_white_list() {
     let mut sink = RecordingSink::new();
     sink.le_add_device_to_white_list(hci::BdAddrType::Public(hci::BdAddr([1, 2, 3, 4, 5, 6])))
-        .await
-        .unwrap();
+        .await;
     assert_eq!(
         sink.written_data,
         [1, 0x11, 0x20, 7, 0x00, 1, 2, 3, 4, 5, 6]
@@ -476,9 +467,7 @@ async fn le_add_device_to_white_list() {
 #[tokio::test]
 async fn le_add_anon_advertising_devices_to_white_list() {
     let mut sink = RecordingSink::new();
-    sink.le_add_anon_advertising_devices_to_white_list()
-        .await
-        .unwrap();
+    sink.le_add_anon_advertising_devices_to_white_list().await;
     assert_eq!(
         sink.written_data,
         [1, 0x11, 0x20, 7, 0xFF, 0, 0, 0, 0, 0, 0]
@@ -489,8 +478,7 @@ async fn le_add_anon_advertising_devices_to_white_list() {
 async fn le_remove_device_from_white_list() {
     let mut sink = RecordingSink::new();
     sink.le_remove_device_from_white_list(hci::BdAddrType::Public(hci::BdAddr([1, 2, 3, 4, 5, 6])))
-        .await
-        .unwrap();
+        .await;
     assert_eq!(
         sink.written_data,
         [1, 0x12, 0x20, 7, 0x00, 1, 2, 3, 4, 5, 6]
@@ -502,8 +490,7 @@ async fn le_remove_device_from_white_list() {
 async fn le_remove_anon_advertising_devices_from_white_list() {
     let mut sink = RecordingSink::new();
     sink.le_remove_anon_advertising_devices_from_white_list()
-        .await
-        .unwrap();
+        .await;
     assert_eq!(
         sink.written_data,
         [1, 0x12, 0x20, 7, 0xFF, 0, 0, 0, 0, 0, 0]
@@ -527,8 +514,7 @@ async fn le_connection_update() {
         )
         .unwrap(),
     })
-    .await
-    .unwrap();
+    .await;
     assert_eq!(
         sink.written_data,
         vec![
@@ -585,8 +571,7 @@ async fn le_encrypt() {
             0x1e, 0x1f,
         ]),
     })
-    .await
-    .unwrap();
+    .await;
     assert_eq!(
         sink.written_data,
         vec![
@@ -608,8 +593,7 @@ async fn le_start_encryption() {
             0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf,
         ]),
     })
-    .await
-    .unwrap();
+    .await;
     assert_eq!(
         sink.written_data,
         vec![
@@ -628,8 +612,7 @@ async fn le_long_term_key_request_reply() {
             0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf,
         ]),
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(
         sink.written_data,
         vec![
