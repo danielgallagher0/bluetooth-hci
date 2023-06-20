@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-extern crate bluetooth_hci as hci;
+extern crate bluetooth_hci_async as hci;
 
 use hci::host::*;
 

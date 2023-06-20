@@ -1,6 +1,6 @@
 #![feature(async_fn_in_trait)]
 
-extern crate bluetooth_hci as hci;
+extern crate bluetooth_hci_async as hci;
 
 use hci::types::{ScanWindow, ScanWindowError};
 use std::time::Duration;

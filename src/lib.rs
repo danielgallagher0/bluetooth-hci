@@ -144,22 +144,22 @@ pub trait Controller {
     /// // host calls:
     ///
     /// # #![feature(async_fn_in_trait)]
-    /// # extern crate bluetooth_hci;
-    /// # use bluetooth_hci::Controller as HciController;
+    /// # extern crate bluetooth_hci_async;
+    /// # use bluetooth_hci_async::Controller as HciController;
     /// # struct Controller;
     /// # struct Error;
     /// # struct Header;
     /// # struct Vendor;
-    /// # impl bluetooth_hci::Vendor for Vendor {
+    /// # impl bluetooth_hci_async::Vendor for Vendor {
     /// #     type Status = VendorStatus;
     /// #     type Event = VendorEvent;
     /// # }
     /// # #[derive(Clone, Debug)]
     /// # struct VendorStatus;
     /// # impl std::convert::TryFrom<u8> for VendorStatus {
-    /// #     type Error = bluetooth_hci::BadStatusError;
+    /// #     type Error = bluetooth_hci_async::BadStatusError;
     /// #     fn try_from(value: u8) -> Result<VendorStatus, Self::Error> {
-    /// #         Err(bluetooth_hci::BadStatusError::BadValue(value))
+    /// #         Err(bluetooth_hci_async::BadStatusError::BadValue(value))
     /// #     }
     /// # }
     /// # impl std::convert::Into<u8> for VendorStatus {
@@ -168,11 +168,11 @@ pub trait Controller {
     /// #    }
     /// # }
     /// # struct VendorEvent;
-    /// # impl bluetooth_hci::event::VendorEvent for VendorEvent {
+    /// # impl bluetooth_hci_async::event::VendorEvent for VendorEvent {
     /// #     type Error = Error;
     /// #     type Status = VendorStatus;
     /// #     type ReturnParameters = ReturnParameters;
-    /// #     fn new(_buffer: &[u8]) -> Result<Self, bluetooth_hci::event::Error<Self::Error>>
+    /// #     fn new(_buffer: &[u8]) -> Result<Self, bluetooth_hci_async::event::Error<Self::Error>>
     /// #     where
     /// #         Self: Sized
     /// #     {
@@ -181,9 +181,9 @@ pub trait Controller {
     /// # }
     /// # #[derive(Clone, Debug)]
     /// # struct ReturnParameters;
-    /// # impl bluetooth_hci::event::VendorReturnParameters for ReturnParameters {
+    /// # impl bluetooth_hci_async::event::VendorReturnParameters for ReturnParameters {
     /// #     type Error = Error;
-    /// #     fn new(_buffer: &[u8]) -> Result<Self, bluetooth_hci::event::Error<Self::Error>> {
+    /// #     fn new(_buffer: &[u8]) -> Result<Self, bluetooth_hci_async::event::Error<Self::Error>> {
     /// #         Ok(ReturnParameters{})
     /// #     }
     /// # }
@@ -231,23 +231,23 @@ pub trait Controller {
     ///
     /// ```
     /// # #![feature(async_fn_in_trait)]
-    /// # extern crate bluetooth_hci;
-    /// # use bluetooth_hci::Controller as HciController;
+    /// # extern crate bluetooth_hci_async;
+    /// # use bluetooth_hci_async::Controller as HciController;
     /// # struct Controller;
     /// # #[derive(Debug)]
     /// # struct Error;
     /// # struct Header;
     /// # struct Vendor;
-    /// # impl bluetooth_hci::Vendor for Vendor {
+    /// # impl bluetooth_hci_async::Vendor for Vendor {
     /// #     type Status = VendorStatus;
     /// #     type Event = VendorEvent;
     /// # }
     /// # #[derive(Clone, Debug)]
     /// # struct VendorStatus;
     /// # impl std::convert::TryFrom<u8> for VendorStatus {
-    /// #     type Error = bluetooth_hci::BadStatusError;
+    /// #     type Error = bluetooth_hci_async::BadStatusError;
     /// #     fn try_from(value: u8) -> Result<VendorStatus, Self::Error> {
-    /// #         Err(bluetooth_hci::BadStatusError::BadValue(value))
+    /// #         Err(bluetooth_hci_async::BadStatusError::BadValue(value))
     /// #     }
     /// # }
     /// # impl std::convert::Into<u8> for VendorStatus {
@@ -256,11 +256,11 @@ pub trait Controller {
     /// #    }
     /// # }
     /// # struct VendorEvent;
-    /// # impl bluetooth_hci::event::VendorEvent for VendorEvent {
+    /// # impl bluetooth_hci_async::event::VendorEvent for VendorEvent {
     /// #     type Error = Error;
     /// #     type Status = VendorStatus;
     /// #     type ReturnParameters = ReturnParameters;
-    /// #     fn new(_buffer: &[u8]) -> Result<Self, bluetooth_hci::event::Error<Self::Error>>
+    /// #     fn new(_buffer: &[u8]) -> Result<Self, bluetooth_hci_async::event::Error<Self::Error>>
     /// #     where
     /// #         Self: Sized
     /// #     {
@@ -269,9 +269,9 @@ pub trait Controller {
     /// # }
     /// # #[derive(Clone, Debug)]
     /// # struct ReturnParameters;
-    /// # impl bluetooth_hci::event::VendorReturnParameters for ReturnParameters {
+    /// # impl bluetooth_hci_async::event::VendorReturnParameters for ReturnParameters {
     /// #     type Error = Error;
-    /// #     fn new(_buffer: &[u8]) -> Result<Self, bluetooth_hci::event::Error<Self::Error>> {
+    /// #     fn new(_buffer: &[u8]) -> Result<Self, bluetooth_hci_async::event::Error<Self::Error>> {
     /// #         Ok(ReturnParameters{})
     /// #     }
     /// # }

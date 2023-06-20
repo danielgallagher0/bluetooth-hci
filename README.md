@@ -1,4 +1,6 @@
-# Bluetooth HCI
+# Bluetooth HCI Async
+
+forked from [bluetooth_hci](https://github.com/danielgallagher0/bluetooth-hci)
 
 [![Build
 Status](https://travis-ci.org/danielgallagher0/bluetooth-hci.svg?branch=master)](https://travis-ci.org/danielgallagher0/bluetooth-hci)
@@ -28,9 +30,9 @@ This crate defines a trait (`Controller`) that should be implemented
 for a specific BLE chip. Any implementor can then be used as a
 `host::uart::Hci` to read and write to the chip.
 
-    impl bluetooth_hci::Controller for MyController {
+    impl bluetooth_hci_async::Controller for MyController {
         type Error = BusError;
-        type Header = bluetooth_hci::host::uart::CommandHeader;
+        type Header = bluetooth_hci_async::host::uart::CommandHeader;
         async fn write(&mut self, header: &[u8], payload: &[u8]) -> Result<(), Self::Error> {
             // implementation...
         }

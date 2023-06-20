@@ -1,13 +1,16 @@
 [package]
 edition = "2018"
-name = "bluetooth-hci"
+name = "bluetooth-hci-async"
 version = "0.1.1"
-authors = ["Daniel Gallagher <pdanielgallagher@gmail.com>"]
-categories = ["embedded", "hardware-support", "no-std"]
+authors = [
+    "Daniel Gallagher <pdanielgallagher@gmail.com>",
+    "Ghaith Oueslati <ghaith.oueslati@gmail.com>",
+]
+categories = ["embedded", "hardware-support", "no-std", "async"]
 description = "Implementation of the Bluetooth HCI"
 keywords = ["ble", "bluetooth"]
 license = "MIT/Apache-2.0"
-repository = "https://github.com/danielgallagher0/bluetooth-hci"
+repository = "https://github.com/OueslatiGhaith/bluetooth-hci"
 readme = "README.md"
 
 [dependencies]
