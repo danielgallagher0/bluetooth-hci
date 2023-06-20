@@ -2,13 +2,14 @@
 
 forked from [bluetooth_hci](https://github.com/danielgallagher0/bluetooth-hci)
 
-[![Build
-Status](https://travis-ci.org/danielgallagher0/bluetooth-hci.svg?branch=master)](https://travis-ci.org/danielgallagher0/bluetooth-hci)
+[![Build Status](https://github.com/OueslatiGhaith/bluetooth-hci/actions/workflows/ci.yml/badge.svg)](https://github.com/OueslatiGhaith/bluetooth-hci/actions/workflows/ci.yml/badge.svg)
 
 This crate defines a pure Rust implementation of the Bluetooth
 Host-Controller Interface for bare metal devices. It defines commands
 and events from the specification, and requires specific chips to
 define vendor-specific commands and events.
+
+This crate requires the `#![feature(async_fn_in_trait)]` feature
 
 ## Version
 
