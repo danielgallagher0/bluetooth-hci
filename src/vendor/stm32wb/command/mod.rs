@@ -55,7 +55,7 @@ macro_rules! impl_variable_length_params {
 macro_rules! impl_validate_variable_length_params {
     ($method:ident, $param_type:ident, $opcode:path) => {
         async fn $method(&mut self, params: &$param_type) -> Result<(), Error> {
-            params.validate().map_err(nb::Error::Other)?;
+            params.validate()?;
 
             let mut bytes = [0; $param_type::MAX_LENGTH];
             let len = params.copy_into_slice(&mut bytes);

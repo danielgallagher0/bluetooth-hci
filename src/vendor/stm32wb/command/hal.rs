@@ -435,7 +435,7 @@ pub struct ConfigDataDiversifierBuilder {
 
 impl ConfigDataDiversifierBuilder {
     /// Specify the diversifier and continue building.
-    pub async fn diversifier(mut self, d: u16) -> ConfigDataEncryptionRootBuilder {
+    pub fn diversifier(mut self, d: u16) -> ConfigDataEncryptionRootBuilder {
         let len = self.data.length as usize;
         LittleEndian::write_u16(&mut self.data.value_buf[len..2 + len], d);
         self.data.length += 2;
@@ -456,7 +456,7 @@ pub struct ConfigDataEncryptionRootBuilder {
 
 impl ConfigDataEncryptionRootBuilder {
     /// Specify the encryption root and continue building.
-    pub async fn encryption_root(
+    pub fn encryption_root(
         mut self,
         key: &crate::host::EncryptionKey,
     ) -> ConfigDataIdentityRootBuilder {
@@ -469,7 +469,7 @@ impl ConfigDataEncryptionRootBuilder {
 
     /// Build the [ConfigData] as-is. It includes the diversifier, and may include fields before it,
     /// but does not include any fields after it (including the encryption root).
-    pub async fn build(self) -> ConfigData {
+    pub fn build(self) -> ConfigData {
         self.data
     }
 }
@@ -481,7 +481,7 @@ pub struct ConfigDataIdentityRootBuilder {
 
 impl ConfigDataIdentityRootBuilder {
     /// Specify the identity root and continue building.
-    pub async fn identity_root(
+    pub fn identity_root(
         mut self,
         key: &crate::host::EncryptionKey,
     ) -> ConfigDataLinkLayerOnlyBuilder {
@@ -494,7 +494,7 @@ impl ConfigDataIdentityRootBuilder {
 
     /// Build the [ConfigData] as-is. It includes the encryption root, and may include fields before
     /// it, but does not include any fields after it (including the identity root).
-    pub async fn build(self) -> ConfigData {
+    pub fn build(self) -> ConfigData {
         self.data
     }
 }
@@ -506,7 +506,7 @@ pub struct ConfigDataLinkLayerOnlyBuilder {
 
 impl ConfigDataLinkLayerOnlyBuilder {
     /// Specify whether to use the link layer only and continue building.
-    pub async fn link_layer_only(mut self, ll_only: bool) -> ConfigDataRoleBuilder {
+    pub fn link_layer_only(mut self, ll_only: bool) -> ConfigDataRoleBuilder {
         self.data.value_buf[self.data.length as usize] = ll_only as u8;
         self.data.length += 1;
         ConfigDataRoleBuilder { data: self.data }
@@ -514,7 +514,7 @@ impl ConfigDataLinkLayerOnlyBuilder {
 
     /// Build the [ConfigData] as-is. It includes the identity root, and may include fields before
     /// it, but does not include any fields after it (including the link layer only flag).
-    pub async fn build(self) -> ConfigData {
+    pub fn build(self) -> ConfigData {
         self.data
     }
 }
@@ -526,7 +526,7 @@ pub struct ConfigDataRoleBuilder {
 
 impl ConfigDataRoleBuilder {
     /// Specify the device role and continue building.
-    pub async fn role(mut self, role: Role) -> ConfigDataCompleteBuilder {
+    pub fn role(mut self, role: Role) -> ConfigDataCompleteBuilder {
         self.data.value_buf[self.data.length as usize] = role as u8;
         self.data.length += 1;
         ConfigDataCompleteBuilder { data: self.data }
@@ -534,7 +534,7 @@ impl ConfigDataRoleBuilder {
 
     /// Build the [ConfigData] as-is. It includes the link layer only flag, and may include fields
     /// before it, but does not include any fields after it (including the role).
-    pub async fn build(self) -> ConfigData {
+    pub fn build(self) -> ConfigData {
         self.data
     }
 }
@@ -546,7 +546,7 @@ pub struct ConfigDataCompleteBuilder {
 
 impl ConfigDataCompleteBuilder {
     /// Build the [ConfigData] as-is. It includes the role field, and may include fields before it.
-    pub async fn build(self) -> ConfigData {
+    pub fn build(self) -> ConfigData {
         self.data
     }
 }
