@@ -1,14 +1,7 @@
-use crate::{
-    host::{uart::CommandHeader, HciHeader},
-    Controller, Opcode,
-};
+use crate::{Controller, Opcode};
 
 pub async fn write_command(controller: &mut impl Controller, opcode: Opcode, params: &[u8]) {
-    const HEADER_LEN: usize = 4;
-    let mut header = [0; HEADER_LEN];
-    CommandHeader::new(opcode, params.len()).copy_into_slice(&mut header);
-
-    controller.write(&header, params).await
+    controller.write(opcode, params).await
 }
 
 macro_rules! impl_params {

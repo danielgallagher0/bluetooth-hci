@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+use hci::{host::HciHeader, vendor::stm32wb::CommandHeader, Opcode};
+
 extern crate bluetooth_hci_async as hci;
 
 pub struct RecordingSink {
@@ -67,14 +69,15 @@ impl hci::event::VendorReturnParameters for VendorReturnParameters {
 }
 
 impl hci::Controller for RecordingSink {
-    async fn write(&mut self, header: &[u8], payload: &[u8]) {
-        println!("header {:?}", header);
-        println!("payload {:?}", payload);
+    async fn write(&mut self, opcode: Opcode, payload: &[u8]) {
+        const HEADER_LEN: usize = 4;
 
-        self.written_data.resize(header.len() + payload.len(), 0);
+        self.written_data.resize(HEADER_LEN + payload.len(), 0);
         {
-            let (h, p) = self.written_data.split_at_mut(header.len());
-            h.copy_from_slice(header);
+            let (h, p) = self.written_data.split_at_mut(HEADER_LEN);
+
+            CommandHeader::new(opcode, payload.len()).copy_into_slice(h);
+
             p.copy_from_slice(payload);
         }
     }

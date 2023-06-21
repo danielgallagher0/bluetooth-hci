@@ -315,7 +315,7 @@ impl ConfigData {
     /// [`write_config_data`](Commands::write_config_data).  The builder associated functions allow
     /// us to start with any field, and the returned builder allows only either chaining the next
     /// field or building the structure to write.
-    pub async fn public_address(addr: crate::BdAddr) -> ConfigDataDiversifierBuilder {
+    pub fn public_address(addr: crate::BdAddr) -> ConfigDataDiversifierBuilder {
         let mut data = Self {
             offset: 0,
             length: 6,
@@ -333,7 +333,7 @@ impl ConfigData {
     /// [`write_config_data`](Commands::write_config_data).  The builder associated functions allow
     /// us to start with any field, and the returned builder allows only either chaining the next
     /// field or building the structure to write.
-    pub async fn random_address(addr: crate::BdAddr) -> ConfigDataDiversifierBuilder {
+    pub fn random_address(addr: crate::BdAddr) -> ConfigDataDiversifierBuilder {
         let mut data = Self {
             offset: 0x2E,
             length: 6,
@@ -351,7 +351,7 @@ impl ConfigData {
     /// [`write_config_data`](Commands::write_config_data).  The builder associated functions allow
     /// us to start with any field, and the returned builder allows only either chaining the next
     /// field or building the structure to write.
-    pub async fn diversifier(d: u16) -> ConfigDataEncryptionRootBuilder {
+    pub fn diversifier(d: u16) -> ConfigDataEncryptionRootBuilder {
         let mut data = Self {
             offset: 6,
             length: 2,
@@ -368,9 +368,7 @@ impl ConfigData {
     /// [`write_config_data`](Commands::write_config_data).  The builder associated functions allow
     /// us to start with any field, and the returned builder allows only either chaining the next
     /// field or building the structure to write.
-    pub async fn encryption_root(
-        key: &crate::host::EncryptionKey,
-    ) -> ConfigDataIdentityRootBuilder {
+    pub fn encryption_root(key: &crate::host::EncryptionKey) -> ConfigDataIdentityRootBuilder {
         let mut data = Self {
             offset: 8,
             length: 16,
@@ -387,7 +385,7 @@ impl ConfigData {
     /// [`write_config_data`](Commands::write_config_data).  The builder associated functions allow
     /// us to start with any field, and the returned builder allows only either chaining the next
     /// field or building the structure to write.
-    pub async fn identity_root(key: &crate::host::EncryptionKey) -> ConfigDataLinkLayerOnlyBuilder {
+    pub fn identity_root(key: &crate::host::EncryptionKey) -> ConfigDataLinkLayerOnlyBuilder {
         let mut data = Self {
             offset: 24,
             length: 16,
@@ -403,7 +401,7 @@ impl ConfigData {
     /// [`write_config_data`](Commands::write_config_data).  The builder associated functions allow
     /// us to start with any field, and the returned builder allows only either chaining the next
     /// field or building the structure to write.
-    pub async fn link_layer_only(ll_only: bool) -> ConfigDataRoleBuilder {
+    pub fn link_layer_only(ll_only: bool) -> ConfigDataRoleBuilder {
         let mut data = Self {
             offset: 40,
             length: 1,
@@ -419,7 +417,7 @@ impl ConfigData {
     /// [`write_config_data`](Commands::write_config_data).  The builder associated functions allow
     /// us to start with any field, and the returned builder allows only either chaining the next
     /// field or building the structure to write.
-    pub async fn role(role: Role) -> ConfigDataCompleteBuilder {
+    pub fn role(role: Role) -> ConfigDataCompleteBuilder {
         let mut data = Self {
             offset: 41,
             length: 1,
@@ -446,7 +444,7 @@ impl ConfigDataDiversifierBuilder {
     }
 
     /// Build the [ConfigData] as-is. It includes only the public address.
-    pub async fn build(self) -> ConfigData {
+    pub fn build(self) -> ConfigData {
         self.data
     }
 }

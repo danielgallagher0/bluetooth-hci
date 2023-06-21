@@ -103,7 +103,7 @@ use core::fmt::Debug;
 pub trait Controller {
     /// Writes the bytes to the controller, in a single transaction if possible. All of `header`
     /// shall be written, followed by all of `payload`.
-    async fn write(&mut self, header: &[u8], payload: &[u8]);
+    async fn write(&mut self, opcode: Opcode, payload: &[u8]);
 
     /// Reads data from the controller into the provided `buffer`. The length of the buffer
     /// indicates the number of bytes to read. The implementor must not return bytes in an order
@@ -124,6 +124,7 @@ pub trait Controller {
     /// # #![feature(async_fn_in_trait)]
     /// # extern crate bluetooth_hci_async;
     /// # use bluetooth_hci_async::Controller as HciController;
+    /// # use bluetooth_hci_async::Opcode;
     /// # struct Controller;
     /// # #[derive(defmt::Format)]
     /// # struct Error;
@@ -168,7 +169,7 @@ pub trait Controller {
     /// #     }
     /// # }
     /// # impl HciController for Controller {
-    /// #     async fn write(&mut self, _header: &[u8], _payload: &[u8]) {}
+    /// #     async fn write(&mut self, opcode: Opcode, _payload: &[u8]) {}
     /// #     async fn read_into(&mut self, _buffer: &mut [u8]) {}
     /// # }
     /// # fn main() {
