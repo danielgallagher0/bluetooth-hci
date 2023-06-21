@@ -2,6 +2,8 @@
 
 use byteorder::{ByteOrder, LittleEndian};
 
+use crate::vendor::stm32wb::{event::Stm32Wb5xEvent, Stm32Wb5xError};
+
 const PACKET_TYPE_HCI_COMMAND: u8 = 0x01;
 // const PACKET_TYPE_ACL_DATA: u8 = 0x02;
 // const PACKET_TYPE_SYNC_DATA: u8 = 0x03;
@@ -46,7 +48,7 @@ pub struct CommandHeader {
 ///
 /// Must be specialized for communication errors (`E`), vendor-specific events (`Vendor`), and
 /// vendor-specific errors (`VE`).
-pub trait UartHci<VendorEvent, VE>: super::HostHci {
+pub trait UartHci: super::HostHci {
     /// Reads and returns a packet from the controller. Consumes exactly enough bytes to read the
     /// next packet including its header.
     ///
@@ -59,9 +61,7 @@ pub trait UartHci<VendorEvent, VE>: super::HostHci {
     ///   event). See [`crate::event::Error`] for possible values of `e`.
     /// - Returns [`Error::Comm`] if there is an error reading from the
     ///   controller.
-    async fn read(&mut self) -> Result<Packet<VendorEvent>, Error<VE>>
-    where
-        VendorEvent: crate::event::VendorEvent<Error = VE>;
+    async fn read(&mut self) -> Result<Packet<Stm32Wb5xEvent>, Error<Stm32Wb5xError>>;
 }
 
 impl super::HciHeader for CommandHeader {
@@ -81,10 +81,11 @@ impl super::HciHeader for CommandHeader {
     }
 }
 
-async fn read_event<T, Vendor, VE>(controller: &mut T) -> Result<crate::Event<Vendor>, Error<VE>>
+async fn read_event<T>(
+    controller: &mut T,
+) -> Result<crate::Event<Stm32Wb5xEvent>, Error<Stm32Wb5xError>>
 where
     T: crate::Controller,
-    Vendor: crate::event::VendorEvent<Error = VE>,
 {
     const MAX_EVENT_LENGTH: usize = 255;
     const PACKET_HEADER_LENGTH: usize = 1;
@@ -101,17 +102,14 @@ where
     crate::event::Event::new(crate::event::Packet(
         &buf[PACKET_HEADER_LENGTH..EVENT_PACKET_HEADER_LENGTH + param_len],
     ))
-    .map_err(|e| Error::BLE(e))
+    .map_err(Error::BLE)
 }
 
-impl<VendorEvent, VE, T> UartHci<VendorEvent, VE> for T
+impl<T> UartHci for T
 where
     T: crate::Controller,
 {
-    async fn read(&mut self) -> Result<Packet<VendorEvent>, Error<VE>>
-    where
-        VendorEvent: crate::event::VendorEvent<Error = VE>,
-    {
+    async fn read(&mut self) -> Result<Packet<Stm32Wb5xEvent>, Error<Stm32Wb5xError>> {
         match self.peek(0).await {
             PACKET_TYPE_HCI_EVENT => Ok(Packet::Event(read_event(self).await?)),
             x => Err(Error::BadPacketType(x)),

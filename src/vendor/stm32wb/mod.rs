@@ -20,7 +20,7 @@ pub trait UartController:
     + command::gatt::GattCommands
     + command::hal::HalCommands
     + command::l2cap::L2capCommands
-    + crate::host::uart::UartHci<event::Stm32Wb5xEvent, event::Stm32Wb5xError>
+    + crate::host::uart::UartHci
 {
 }
 
@@ -29,6 +29,6 @@ impl<T> UartController for T where
         + command::gatt::GattCommands
         + command::hal::HalCommands
         + command::l2cap::L2capCommands
-        + crate::host::uart::UartHci<event::Stm32Wb5xEvent, event::Stm32Wb5xError>
+        + crate::host::uart::UartHci
 {
 }
