@@ -23,7 +23,7 @@ use core::mem;
 /// Must be specialized on the return parameters that may be returned by vendor-specific commands.
 ///
 /// Defined in the Bluetooth spec, Vol 2, Part E, Section 7.7.14.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, defmt::Format)]
 pub struct CommandComplete<V>
 where
     V: super::VendorEvent,
@@ -180,10 +180,10 @@ where
 
 /// Commands that may generate the [Command Complete](crate::event::Event::CommandComplete) event.
 /// If the commands have defined return parameters, they are included in this enum.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub enum ReturnParameters<V>
 where
-    V: super::VendorEvent,
+    V: super::VendorEvent + defmt::Format,
 {
     /// The controller sent an unsolicited command complete event in order to change the number of
     /// HCI command packets the Host is allowed to send.
@@ -331,7 +331,7 @@ where
 
 /// Values returned by the [Read Transmit Power Level](crate::host::Hci::read_tx_power_level)
 /// command.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct TxPowerLevel<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -359,7 +359,7 @@ where
 
 /// Values returned by [Read Local Version
 /// Information](crate::host::Hci::read_local_version_information) command.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct LocalVersionInfo<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -412,7 +412,7 @@ where
 
 /// Values returned by the [Read Local Supported
 /// Commands](crate::host::Hci::read_local_supported_commands) command.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct LocalSupportedCommands<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -426,7 +426,7 @@ const COMMAND_FLAGS_SIZE: usize = 64;
 bitflag_array! {
     /// Extended bit field for the command flags of the [`LocalSupportedCommands`] return
     /// parameters.
-    #[derive(Copy, Clone)]
+    #[derive(Copy, Clone, defmt::Format)]
     pub struct CommandFlags : COMMAND_FLAGS_SIZE;
     pub struct CommandFlag;
 
@@ -1077,7 +1077,7 @@ where
 
 /// Values returned by the [Read Local Supported
 /// Features](crate::host::Hci::read_local_supported_features) command.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct LocalSupportedFeatures<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -1086,9 +1086,9 @@ pub struct LocalSupportedFeatures<VS> {
     pub supported_features: LmpFeatures,
 }
 
-bitflags! {
+defmt::bitflags! {
     /// See the Bluetooth Specification, v4.1 or later, Vol 2, Part C, Section 3.3 (Table 3.2).
-    #[derive(Default, Copy, Clone, Debug, PartialEq, Eq)]
+    #[derive(Default)]
     pub struct LmpFeatures : u64 {
         /// 3-slot packets
         const THREE_SLOT_PACKETS = 1 << 0;
@@ -1217,7 +1217,7 @@ where
 }
 
 /// Values returned by the [Read BD ADDR](crate::host::Hci::read_bd_addr) command.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct ReadBdAddr<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -1240,7 +1240,7 @@ where
 }
 
 /// Values returned by the [Read RSSI](crate::host::Hci::read_rssi) command.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct ReadRssi<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -1277,7 +1277,7 @@ where
 }
 
 /// Values returned by the [LE Read Buffer Size](crate::host::Hci::le_read_buffer_size) command.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct LeReadBufferSize<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -1318,7 +1318,7 @@ where
 
 /// Values returned by the [LE Read Local Supported
 /// Features](crate::host::Hci::le_read_local_supported_features) command.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct LeSupportedFeatures<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -1327,12 +1327,12 @@ pub struct LeSupportedFeatures<VS> {
     pub supported_features: LeFeatures,
 }
 
-bitflags! {
+defmt::bitflags! {
     /// Possible LE features for the [LE Read Local Supported
     /// Features](::host::Hci::le_read_local_supported_features) command.  See the Bluetooth
     /// specification, Vol 6, Part B, Section 4.6.  See Table 4.3 (v4.1 of the spec), Table 4.4
     /// (v4.2 and v5.0).
-    #[derive(Default, Copy, Clone, Debug, PartialEq, Eq)]
+    #[derive(Default)]
     pub struct LeFeatures : u64 {
         /// LE Encryption.  Valid from controller to controller.
         const ENCRYPTION = 1 << 0;
@@ -1398,7 +1398,7 @@ where
 
 /// Values returned by the [LE Read Advertising Channel TX
 /// Power](crate::host::Hci::le_read_advertising_channel_tx_power) command.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct LeAdvertisingChannelTxPower<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -1439,7 +1439,7 @@ where
 }
 
 /// Parameters returned by the [LE Read Channel Map](crate::host::Hci::le_read_channel_map) command.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct ChannelMapParameters<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -1471,7 +1471,7 @@ where
 }
 
 /// Parameters returned by the [LE Encrypt](crate::host::Hci::le_encrypt) command.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct EncryptedReturnParameters<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -1486,7 +1486,7 @@ pub struct EncryptedReturnParameters<VS> {
 /// Newtype for a 128-bit encrypted block of data.
 ///
 /// See [`EncryptedReturnParameters`].
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, defmt::Format)]
 pub struct EncryptedBlock(pub [u8; 16]);
 
 impl Debug for EncryptedBlock {
@@ -1512,7 +1512,7 @@ where
 }
 
 /// Return parameters for the [LE Rand](crate::host::Hci::le_rand) command.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct LeRandom<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -1535,7 +1535,7 @@ where
 
 /// Parameters returned by the [LE LTK Request
 /// Reply](crate::host::Hci::le_long_term_key_request_reply) command.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct LeLongTermRequestReply<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -1560,7 +1560,7 @@ where
 
 /// Parameters returned by the [LE Read Supported
 /// States](crate::host::Hci::le_read_supported_states) command.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct LeReadSupportedStates<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -1570,10 +1570,10 @@ pub struct LeReadSupportedStates<VS> {
     pub supported_states: LeStates,
 }
 
-bitflags! {
+defmt::bitflags! {
     /// Possible LE states or state combinations for the [LE Read Supported
     /// States](::host::Hci::le_read_supported_states) command.
-    #[derive(Default, Copy, Clone, Debug, PartialEq, Eq)]
+    #[derive(Default)]
     pub struct LeStates : u64 {
         /// Non-connectable advertising state alone.
         const NON_CONNECTABLE_ADVERTISING = 1 << 0;
@@ -1679,7 +1679,7 @@ where
 }
 
 /// Parameters returned by the [LE Test End](crate::host::Hci::le_test_end) command.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct LeTestEnd<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,

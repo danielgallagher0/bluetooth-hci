@@ -273,7 +273,7 @@ impl<T: Controller> HalCommands for T {
 /// Before some commands are sent to the controller, the parameters are validated. This type
 /// enumerates the potential validation errors. Must be specialized on the types of communication
 /// errors.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub enum Error {
     /// For the [Start Tone](Commands::start_tone) command, the channel was greater than the maximum
     /// allowed channel (39). The invalid channel is returned.
@@ -555,6 +555,7 @@ impl ConfigDataCompleteBuilder {
 
 /// Roles that the server can adopt.
 #[repr(u8)]
+#[derive(defmt::Format)]
 pub enum Role {
     /// Peripheral and primary device.
     /// - Only one connection.
@@ -581,6 +582,7 @@ pub enum Role {
 /// Configuration parameters that are readable by the
 /// [`read_config_data`](Commands::read_config_data) command.
 #[repr(u8)]
+#[derive(defmt::Format)]
 pub enum ConfigParameter {
     /// Bluetooth public address.
     PublicAddress = 0,
@@ -610,6 +612,7 @@ pub enum ConfigParameter {
 ///
 /// STM32WB5x uses single byte parameter for PA level.
 #[repr(u8)]
+#[derive(defmt::Format)]
 pub enum PowerLevel {
     /// -40 dBm.
     Minus40dBm = 0x00,

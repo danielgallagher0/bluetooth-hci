@@ -18,7 +18,7 @@ pub use crate::{BdAddr, BdAddrType, ConnectionHandle};
 
 /// Vendor-specific events for the STM32WB5x radio coprocessor.
 #[allow(clippy::large_enum_variant)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, defmt::Format)]
 pub enum Stm32Wb5xEvent {
     /// When the radio coprocessor firmware is started normally, it gives this event to the user to
     /// indicate the system has started.
@@ -246,6 +246,7 @@ pub enum Stm32Wb5xEvent {
 /// Enumeration of vendor-specific status codes.
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[repr(u8)]
+#[derive(defmt::Format)]
 pub enum Status {
     /// The command cannot be executed due to the current state of the device.
     Failed = 0x41,
@@ -371,7 +372,7 @@ impl From<Status> for u8 {
 }
 
 /// Enumeration of potential errors when sending commands or deserializing events.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, defmt::Format)]
 pub enum Stm32Wb5xError {
     /// The event is not recognized. Includes the unknown opcode.
     UnknownEvent(u16),
@@ -724,7 +725,7 @@ impl crate::event::VendorEvent for Stm32Wb5xEvent {
 
 /// Potential firmware kinds for [`CoprocessorReady`](Stm32Wb5xEvent::CoprocessorReady)
 /// event.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, defmt::Format)]
 pub enum FirmwareKind {
     /// Wireless firmware (BLE, Thread, etc.)
     Wireless,
@@ -785,7 +786,7 @@ macro_rules! require_l2cap_len {
 ///
 /// For more info see connection parameter update response and command reject in Bluetooth Core v4.0
 /// spec.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct L2CapConnectionUpdateResponse {
     /// The connection handle related to the event
     pub conn_handle: ConnectionHandle,
@@ -796,7 +797,7 @@ pub struct L2CapConnectionUpdateResponse {
 
 /// Reasons why an L2CAP command was rejected. see the Bluetooth specification, v4.1, Vol 3, Part A,
 /// Section 4.1.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub enum L2CapRejectionReason {
     /// The controller sent an unknown command.
     CommandNotUnderstood,
@@ -821,7 +822,7 @@ impl TryFrom<u16> for L2CapRejectionReason {
 }
 
 /// Potential results that can be used in the L2CAP connection update response.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub enum L2CapConnectionUpdateResult {
     /// The update request was rejected. The code indicates the reason for the rejection.
     CommandRejected(L2CapRejectionReason),
@@ -873,7 +874,7 @@ fn to_l2cap_connection_update_response(
 
 /// This event is generated when the central device does not respond to the connection update
 /// request within 30 seconds.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct L2CapProcedureTimeout {
     /// The connection handle related to the event.
     pub conn_handle: ConnectionHandle,
@@ -895,7 +896,7 @@ fn to_l2cap_procedure_timeout(
 /// [`l2cap_connection_parameter_update_response`](crate::l2cap::Commands::connection_parameter_update_response).
 ///
 /// Defined in Vol 3, Part A, section 4.20 of the Bluetooth specification.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct L2CapConnectionUpdateRequest {
     /// Handle of the connection for which the connection update request has been received.  The
     /// [same handle](crate::l2cap::ConnectionParameterUpdateResponse::conn_handle) has to be
@@ -935,7 +936,7 @@ fn to_l2cap_connection_update_request(
 /// procedure timeout has occurred or the pairing has failed. This is to notify the application that
 /// we have paired with a remote device so that it can take further actions or to notify that a
 /// timeout has occurred so that the upper layer can decide to disconnect the link.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct GapPairingComplete {
     /// Connection handle on which the pairing procedure completed
     pub conn_handle: ConnectionHandle,
@@ -945,7 +946,7 @@ pub struct GapPairingComplete {
 }
 
 /// Reasons the [GAP Pairing Complete](Stm32Wb5xEvent::GapPairingComplete) event was generated.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub enum GapPairingStatus {
     /// Pairing with a remote device was successful.
     Success,
@@ -986,7 +987,7 @@ fn to_conn_handle(buffer: &[u8]) -> Result<ConnectionHandle, crate::event::Error
 
 /// The event is given by the GAP layer to the upper layers when a device is discovered during
 /// scanning as a consequence of one of the GAP procedures started by the upper layers.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct GapDeviceFound {
     /// Type of event
     pub event: GapDeviceFoundEvent,
@@ -1052,7 +1053,7 @@ fn to_gap_device_found(
 
 /// This event is sent by the GAP to the upper layers when a procedure previously started has been
 /// terminated by the upper layer or has completed for any other reason
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct GapProcedureComplete {
     /// Type of procedure that completed
     pub procedure: GapProcedure,
@@ -1066,7 +1067,7 @@ pub const MAX_NAME_LEN: usize = 248;
 
 /// Newtype for the name buffer returned after successful
 /// [`NameDiscovery`](GapProcedure::NameDiscovery).
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, defmt::Format)]
 pub struct NameBuffer(pub [u8; MAX_NAME_LEN]);
 
 impl Debug for NameBuffer {
@@ -1094,7 +1095,7 @@ impl PartialEq<NameBuffer> for NameBuffer {
 /// Procedures whose completion may be reported by
 /// [`GapProcedureComplete`](Stm32Wb5xEvent::GapProcedureComplete).
 #[allow(clippy::large_enum_variant)]
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub enum GapProcedure {
     /// See Vol 3, Part C, section 9.2.5.
     LimitedDiscovery,
@@ -1114,7 +1115,7 @@ pub enum GapProcedure {
 }
 
 /// Possible results of a [GAP procedure](Stm32Wb5xEvent::GapProcedureComplete).
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub enum GapProcedureStatus {
     /// BLE Status Success.
     Success,
@@ -1192,7 +1193,7 @@ fn to_gap_reconnection_address(
 /// - write characteristic value
 /// - write long characteristic value
 /// - reliable write
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, defmt::Format)]
 pub struct GattAttributeModified {
     /// The connection handle which modified the attribute
     pub conn_handle: ConnectionHandle,
@@ -1216,7 +1217,7 @@ impl GattAttributeModified {
 
 /// Newtype for an attribute handle. These handles are IDs, not general integers, and should not be
 /// manipulated as such.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub struct AttributeHandle(pub u16);
 
 // Defines the maximum length of a ATT attribute value field. This is determined by the max packet
@@ -1289,7 +1290,7 @@ fn to_gatt_attribute_modified(
 }
 
 /// This event is generated in response to an Exchange MTU request.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct AttExchangeMtuResponse {
     ///  The connection handle related to the response.
     pub conn_handle: ConnectionHandle,
@@ -1310,7 +1311,7 @@ fn to_att_exchange_mtu_resp(
 
 /// This event is generated in response to a Find Information Request. See Find Information Response
 /// in Bluetooth Core v4.0 spec.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct AttFindInformationResponse {
     /// The connection handle related to the response
     pub conn_handle: ConnectionHandle,
@@ -1357,7 +1358,7 @@ const MAX_FORMAT128_PAIR_COUNT: usize = 13;
 
 /// One format of the handle-UUID pairs in the [`AttFindInformationResponse`] event. The UUIDs are
 /// 16 bits.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct HandleUuid16Pair {
     /// Attribute handle
     pub handle: AttributeHandle,
@@ -1367,7 +1368,7 @@ pub struct HandleUuid16Pair {
 
 /// One format of the handle-UUID pairs in the [`AttFindInformationResponse`] event. The UUIDs are
 /// 128 bits.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct HandleUuid128Pair {
     /// Attribute handle
     pub handle: AttributeHandle,
@@ -1376,14 +1377,14 @@ pub struct HandleUuid128Pair {
 }
 
 /// Newtype for the 16-bit UUID buffer.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub struct Uuid16(pub u16);
 
 /// Newtype for the 128-bit UUID buffer.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub struct Uuid128(pub [u8; 16]);
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, defmt::Format)]
 enum HandleUuidPairs {
     Format16(usize, [HandleUuid16Pair; MAX_FORMAT16_PAIR_COUNT]),
     Format128(usize, [HandleUuid128Pair; MAX_FORMAT128_PAIR_COUNT]),
@@ -1418,6 +1419,7 @@ impl Debug for HandleUuidPairs {
 
 /// Possible iterators over handle-UUID pairs that can be returnedby the [ATT find information
 /// response](AttFindInformationResponse). All pairs from the same event have the same format.
+#[derive(defmt::Format)]
 pub enum HandleUuidPairIterator<'a> {
     /// The event contains 16-bit UUIDs.
     Format16(HandleUuid16PairIterator<'a>),
@@ -1426,6 +1428,7 @@ pub enum HandleUuidPairIterator<'a> {
 }
 
 /// Iterator over handle-UUID pairs for 16-bit UUIDs.
+#[derive(defmt::Format)]
 pub struct HandleUuid16PairIterator<'a> {
     data: &'a [HandleUuid16Pair; MAX_FORMAT16_PAIR_COUNT],
     count: usize,
@@ -1446,6 +1449,7 @@ impl<'a> Iterator for HandleUuid16PairIterator<'a> {
 }
 
 /// Iterator over handle-UUID pairs for 128-bit UUIDs.
+#[derive(defmt::Format)]
 pub struct HandleUuid128PairIterator<'a> {
     data: &'a [HandleUuid128Pair; MAX_FORMAT128_PAIR_COUNT],
     count: usize,
@@ -1529,7 +1533,7 @@ fn to_handle_uuid128_pairs(buffer: &[u8]) -> Result<HandleUuidPairs, Stm32Wb5xEr
 }
 
 /// This event is generated in response to a Find By Type Value Request.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, defmt::Format)]
 pub struct AttFindByTypeValueResponse {
     /// The connection handle related to the response.
     pub conn_handle: ConnectionHandle,
@@ -1571,7 +1575,7 @@ impl Debug for AttFindByTypeValueResponse {
 const MAX_HANDLE_INFO_PAIR_COUNT: usize = 62;
 
 /// Simple container for the handle information returned in [`AttFindByTypeValueResponse`].
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct HandleInfoPair {
     /// Attribute handle
     pub attribute: AttributeHandle,
@@ -1580,11 +1584,12 @@ pub struct HandleInfoPair {
 }
 
 /// Newtype for Group End handles
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub struct GroupEndHandle(pub u16);
 
 /// Iterator into valid [`HandleInfoPair`] structs returned in the [ATT Find By Type Value
 /// Response](AttFindByTypeValueResponse) event.
+#[derive(defmt::Format)]
 pub struct HandleInfoPairIterator<'a> {
     event: &'a AttFindByTypeValueResponse,
     next_index: usize,
@@ -1639,7 +1644,7 @@ fn to_att_find_by_value_type_response(
 }
 
 /// This event is generated in response to a Read By Type Request.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, defmt::Format)]
 pub struct AttReadByTypeResponse {
     /// The connection handle related to the response.
     pub conn_handle: ConnectionHandle,
@@ -1684,6 +1689,7 @@ impl AttReadByTypeResponse {
 
 /// Iterator over the valid handle-value pairs returned with the [ATT Read by Type
 /// response](AttReadByTypeResponse).
+#[derive(defmt::Format)]
 pub struct HandleValuePairIterator<'a> {
     event: &'a AttReadByTypeResponse,
     index: usize,
@@ -1710,6 +1716,7 @@ impl<'a> Iterator for HandleValuePairIterator<'a> {
 }
 
 /// A single handle-value pair returned by the [ATT Read by Type response](AttReadByTypeResponse).
+#[derive(defmt::Format)]
 pub struct HandleValuePair<'a> {
     /// Attribute handle
     pub handle: AttributeHandle,
@@ -1747,7 +1754,7 @@ fn to_att_read_by_type_response(
 }
 
 /// This event is generated in response to a Read Request.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, defmt::Format)]
 pub struct AttReadResponse {
     /// The connection handle related to the response.
     pub conn_handle: ConnectionHandle,
@@ -1801,7 +1808,7 @@ fn to_att_read_response(
 
 /// This event is generated in response to a Read By Group Type Request. See the Bluetooth Core v4.1
 /// spec, Vol 3, section 3.4.4.9 and 3.4.4.10.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, defmt::Format)]
 pub struct AttReadByGroupTypeResponse {
     ///  The connection handle related to the response.
     pub conn_handle: ConnectionHandle,
@@ -1851,6 +1858,7 @@ impl Debug for AttReadByGroupTypeResponse {
 }
 
 /// Iterator over the attribute data returned in the [`AttReadByGroupTypeResponse`].
+#[derive(defmt::Format)]
 pub struct AttributeDataIterator<'a> {
     event: &'a AttReadByGroupTypeResponse,
     next_index: usize,
@@ -1880,6 +1888,7 @@ impl<'a> Iterator for AttributeDataIterator<'a> {
 }
 
 /// Attribute data returned in the [`AttReadByGroupTypeResponse`] event.
+#[derive(defmt::Format)]
 pub struct AttributeData<'a> {
     /// Attribute handle
     pub attribute_handle: AttributeHandle,
@@ -1917,7 +1926,7 @@ fn to_att_read_by_group_type_response(
 
 /// This event is generated in response to a Prepare Write Request. See the Bluetooth Core v4.1
 /// spec, Vol 3, Part F, section 3.4.6.1 and 3.4.6.2
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, defmt::Format)]
 pub struct AttPrepareWriteResponse {
     /// The connection handle related to the response.
     pub conn_handle: ConnectionHandle,
@@ -1977,7 +1986,7 @@ fn to_att_prepare_write_response(
 
 /// Defines the attribute value returned by a [GATT Indication](Stm32Wb5xEvent::GattIndication) or
 /// [GATT Notification](Stm32Wb5xEvent::GattNotification) event.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, defmt::Format)]
 pub struct AttributeValue {
     /// The connection handle related to the event.
     pub conn_handle: ConnectionHandle,
@@ -2053,7 +2062,7 @@ fn to_write_permit_request(
 
 /// This event is generated when a GATT client procedure completes either with error or
 /// successfully.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct GattProcedureComplete {
     /// The connection handle for which the GATT procedure has completed.
     pub conn_handle: ConnectionHandle,
@@ -2065,7 +2074,7 @@ pub struct GattProcedureComplete {
 
 /// Allowed status codes for the [GATT Procedure Complete](Stm32Wb5xEvent::GattProcedureComplete)
 /// event.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub enum GattProcedureStatus {
     /// BLE Status Success
     Success,
@@ -2098,7 +2107,7 @@ fn to_gatt_procedure_complete(
 
 /// The Error Response is used to state that a given request cannot be performed, and to provide the
 /// reason. See the Bluetooth Core Specification, v4.1, Vol 3, Part F, Section 3.4.1.1.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct AttErrorResponse {
     /// The connection handle related to the event.
     pub conn_handle: ConnectionHandle,
@@ -2114,7 +2123,7 @@ pub struct AttErrorResponse {
 /// 3.3 in the Bluetooth Core Specification, v4.1, Vol 3, Part F, Section 3.4.1.1 and The Bluetooth
 /// Core Specification Supplement, Table 1.1.
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub enum AttError {
     /// The attribute handle given was not valid on this server.
     InvalidHandle = 0x01,
@@ -2294,7 +2303,7 @@ impl TryFrom<u8> for AttError {
 /// Possible ATT requests.  See Table 3.37 in the Bluetooth Core Spec v4.1, Vol 3, Part F, Section
 /// 3.4.8.
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub enum AttRequest {
     /// Section 3.4.1.1
     ErrorResponse = 0x01,
@@ -2416,7 +2425,7 @@ fn to_att_error_response(
 ///
 /// See the Bluetooth Core v4.1 spec, Vol 3, Part F, section 3.4.4.
 /// See STM AN5270, section 3.4.19
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct AttReadPermitRequest {
     /// Handle of the connection on which there was the request to read the attribute
     pub conn_handle: ConnectionHandle,
@@ -2447,7 +2456,7 @@ fn to_att_read_permit_request(
 /// the client.
 ///
 /// See the Bluetooth Core v4.1 spec, Vol 3, Part F, section 3.4.4.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, defmt::Format)]
 pub struct AttReadMultiplePermitRequest {
     /// Handle of the connection which requested to read the attribute.
     pub conn_handle: ConnectionHandle,
@@ -2511,7 +2520,7 @@ fn to_att_read_multiple_permit_request(
 /// The event will be given only if a previous ACI command returned with
 /// [`InsufficientResources`](AttError::InsufficientResources).
 #[cfg(feature = "ms")]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct GattTxPoolAvailable {
     /// Connection handle on which the GATT procedure is running.
     pub conn_handle: ConnectionHandle,
@@ -2541,7 +2550,7 @@ fn to_gatt_tx_pool_available(
 /// the attribute will not be modified and an error response will be sent to the client, with the
 /// error code as specified by the application.
 #[cfg(feature = "ms")]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, defmt::Format)]
 pub struct AttPrepareWritePermitRequest {
     /// Connection handle on which the GATT procedure is running.
     pub conn_handle: ConnectionHandle,

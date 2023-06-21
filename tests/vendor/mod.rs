@@ -9,13 +9,13 @@ pub struct RecordingSink {
 #[derive(Debug, PartialEq)]
 pub struct RecordingSinkError;
 
-#[derive(Debug)]
+#[derive(Debug, defmt::Format)]
 pub struct VendorEvent;
-#[derive(Debug)]
+#[derive(Debug, defmt::Format)]
 pub struct VendorError;
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, defmt::Format)]
 pub struct VendorReturnParameters;
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub enum VendorStatus {
     FourFive,
     FiveZero,

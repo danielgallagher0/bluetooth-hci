@@ -2,10 +2,10 @@
 
 /// Enumeration of "Common Data Types" from the [Bluetooth Assigned Numbers][0]
 /// registry.
-/// 
+///
 /// [0]: https://www.bluetooth.com/specifications/assigned-numbers/
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub enum CommonDataType {
     /// Ref: Core Specification Supplement, Part A, Section 1.3
     Flags = 0x01,

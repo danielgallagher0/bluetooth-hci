@@ -77,8 +77,6 @@
 #![no_std]
 #![feature(async_fn_in_trait)]
 
-#[macro_use]
-extern crate bitflags;
 extern crate byteorder;
 
 #[macro_use]
@@ -127,6 +125,7 @@ pub trait Controller {
     /// # extern crate bluetooth_hci_async;
     /// # use bluetooth_hci_async::Controller as HciController;
     /// # struct Controller;
+    /// # #[derive(defmt::Format)]
     /// # struct Error;
     /// # struct Header;
     /// # struct Vendor;
@@ -134,7 +133,7 @@ pub trait Controller {
     /// #     type Status = VendorStatus;
     /// #     type Event = VendorEvent;
     /// # }
-    /// # #[derive(Clone, Debug)]
+    /// # #[derive(Clone, Debug, defmt::Format)]
     /// # struct VendorStatus;
     /// # impl std::convert::TryFrom<u8> for VendorStatus {
     /// #     type Error = bluetooth_hci_async::BadStatusError;
@@ -147,6 +146,7 @@ pub trait Controller {
     /// #        0
     /// #    }
     /// # }
+    /// # #[derive(defmt::Format)]
     /// # struct VendorEvent;
     /// # impl bluetooth_hci_async::event::VendorEvent for VendorEvent {
     /// #     type Error = Error;
@@ -159,7 +159,7 @@ pub trait Controller {
     /// #         Ok(VendorEvent{})
     /// #     }
     /// # }
-    /// # #[derive(Clone, Debug)]
+    /// # #[derive(Clone, Debug, defmt::Format)]
     /// # struct ReturnParameters;
     /// # impl bluetooth_hci_async::event::VendorReturnParameters for ReturnParameters {
     /// #     type Error = Error;
@@ -205,7 +205,7 @@ pub trait Vendor {
 /// List of possible error codes, Bluetooth Spec, Vol 2, Part D, Section 2.
 ///
 /// Includes an extension point for vendor-specific status codes.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub enum Status<V> {
     /// Success
     Success,
@@ -362,6 +362,7 @@ pub enum Status<V> {
 }
 
 /// Wrapper enum for errors converting a u8 into a [`Status`].
+#[derive(defmt::Format)]
 pub enum BadStatusError {
     /// The value does not map to a [`Status`].
     BadValue(u8),
@@ -583,15 +584,15 @@ where
 }
 
 /// Newtype for a connection handle.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, defmt::Format)]
 pub struct ConnectionHandle(pub u16);
 
 /// Newtype for BDADDR.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub struct BdAddr(pub [u8; 6]);
 
 /// Potential values for BDADDR
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub enum BdAddrType {
     /// Public address.
     Public(BdAddr),
@@ -637,12 +638,12 @@ pub fn to_bd_addr_type(bd_addr_type: u8, addr: BdAddr) -> Result<BdAddrType, BdA
     }
 }
 
-bitflags! {
+defmt::bitflags! {
     /// Bitfield for LE Remote Features.
     ///
     /// Fields are defined in Vol 6, Part B, Section 4.6 of the spec.  See Table 4.3 (version 4.1)
     /// or Table 4.4 (version 4.2 and 5.0).
-    #[derive(Default, Copy, Clone, Debug, PartialEq, Eq)]
+    #[derive(Default)]
     pub struct LinkLayerFeature : u64 {
         /// See section 4.6.1
         const LE_ENCRYPTION = 1 << 0;
@@ -698,7 +699,7 @@ bitflag_array! {
     ///
     /// If a flag is set, its classification is "Unknown".  If the flag is cleared, it is known
     /// "bad".
-    #[derive(Copy, Clone, Debug)]
+    #[derive(Copy, Clone, Debug, defmt::Format)]
     pub struct ChannelClassification : 5;
     pub struct ChannelFlag;
 

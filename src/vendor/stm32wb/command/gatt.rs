@@ -1276,7 +1276,7 @@ impl<T: Controller> GattCommands for T {
 /// Before some commands are sent to the controller, the parameters are validated. This type
 /// enumerates the potential validation errors. Must be specialized on the types of communication
 /// errors.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub enum Error {
     /// For the [Add Characteristic Descriptor](Commands::add_characteristic_descriptor) command:
     /// the [descriptor value](AddDescriptorParameters::descriptor_value) is longer than the
@@ -1328,7 +1328,7 @@ impl AddServiceParameters {
 }
 
 /// Types of UUID
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub enum Uuid {
     /// 16-bit UUID
     Uuid16(u16),
@@ -1363,6 +1363,7 @@ impl Uuid {
 /// Types of GATT services
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[repr(u8)]
+#[derive(defmt::Format)]
 pub enum ServiceType {
     /// Primary service
     Primary = 0x01,
@@ -1398,7 +1399,7 @@ impl IncludeServiceParameters {
 }
 
 /// Handle for GATT Services.
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, defmt::Format)]
 pub struct ServiceHandle(pub u16);
 
 /// Two ordered points that represent a range. The points may be identical to represent a range with
@@ -1424,7 +1425,7 @@ impl<T: PartialOrd> Range<T> {
 }
 
 /// Potential errors that can occer when creating a [Range].
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub enum RangeError {
     /// The beginning of the range came after the end.
     Inverted,
@@ -1494,7 +1495,7 @@ impl AddCharacteristicParameters {
     }
 }
 
-bitflags! {
+defmt::bitflags! {
     /// Available [properties](AddCharacteristicParameters::characteristic_properties) for
     /// characteristics. Defined in Volume 3, Part G, Section 3.3.3.1 of Bluetooth Specification
     /// 4.1.
@@ -1540,7 +1541,7 @@ bitflags! {
     }
 }
 
-bitflags! {
+defmt::bitflags! {
     /// [Permissions](AddCharacteristicParameter::security_permissions) available for
     /// characteristics.
     pub struct CharacteristicPermission: u8 {
@@ -1564,7 +1565,7 @@ bitflags! {
     }
 }
 
-bitflags! {
+defmt::bitflags! {
     /// Which events may be generated when a characteristic is accessed.
     pub struct CharacteristicEvent: u8 {
         /// The application will be notified when a client writes to this attribute.
@@ -1613,7 +1614,7 @@ impl EncryptionKeySize {
 }
 
 /// Errors that can occur when creating an [`EncryptionKeySize`].
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub enum EncryptionKeySizeError {
     /// The provided size was less than the minimum allowed size.
     TooShort,
@@ -1622,7 +1623,7 @@ pub enum EncryptionKeySizeError {
 }
 
 /// Handle for GATT characteristics.
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, defmt::Format)]
 pub struct CharacteristicHandle(pub u16);
 
 /// Parameters for the [GATT Add Characteristic Descriptor](Commands::add_characteristic_descriptor)
@@ -1702,6 +1703,7 @@ impl<'a> AddDescriptorParameters<'a> {
 
 /// Common characteristic descriptor UUIDs.
 #[repr(u16)]
+#[derive(defmt::Format)]
 pub enum KnownDescriptor {
     /// Characteristic Extended Properties Descriptor
     CharacteristicExtendedProperties = 0x2900,
@@ -1723,7 +1725,7 @@ impl From<KnownDescriptor> for Uuid {
     }
 }
 
-bitflags! {
+defmt::bitflags! {
     /// Permissions available for characteristic descriptors.
     pub struct DescriptorPermission: u8 {
         /// Authentication required.
@@ -1737,7 +1739,7 @@ bitflags! {
     }
 }
 
-bitflags! {
+defmt::bitflags! {
     /// Types of access for characteristic descriptors
     pub struct AccessPermission: u8 {
         /// Readable
@@ -1752,7 +1754,7 @@ bitflags! {
 }
 
 /// Handle for GATT characteristic descriptors.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub struct DescriptorHandle(pub u16);
 
 /// Parameters for the [Update Characteristic Value](Commands::update_characteristic_value)
@@ -1822,7 +1824,7 @@ impl DeleteIncludedServiceParameters {
     }
 }
 
-bitflags! {
+defmt::bitflags! {
     /// Flags for individual events that can be masked by the [GATT Set Event
     /// Mask](Commands::set_event_mask) command.
     pub struct Event: u32 {
@@ -2318,7 +2320,7 @@ impl<'a> UpdateLongCharacteristicValueParameters<'a> {
 }
 
 #[cfg(feature = "ms")]
-bitflags! {
+defmt::bitflags! {
     /// Flags for types of updates that the controller should signal when a characteristic value is
     /// [updated](Commands::update_long_characteristic_value).
     pub struct UpdateType: u8 {

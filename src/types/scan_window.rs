@@ -110,7 +110,7 @@ impl ScanWindowBuilder {
 }
 
 /// Types of errors that can occure when creating a [`ScanWindow`].
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub enum ScanWindowError {
     /// The duration is too short. Both the interval and duration must be at least 2.5 ms. Includes
     /// the invalid duration.

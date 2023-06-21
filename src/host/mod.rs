@@ -1101,7 +1101,7 @@ pub trait HostHci {
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
 /// of communication errors.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub enum Error<VS> {
     /// For the [`disconnect`](Hci::disconnect) command: The provided reason is not a valid
     /// disconnection reason. Includes the reported reason.
@@ -1663,7 +1663,7 @@ where
 
 const MAX_TEST_CHANNEL: u8 = 0x27;
 
-bitflags! {
+defmt::bitflags! {
     /// Event flags defined for the [`set_event_mask`](Hci::set_event_mask) command.
     #[derive(Default)]
     pub struct EventFlags : u64 {
@@ -1774,7 +1774,7 @@ bitflags! {
 ///
 /// See the Bluetooth spec, Vol 2, Part E, Section 7.3.35.
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub enum TxPowerLevel {
     /// Read Current Transmit Power Level.
     Current = 0x00,
@@ -1782,7 +1782,7 @@ pub enum TxPowerLevel {
     Maximum = 0x01,
 }
 
-bitflags! {
+defmt::bitflags! {
     /// Event flags defined for the [`le_set_event_mask`](Hci::le_set_event_mask) command.
     #[derive(Default)]
     pub struct LeEventFlags : u64 {
@@ -1926,7 +1926,7 @@ impl AdvertisingParameters {
 
 /// Indicates the type of address being used in the advertising packets.
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub enum OwnAddressType {
     /// Public Device Address (default)
     Public = 0x00,
@@ -1943,9 +1943,8 @@ pub enum OwnAddressType {
     PrivateFallbackRandom = 0x03,
 }
 
-bitflags! {
+defmt::bitflags! {
     /// The advertising channels that shall be used when transmitting advertising packets.
-    #[derive(Copy, Clone, Debug, PartialEq)]
     pub struct Channels : u8 {
         /// Channel 37 shall be used
         const CH_37 = 0b0000_0001;
@@ -1966,7 +1965,7 @@ impl Default for Channels {
 ///
 /// See [`AdvertisingParameters`]($crate::host::AdvertisingParameters).
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
 pub enum AdvertisingFilterPolicy {
     /// Process scan and connection requests from all devices (i.e., the White List is not in use)
     /// (default).
@@ -2014,6 +2013,7 @@ impl ScanParameters {
 /// See [`ScanParameters`] and [`le_set_scan_parameters`](Hci::le_set_scan_parameters).
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[repr(u8)]
+#[derive(defmt::Format)]
 pub enum ScanType {
     /// Passive Scanning. No scanning PDUs shall be sent (default).
     Passive = 0x00,
@@ -2026,6 +2026,7 @@ pub enum ScanType {
 /// See [`ScanParameters`] and [`le_set_scan_parameters`](Hci::le_set_scan_parameters).
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[repr(u8)]
+#[derive(defmt::Format)]
 pub enum ScanFilterPolicy {
     /// Accept all advertising packets except directed advertising packets not addressed to this
     /// device (default).
@@ -2122,6 +2123,7 @@ impl ConnectionParameters {
 /// [`le_create_connection`](Hci::le_create_connection) command.
 #[derive(Copy, Clone, Debug)]
 #[repr(u8)]
+#[derive(defmt::Format)]
 pub enum ConnectionFilterPolicy {
     /// White List is not used to determine which advertiser to connect to.  `peer_address` shall be
     /// used in the connection complete event.
@@ -2134,7 +2136,7 @@ pub enum ConnectionFilterPolicy {
 
 /// Possible values for the peer address in the [`le_create_connection`](Hci::le_create_connection)
 /// command.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub enum PeerAddrType {
     /// Public Device Address
     PublicDeviceAddress(crate::BdAddr),
@@ -2247,7 +2249,7 @@ pub struct AesParameters {
 /// Newtype for the encryption key.
 ///
 /// See [`AesParameters`]
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, defmt::Format)]
 pub struct EncryptionKey(pub [u8; 16]);
 
 impl Debug for EncryptionKey {
@@ -2287,6 +2289,7 @@ pub struct EncryptionParameters {
 /// [`le_transmitter_test`](Hci::le_transmitter_test) command.
 #[derive(Copy, Clone, Debug)]
 #[repr(u8)]
+#[derive(defmt::Format)]
 pub enum TestPacketPayload {
     /// Pseudo-Random bit sequence 9
     PrbS9 = 0x00,

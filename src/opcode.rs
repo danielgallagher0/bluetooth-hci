@@ -1,7 +1,7 @@
 /// Newtype wrapper for a Bluetooth Opcode. Opcodes are used to indicate which command to send to
 /// the Controller as well as which command results are returned by the Command Complete and Command
 /// Status events.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, defmt::Format)]
 pub struct Opcode(pub u16);
 
 impl Opcode {
