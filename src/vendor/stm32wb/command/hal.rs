@@ -174,8 +174,7 @@ pub trait HalCommands {
 
 impl<T: Controller> HalCommands for T {
     async fn get_firmware_revision(&mut self) {
-        super::write_command(
-            self,
+        self.write(
             crate::vendor::stm32wb::opcode::HAL_GET_FIRMWARE_REVISION,
             &[],
         )
@@ -189,8 +188,7 @@ impl<T: Controller> HalCommands for T {
     );
 
     async fn read_config_data(&mut self, param: ConfigParameter) {
-        super::write_command(
-            self,
+        self.write(
             crate::vendor::stm32wb::opcode::HAL_READ_CONFIG_DATA,
             &[param as u8],
         )
@@ -203,8 +201,7 @@ impl<T: Controller> HalCommands for T {
         let mut bytes = [0; 2];
         bytes[1] = level as u8;
 
-        super::write_command(
-            self,
+        self.write(
             crate::vendor::stm32wb::opcode::HAL_SET_TX_POWER_LEVEL,
             &bytes,
         )
@@ -212,17 +209,12 @@ impl<T: Controller> HalCommands for T {
     }
 
     async fn device_standby(&mut self) {
-        super::write_command(
-            self,
-            crate::vendor::stm32wb::opcode::HAL_DEVICE_STANDBY,
-            &[],
-        )
-        .await
+        self.write(crate::vendor::stm32wb::opcode::HAL_DEVICE_STANDBY, &[])
+            .await
     }
 
     async fn get_tx_test_packet_count(&mut self) {
-        super::write_command(
-            self,
+        self.write(
             crate::vendor::stm32wb::opcode::HAL_TX_TEST_PACKET_COUNT,
             &[],
         )
@@ -235,36 +227,25 @@ impl<T: Controller> HalCommands for T {
             return Err(Error::InvalidChannel(channel));
         }
 
-        super::write_command(
-            self,
-            crate::vendor::stm32wb::opcode::HAL_START_TONE,
-            &[channel],
-        )
-        .await;
+        self.write(crate::vendor::stm32wb::opcode::HAL_START_TONE, &[channel])
+            .await;
 
         Ok(())
     }
 
     async fn stop_tone(&mut self) {
-        super::write_command(self, crate::vendor::stm32wb::opcode::HAL_STOP_TONE, &[]).await
+        self.write(crate::vendor::stm32wb::opcode::HAL_STOP_TONE, &[])
+            .await
     }
 
     async fn get_link_status(&mut self) {
-        super::write_command(
-            self,
-            crate::vendor::stm32wb::opcode::HAL_GET_LINK_STATUS,
-            &[],
-        )
-        .await
+        self.write(crate::vendor::stm32wb::opcode::HAL_GET_LINK_STATUS, &[])
+            .await
     }
 
     async fn get_anchor_period(&mut self) {
-        super::write_command(
-            self,
-            crate::vendor::stm32wb::opcode::HAL_GET_ANCHOR_PERIOD,
-            &[],
-        )
-        .await
+        self.write(crate::vendor::stm32wb::opcode::HAL_GET_ANCHOR_PERIOD, &[])
+            .await
     }
 }
 

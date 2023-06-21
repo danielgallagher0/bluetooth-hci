@@ -824,7 +824,8 @@ pub trait GattCommands {
 
 impl<T: Controller> GattCommands for T {
     async fn init(&mut self) {
-        super::write_command(self, crate::vendor::stm32wb::opcode::GATT_INIT, &[]).await
+        self.write(crate::vendor::stm32wb::opcode::GATT_INIT, &[])
+            .await
     }
 
     impl_variable_length_params!(
@@ -866,8 +867,7 @@ impl<T: Controller> GattCommands for T {
         LittleEndian::write_u16(&mut bytes[0..2], service.0);
         LittleEndian::write_u16(&mut bytes[2..4], characteristic.0);
 
-        super::write_command(
-            self,
+        self.write(
             crate::vendor::stm32wb::opcode::GATT_DELETE_CHARACTERISTIC,
             &bytes,
         )
@@ -878,12 +878,8 @@ impl<T: Controller> GattCommands for T {
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes[0..2], service.0);
 
-        super::write_command(
-            self,
-            crate::vendor::stm32wb::opcode::GATT_DELETE_SERVICE,
-            &bytes,
-        )
-        .await
+        self.write(crate::vendor::stm32wb::opcode::GATT_DELETE_SERVICE, &bytes)
+            .await
     }
 
     impl_params!(
@@ -902,8 +898,7 @@ impl<T: Controller> GattCommands for T {
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes, conn_handle.0);
 
-        super::write_command(
-            self,
+        self.write(
             crate::vendor::stm32wb::opcode::GATT_EXCHANGE_CONFIGURATION,
             &bytes,
         )
@@ -920,8 +915,7 @@ impl<T: Controller> GattCommands for T {
         LittleEndian::write_u16(&mut bytes[2..4], attribute_range.from.0);
         LittleEndian::write_u16(&mut bytes[4..6], attribute_range.to.0);
 
-        super::write_command(
-            self,
+        self.write(
             crate::vendor::stm32wb::opcode::GATT_FIND_INFORMATION_REQUEST,
             &bytes,
         )
@@ -957,8 +951,7 @@ impl<T: Controller> GattCommands for T {
         LittleEndian::write_u16(&mut bytes, conn_handle.0);
         bytes[2] = true as u8;
 
-        super::write_command(
-            self,
+        self.write(
             crate::vendor::stm32wb::opcode::GATT_EXECUTE_WRITE_REQUEST,
             &bytes,
         )
@@ -970,8 +963,7 @@ impl<T: Controller> GattCommands for T {
         LittleEndian::write_u16(&mut bytes, conn_handle.0);
         bytes[2] = false as u8;
 
-        super::write_command(
-            self,
+        self.write(
             crate::vendor::stm32wb::opcode::GATT_EXECUTE_WRITE_REQUEST,
             &bytes,
         )
@@ -982,8 +974,7 @@ impl<T: Controller> GattCommands for T {
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes, conn_handle.0);
 
-        super::write_command(
-            self,
+        self.write(
             crate::vendor::stm32wb::opcode::GATT_DISCOVER_ALL_PRIMARY_SERVICES,
             &bytes,
         )
@@ -999,8 +990,7 @@ impl<T: Controller> GattCommands for T {
         LittleEndian::write_u16(&mut bytes, conn_handle.0);
         let end = 2 + uuid.copy_into_slice(&mut bytes[2..]);
 
-        super::write_command(
-            self,
+        self.write(
             crate::vendor::stm32wb::opcode::GATT_DISCOVER_PRIMARY_SERVICES_BY_UUID,
             &bytes[..end],
         )
@@ -1017,8 +1007,7 @@ impl<T: Controller> GattCommands for T {
         LittleEndian::write_u16(&mut bytes[2..4], service_handle_range.from.0);
         LittleEndian::write_u16(&mut bytes[4..6], service_handle_range.to.0);
 
-        super::write_command(
-            self,
+        self.write(
             crate::vendor::stm32wb::opcode::GATT_FIND_INCLUDED_SERVICES,
             &bytes,
         )
@@ -1035,8 +1024,7 @@ impl<T: Controller> GattCommands for T {
         LittleEndian::write_u16(&mut bytes[2..4], attribute_handle_range.from.0);
         LittleEndian::write_u16(&mut bytes[4..6], attribute_handle_range.to.0);
 
-        super::write_command(
-            self,
+        self.write(
             crate::vendor::stm32wb::opcode::GATT_DISCOVER_ALL_CHARACTERISTICS_OF_SERVICE,
             &bytes,
         )
@@ -1055,8 +1043,7 @@ impl<T: Controller> GattCommands for T {
         LittleEndian::write_u16(&mut bytes[4..6], attribute_handle_range.to.0);
         let uuid_len = uuid.copy_into_slice(&mut bytes[6..]);
 
-        super::write_command(
-            self,
+        self.write(
             crate::vendor::stm32wb::opcode::GATT_DISCOVER_CHARACTERISTICS_BY_UUID,
             &bytes[..6 + uuid_len],
         )
@@ -1073,8 +1060,7 @@ impl<T: Controller> GattCommands for T {
         LittleEndian::write_u16(&mut bytes[2..4], characteristic_handle_range.from.0);
         LittleEndian::write_u16(&mut bytes[4..6], characteristic_handle_range.to.0);
 
-        super::write_command(
-            self,
+        self.write(
             crate::vendor::stm32wb::opcode::GATT_DISCOVER_ALL_CHARACTERISTIC_DESCRIPTORS,
             &bytes,
         )
@@ -1090,8 +1076,7 @@ impl<T: Controller> GattCommands for T {
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
         LittleEndian::write_u16(&mut bytes[2..4], characteristic_handle.0);
 
-        super::write_command(
-            self,
+        self.write(
             crate::vendor::stm32wb::opcode::GATT_READ_CHARACTERISTIC_VALUE,
             &bytes,
         )
@@ -1110,8 +1095,7 @@ impl<T: Controller> GattCommands for T {
         LittleEndian::write_u16(&mut bytes[4..6], characteristic_handle_range.to.0);
         let uuid_len = uuid.copy_into_slice(&mut bytes[6..]);
 
-        super::write_command(
-            self,
+        self.write(
             crate::vendor::stm32wb::opcode::GATT_READ_CHARACTERISTIC_BY_UUID,
             &bytes[..6 + uuid_len],
         )
@@ -1175,8 +1159,7 @@ impl<T: Controller> GattCommands for T {
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
         LittleEndian::write_u16(&mut bytes[2..4], characteristic_handle.0);
 
-        super::write_command(
-            self,
+        self.write(
             crate::vendor::stm32wb::opcode::GATT_READ_CHARACTERISTIC_DESCRIPTOR,
             &bytes,
         )
@@ -1199,8 +1182,7 @@ impl<T: Controller> GattCommands for T {
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes, conn_handle.0);
 
-        super::write_command(
-            self,
+        self.write(
             crate::vendor::stm32wb::opcode::GATT_CONFIRM_INDICATION,
             &bytes,
         )
@@ -1217,12 +1199,8 @@ impl<T: Controller> GattCommands for T {
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes, conn_handle.0);
 
-        super::write_command(
-            self,
-            crate::vendor::stm32wb::opcode::GATT_ALLOW_READ,
-            &bytes,
-        )
-        .await
+        self.write(crate::vendor::stm32wb::opcode::GATT_ALLOW_READ, &bytes)
+            .await
     }
 
     impl_params!(
@@ -1241,8 +1219,7 @@ impl<T: Controller> GattCommands for T {
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes, handle.0);
 
-        super::write_command(
-            self,
+        self.write(
             crate::vendor::stm32wb::opcode::GATT_READ_HANDLE_VALUE,
             &bytes,
         )
@@ -1255,8 +1232,7 @@ impl<T: Controller> GattCommands for T {
         LittleEndian::write_u16(&mut bytes, handle.0);
         bytes[2] = offset as u8;
 
-        super::write_command(
-            self,
+        self.write(
             crate::vendor::stm32wb::opcode::GATT_READ_HANDLE_VALUE_OFFSET,
             &bytes,
         )
