@@ -40,9 +40,6 @@ for a specific BLE chip. Any implementor can then be used as a
         async fn read_into(&mut self, buffer: &mut [u8]) -> Result<(), Self::Error> {
             // implementation...
         }
-        async fn peek(&mut self, n: usize) -> Result<u8, Self::Error> {
-            // implementation...
-        }
     }
 
 The entire Bluetooth HCI is implemented in terms of these functions

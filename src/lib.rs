@@ -170,9 +170,6 @@ pub trait Controller {
     /// # impl HciController for Controller {
     /// #     async fn write(&mut self, _header: &[u8], _payload: &[u8]) {}
     /// #     async fn read_into(&mut self, _buffer: &mut [u8]) {}
-    /// #     async fn peek(&mut self, _n: usize) -> u8 {
-    /// #         0
-    /// #     }
     /// # }
     /// # fn main() {
     /// # let mut controller = Controller;
@@ -194,86 +191,6 @@ pub trait Controller {
     /// # }
     /// ```
     async fn read_into(&mut self, buffer: &mut [u8]);
-
-    /// Looks ahead at the data coming from the Controller without consuming it. Implementors should
-    /// be able to support values of `n` up to 5 to support all potential data types.
-    ///
-    /// `peek(0)` will typically be used to the the packet type (see Bluetooth Spec, Vol 4, Part A,
-    /// Section 2), which will be followed by another peek to determine the amount of data to
-    /// read. For example, the code to read an HCI event looks like this:
-    ///
-    /// ```
-    /// # #![feature(async_fn_in_trait)]
-    /// # extern crate bluetooth_hci_async;
-    /// # use bluetooth_hci_async::Controller as HciController;
-    /// # struct Controller;
-    /// # #[derive(Debug)]
-    /// # struct Error;
-    /// # struct Header;
-    /// # struct Vendor;
-    /// # impl bluetooth_hci_async::Vendor for Vendor {
-    /// #     type Status = VendorStatus;
-    /// #     type Event = VendorEvent;
-    /// # }
-    /// # #[derive(Clone, Debug)]
-    /// # struct VendorStatus;
-    /// # impl std::convert::TryFrom<u8> for VendorStatus {
-    /// #     type Error = bluetooth_hci_async::BadStatusError;
-    /// #     fn try_from(value: u8) -> Result<VendorStatus, Self::Error> {
-    /// #         Err(bluetooth_hci_async::BadStatusError::BadValue(value))
-    /// #     }
-    /// # }
-    /// # impl std::convert::Into<u8> for VendorStatus {
-    /// #    fn into(self) -> u8 {
-    /// #        0
-    /// #    }
-    /// # }
-    /// # struct VendorEvent;
-    /// # impl bluetooth_hci_async::event::VendorEvent for VendorEvent {
-    /// #     type Error = Error;
-    /// #     type Status = VendorStatus;
-    /// #     type ReturnParameters = ReturnParameters;
-    /// #     fn new(_buffer: &[u8]) -> Result<Self, bluetooth_hci_async::event::Error<Self::Error>>
-    /// #     where
-    /// #         Self: Sized
-    /// #     {
-    /// #         Ok(VendorEvent{})
-    /// #     }
-    /// # }
-    /// # #[derive(Clone, Debug)]
-    /// # struct ReturnParameters;
-    /// # impl bluetooth_hci_async::event::VendorReturnParameters for ReturnParameters {
-    /// #     type Error = Error;
-    /// #     fn new(_buffer: &[u8]) -> Result<Self, bluetooth_hci_async::event::Error<Self::Error>> {
-    /// #         Ok(ReturnParameters{})
-    /// #     }
-    /// # }
-    /// # impl HciController for Controller {
-    /// #     async fn write(&mut self, _header: &[u8], _payload: &[u8]) {}
-    /// #     async fn read_into(&mut self, _buffer: &mut [u8]) {}
-    /// #     async fn peek(&mut self, _n: usize) -> u8 {
-    /// #         0
-    /// #     }
-    /// # }
-    /// # #[tokio::main]
-    /// # async fn main() -> Result<(), Error> {
-    /// # const PACKET_TYPE_HCI_EVENT: u8 = 4;
-    /// # let mut controller = Controller;
-    /// const MAX_EVENT_LENGTH: usize = 255;
-    /// const HEADER_LENGTH: usize = 2;
-    /// let mut buffer = [0; MAX_EVENT_LENGTH + HEADER_LENGTH];
-    /// let packet_type = controller.peek(0).await;
-    /// if packet_type == PACKET_TYPE_HCI_EVENT {
-    ///     // Byte 3 has the parameter length in HCI events
-    ///     let param_len = controller.peek(3).await as usize;
-    ///
-    ///     // We want to consume the full HCI Event packet, and we now know the length.
-    ///     controller.read_into(&mut buffer[..HEADER_LENGTH + param_len]).await;
-    /// }
-    /// # Ok(())
-    /// # }
-    /// ```
-    async fn peek(&mut self, n: usize) -> u8;
 }
 
 /// Trait defining vendor-specific extensions for the Bluetooth Controller.

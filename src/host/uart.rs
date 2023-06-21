@@ -81,37 +81,34 @@ impl super::HciHeader for CommandHeader {
     }
 }
 
-async fn read_event<T>(
-    controller: &mut T,
-) -> Result<crate::Event<Stm32Wb5xEvent>, Error<Stm32Wb5xError>>
-where
-    T: crate::Controller,
-{
-    const MAX_EVENT_LENGTH: usize = 255;
-    const PACKET_HEADER_LENGTH: usize = 1;
-    const EVENT_PACKET_HEADER_LENGTH: usize = 3;
-    const PARAM_LEN_BYTE: usize = 2;
-
-    let param_len = controller.peek(PARAM_LEN_BYTE).await as usize;
-
-    let mut buf = [0; MAX_EVENT_LENGTH + EVENT_PACKET_HEADER_LENGTH];
-    controller
-        .read_into(&mut buf[..EVENT_PACKET_HEADER_LENGTH + param_len])
-        .await;
-
-    crate::event::Event::new(crate::event::Packet(
-        &buf[PACKET_HEADER_LENGTH..EVENT_PACKET_HEADER_LENGTH + param_len],
-    ))
-    .map_err(Error::BLE)
-}
-
 impl<T> UartHci for T
 where
     T: crate::Controller,
 {
     async fn read(&mut self) -> Result<Packet<Stm32Wb5xEvent>, Error<Stm32Wb5xError>> {
-        match self.peek(0).await {
-            PACKET_TYPE_HCI_EVENT => Ok(Packet::Event(read_event(self).await?)),
+        const MAX_EVENT_LENGTH: usize = 255;
+        const PACKET_HEADER_LENGTH: usize = 1;
+        const EVENT_PACKET_HEADER_LENGTH: usize = 3;
+        const PARAM_LEN_BYTE: usize = 2;
+
+        let mut packet = [0; MAX_EVENT_LENGTH + EVENT_PACKET_HEADER_LENGTH + PARAM_LEN_BYTE];
+        self.read_into(&mut packet).await;
+
+        let packet_type = packet[0];
+        match packet_type {
+            PACKET_TYPE_HCI_EVENT => {
+                let param_len = packet[PARAM_LEN_BYTE] as usize;
+
+                let mut buf = [0; MAX_EVENT_LENGTH + EVENT_PACKET_HEADER_LENGTH];
+                buf[..EVENT_PACKET_HEADER_LENGTH + param_len].copy_from_slice(&packet);
+
+                Ok(Packet::Event(
+                    crate::event::Event::new(crate::event::Packet(
+                        &buf[PACKET_HEADER_LENGTH..EVENT_PACKET_HEADER_LENGTH + param_len],
+                    ))
+                    .map_err(Error::BLE)?,
+                ))
+            }
             x => Err(Error::BadPacketType(x)),
         }
     }

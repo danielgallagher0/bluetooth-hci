@@ -80,10 +80,6 @@ impl hci::Controller for RecordingSink {
     }
 
     async fn read_into(&mut self, _buffer: &mut [u8]) {}
-
-    async fn peek(&mut self, _n: usize) -> u8 {
-        0
-    }
 }
 
 impl RecordingSink {
