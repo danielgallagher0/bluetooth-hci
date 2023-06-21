@@ -92,6 +92,7 @@ where
         const PARAM_LEN_BYTE: usize = 2;
 
         let mut packet = [0; MAX_EVENT_LENGTH + EVENT_PACKET_HEADER_LENGTH + PARAM_LEN_BYTE];
+
         self.read_into(&mut packet).await;
 
         let packet_type = packet[0];
@@ -100,7 +101,8 @@ where
                 let param_len = packet[PARAM_LEN_BYTE] as usize;
 
                 let mut buf = [0; MAX_EVENT_LENGTH + EVENT_PACKET_HEADER_LENGTH];
-                buf[..EVENT_PACKET_HEADER_LENGTH + param_len].copy_from_slice(&packet);
+                buf[..EVENT_PACKET_HEADER_LENGTH + param_len]
+                    .copy_from_slice(&packet[..EVENT_PACKET_HEADER_LENGTH + param_len]);
 
                 Ok(Packet::Event(
                     crate::event::Event::new(crate::event::Packet(
