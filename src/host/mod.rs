@@ -1304,7 +1304,7 @@ where
 
     #[cfg(not(feature = "version-5-0"))]
     async fn le_set_advertise_enable(&mut self, enable: bool) {
-        self.write(crate::opcode::LE_SET_ADVERTISE_ENABLE, &[enable as u8])
+        self.controller_write(crate::opcode::LE_SET_ADVERTISE_ENABLE, &[enable as u8])
             .await;
     }
 
