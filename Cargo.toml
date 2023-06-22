@@ -4,7 +4,7 @@ name = "stm32wb-hci"
 version = "0.1.2"
 authors = [
     "Daniel Gallagher <pdanielgallagher@gmail.com>",
-    "Ghaith Oueslati <ghaith.oueslati@gmail.com>",
+    "Ghaith Oueslati <ghaith.oueslati@enis.tn>",
 ]
 categories = ["embedded", "hardware-support", "no-std", "async"]
 description = "Implementation of the Bluetooth HCI for the STM32WB family"
@@ -12,6 +12,7 @@ keywords = ["ble", "bluetooth", "stm32"]
 license = "MIT/Apache-2.0"
 repository = "https://github.com/OueslatiGhaith/bluetooth-hci"
 readme = "README.md"
+exclude = ["tests"]
 
 [dependencies]
 byteorder = { version = "1.4.3", default_features = false }
