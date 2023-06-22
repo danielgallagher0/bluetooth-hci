@@ -170,11 +170,12 @@ pub trait Controller {
     /// # }
     /// # impl HciController for Controller {
     /// #     async fn controller_write(&mut self, opcode: Opcode, _payload: &[u8]) {}
-    /// #     async fn controller_read(&self) -> &[u8] { &[] }
+    /// #     async fn controller_read_into(&self, _buf: &mut [u8]) {}
     /// # }
     /// # fn main() {
     /// # let mut controller = Controller;
-    /// let buffer = controller.controller_read();
+    /// let mut buffer = [0; 4];
+    /// controller.controller_read_into(&mut buffer);
     ///
     /// // buffer contains:
     /// // +------+------+------+------+
@@ -182,7 +183,7 @@ pub trait Controller {
     /// // +------+------+------+------+
     ///
     /// // now the host calls:
-    /// controller.controller_read();  // read 4 bytes into buffer
+    /// controller.controller_read_into(&mut buffer);  // read 4 bytes into buffer
     ///
     /// // buffer contains:
     /// // +------+------+------+------+
@@ -190,7 +191,7 @@ pub trait Controller {
     /// // +------+------+------+------+
     /// # }
     /// ```
-    async fn controller_read(&self) -> &[u8];
+    async fn controller_read_into(&self, buf: &mut [u8]);
 }
 
 /// Trait defining vendor-specific extensions for the Bluetooth Controller.

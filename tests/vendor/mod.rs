@@ -82,9 +82,7 @@ impl hci::Controller for RecordingSink {
         }
     }
 
-    async fn controller_read(&self) -> &[u8] {
-        &[]
-    }
+    async fn controller_read_into(&self, _buf: &mut [u8]) {}
 }
 
 impl RecordingSink {
