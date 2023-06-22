@@ -1014,6 +1014,8 @@ impl GapDeviceFound {
 
 pub use crate::event::AdvertisementEvent as GapDeviceFoundEvent;
 
+use super::command::gap::EventFlags;
+
 fn to_gap_device_found(
     buffer: &[u8],
 ) -> Result<GapDeviceFound, crate::event::Error<Stm32Wb5xError>> {
@@ -1200,6 +1202,9 @@ pub struct GattAttributeModified {
     ///  Handle of the attribute that was modified
     pub attr_handle: AttributeHandle,
 
+    #[cfg(feature = "ms")]
+    offset: u16,
+
     /// Number of valid bytes in |data|.
     data_len: usize,
     /// The new attribute value, starting from the given offset. If compiling with "ms" support, the
@@ -1231,7 +1236,6 @@ impl Debug for GattAttributeModified {
             .field("conn_handle", &self.conn_handle)
             .field("attr_handle", &self.attr_handle)
             .field("offset", &self.offset)
-            .field("continued", &self.continued)
             .field("data", &first_16(self.data()))
             .finish()
     }
@@ -1262,8 +1266,7 @@ fn to_gatt_attribute_modified(
     Ok(GattAttributeModified {
         conn_handle: ConnectionHandle(LittleEndian::read_u16(&buffer[2..])),
         attr_handle: AttributeHandle(LittleEndian::read_u16(&buffer[4..])),
-        offset: (offset_field & 0x7FFF) as usize,
-        continued: (offset_field & 0x8000) > 0,
+        offset: (offset_field & 0x7FFF),
         data_len,
         data_buf: data,
     })

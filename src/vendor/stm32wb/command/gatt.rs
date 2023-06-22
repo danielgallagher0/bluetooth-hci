@@ -1232,7 +1232,7 @@ impl<T: Controller> GattCommands for T {
         LittleEndian::write_u16(&mut bytes, handle.0);
         bytes[2] = offset as u8;
 
-        self.write(
+        self.controller_write(
             crate::vendor::stm32wb::opcode::GATT_READ_HANDLE_VALUE_OFFSET,
             &bytes,
         )
@@ -2290,7 +2290,7 @@ impl<'a> UpdateLongCharacteristicValueParameters<'a> {
         self.len()
     }
 
-    async fn len(&self) -> usize {
+    fn len(&self) -> usize {
         10 + self.value.len()
     }
 }

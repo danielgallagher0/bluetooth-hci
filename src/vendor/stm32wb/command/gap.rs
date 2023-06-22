@@ -1017,7 +1017,7 @@ impl<T: Controller> GapCommands for T {
     async fn allow_rebond(&mut self, conn_handle: crate::ConnectionHandle) {
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes, conn_handle.0);
-        self.write(crate::vendor::stm32wb::opcode::GAP_ALLOW_REBOND, &bytes)
+        self.controller_write(crate::vendor::stm32wb::opcode::GAP_ALLOW_REBOND, &bytes)
             .await
     }
 
@@ -1103,8 +1103,8 @@ impl<T: Controller> GapCommands for T {
 
     #[cfg(feature = "ms")]
     impl_validate_variable_length_params!(
-        set_broadcast_mode,
-        BroadcastModeParameters,
+        set_broadcast_mode<'a, 'b>,
+        BroadcastModeParameters<'a, 'b>,
         crate::vendor::stm32wb::opcode::GAP_SET_BROADCAST_MODE
     );
 
