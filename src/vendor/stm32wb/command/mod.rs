@@ -67,9 +67,9 @@ macro_rules! impl_validate_variable_length_params {
             params.validate()?;
 
             let mut bytes = [0; $param_type::MAX_LENGTH];
-            params.copy_into_slice(&mut bytes);
+            let len = params.copy_into_slice(&mut bytes);
 
-            self.controller_write($opcode, &bytes).await;
+            self.controller_write($opcode, &bytes[..len]).await;
 
             Ok(())
         }
