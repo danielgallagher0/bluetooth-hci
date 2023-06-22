@@ -1,8 +1,7 @@
 #![allow(dead_code)]
 
+extern crate stm32wb_hci as hci;
 use hci::{host::HciHeader, vendor::stm32wb::CommandHeader, Opcode};
-
-extern crate bluetooth_hci_async as hci;
 
 pub struct RecordingSink {
     pub written_data: Vec<u8>,

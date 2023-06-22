@@ -1,6 +1,6 @@
 #![feature(async_fn_in_trait)]
 
-extern crate bluetooth_hci_async as hci;
+extern crate stm32wb_hci as hci;
 
 mod vendor;
 

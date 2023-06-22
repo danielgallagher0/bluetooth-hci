@@ -2,7 +2,7 @@
 
 use hci::types::Advertisement;
 
-extern crate bluetooth_hci_async as hci;
+extern crate stm32wb_hci as hci;
 
 #[test]
 fn complete_name() {

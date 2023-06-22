@@ -21,7 +21,7 @@ pub extern crate core as _core;
 ///
 /// ```
 /// # #[macro_use]
-/// # extern crate bluetooth_hci_async;
+/// # extern crate stm32wb_hci as hci;
 /// # fn main() {}
 /// bitflag_array! {
 ///     #[derive(Clone)]
@@ -40,7 +40,7 @@ pub extern crate core as _core;
 /// A subset of the bitflags interface is implemented, including bitwise OR operations:
 /// ```
 /// # #[macro_use]
-/// # extern crate bluetooth_hci_async;
+/// # extern crate stm32wb_hci as hci;
 /// # bitflag_array! {
 /// #    #[derive(Clone)]
 /// #    pub struct Flags : 3;
