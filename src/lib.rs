@@ -103,7 +103,7 @@ use core::fmt::Debug;
 pub trait Controller {
     /// Writes the bytes to the controller, in a single transaction if possible. All of `header`
     /// shall be written, followed by all of `payload`.
-    async fn write(&mut self, opcode: Opcode, payload: &[u8]);
+    async fn controller_write(&mut self, opcode: Opcode, payload: &[u8]);
 
     /// Reads data from the controller into the provided `buffer`. The length of the buffer
     /// indicates the number of bytes to read. The implementor must not return bytes in an order
@@ -169,13 +169,12 @@ pub trait Controller {
     /// #     }
     /// # }
     /// # impl HciController for Controller {
-    /// #     async fn write(&mut self, opcode: Opcode, _payload: &[u8]) {}
-    /// #     async fn read_into(&mut self, _buffer: &mut [u8]) {}
+    /// #     async fn controller_write(&mut self, opcode: Opcode, _payload: &[u8]) {}
+    /// #     async fn controller_read(&self) -> &[u8] { &[] }
     /// # }
     /// # fn main() {
     /// # let mut controller = Controller;
-    /// let mut buffer = [0; 4];
-    /// controller.read_into(&mut buffer[1..]);  // read 3 bytes into buffer[1..]
+    /// let buffer = controller.controller_read();
     ///
     /// // buffer contains:
     /// // +------+------+------+------+
@@ -183,7 +182,7 @@ pub trait Controller {
     /// // +------+------+------+------+
     ///
     /// // now the host calls:
-    /// controller.read_into(&mut buffer);  // read 4 bytes into buffer
+    /// controller.controller_read();  // read 4 bytes into buffer
     ///
     /// // buffer contains:
     /// // +------+------+------+------+
@@ -191,7 +190,7 @@ pub trait Controller {
     /// // +------+------+------+------+
     /// # }
     /// ```
-    async fn read_into(&mut self, buffer: &mut [u8]);
+    async fn controller_read(&self) -> &[u8];
 }
 
 /// Trait defining vendor-specific extensions for the Bluetooth Controller.

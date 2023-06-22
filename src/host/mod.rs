@@ -1154,7 +1154,7 @@ where
     let mut params = [0; 32];
     params[0] = data.len() as u8;
     params[1..=data.len()].copy_from_slice(data);
-    controller.write(opcode, &params).await;
+    controller.controller_write(opcode, &params).await;
 
     Ok(())
 }
@@ -1184,7 +1184,8 @@ where
         let mut params = [0; 3];
         LittleEndian::write_u16(&mut params[0..], conn_handle.0);
         params[2] = reason.into();
-        self.write(crate::opcode::DISCONNECT, &params).await;
+        self.controller_write(crate::opcode::DISCONNECT, &params)
+            .await;
 
         Ok(())
     }
@@ -1192,7 +1193,7 @@ where
     async fn read_remote_version_information(&mut self, conn_handle: ConnectionHandle) {
         let mut params = [0; 2];
         LittleEndian::write_u16(&mut params, conn_handle.0);
-        self.write(crate::opcode::READ_REMOTE_VERSION_INFO, &params)
+        self.controller_write(crate::opcode::READ_REMOTE_VERSION_INFO, &params)
             .await;
     }
 
@@ -1200,11 +1201,12 @@ where
         let mut params = [0; 8];
         LittleEndian::write_u64(&mut params, mask.bits());
 
-        self.write(crate::opcode::SET_EVENT_MASK, &params).await;
+        self.controller_write(crate::opcode::SET_EVENT_MASK, &params)
+            .await;
     }
 
     async fn reset(&mut self) {
-        self.write(crate::opcode::RESET, &[]).await;
+        self.controller_write(crate::opcode::RESET, &[]).await;
     }
 
     async fn read_tx_power_level(
@@ -1215,48 +1217,52 @@ where
         let mut params = [0; 3];
         LittleEndian::write_u16(&mut params, conn_handle.0);
         params[2] = power_level_type as u8;
-        self.write(crate::opcode::READ_TX_POWER_LEVEL, &params)
+        self.controller_write(crate::opcode::READ_TX_POWER_LEVEL, &params)
             .await;
     }
 
     async fn read_local_version_information(&mut self) {
-        self.write(crate::opcode::READ_LOCAL_VERSION_INFO, &[])
+        self.controller_write(crate::opcode::READ_LOCAL_VERSION_INFO, &[])
             .await;
     }
 
     async fn read_local_supported_commands(&mut self) {
-        self.write(crate::opcode::READ_LOCAL_SUPPORTED_COMMANDS, &[])
+        self.controller_write(crate::opcode::READ_LOCAL_SUPPORTED_COMMANDS, &[])
             .await;
     }
 
     async fn read_local_supported_features(&mut self) {
-        self.write(crate::opcode::READ_LOCAL_SUPPORTED_FEATURES, &[])
+        self.controller_write(crate::opcode::READ_LOCAL_SUPPORTED_FEATURES, &[])
             .await;
     }
 
     async fn read_bd_addr(&mut self) {
-        self.write(crate::opcode::READ_BD_ADDR, &[]).await;
+        self.controller_write(crate::opcode::READ_BD_ADDR, &[])
+            .await;
     }
 
     async fn read_rssi(&mut self, conn_handle: ConnectionHandle) {
         let mut params = [0; 2];
         LittleEndian::write_u16(&mut params, conn_handle.0);
-        self.write(crate::opcode::READ_RSSI, &params).await;
+        self.controller_write(crate::opcode::READ_RSSI, &params)
+            .await;
     }
 
     async fn le_set_event_mask(&mut self, event_mask: LeEventFlags) {
         let mut params = [0; 8];
         LittleEndian::write_u64(&mut params, event_mask.bits());
 
-        self.write(crate::opcode::LE_SET_EVENT_MASK, &params).await;
+        self.controller_write(crate::opcode::LE_SET_EVENT_MASK, &params)
+            .await;
     }
 
     async fn le_read_buffer_size(&mut self) {
-        self.write(crate::opcode::LE_READ_BUFFER_SIZE, &[]).await;
+        self.controller_write(crate::opcode::LE_READ_BUFFER_SIZE, &[])
+            .await;
     }
 
     async fn le_read_local_supported_features(&mut self) {
-        self.write(crate::opcode::LE_READ_LOCAL_SUPPORTED_FEATURES, &[])
+        self.controller_write(crate::opcode::LE_READ_LOCAL_SUPPORTED_FEATURES, &[])
             .await;
     }
 
@@ -1265,7 +1271,7 @@ where
         bd_addr: crate::BdAddr,
     ) -> Result<(), Error<Self::VS>> {
         validate_random_address(bd_addr)?;
-        self.write(crate::opcode::LE_SET_RANDOM_ADDRESS, &bd_addr.0)
+        self.controller_write(crate::opcode::LE_SET_RANDOM_ADDRESS, &bd_addr.0)
             .await;
 
         Ok(())
@@ -1277,14 +1283,14 @@ where
     ) -> Result<(), Error<Self::VS>> {
         let mut bytes = [0; 15];
         params.copy_into_slice(&mut bytes)?;
-        self.write(crate::opcode::LE_SET_ADVERTISING_PARAMETERS, &bytes)
+        self.controller_write(crate::opcode::LE_SET_ADVERTISING_PARAMETERS, &bytes)
             .await;
 
         Ok(())
     }
 
     async fn le_read_advertising_channel_tx_power(&mut self) {
-        self.write(crate::opcode::LE_READ_ADVERTISING_CHANNEL_TX_POWER, &[])
+        self.controller_write(crate::opcode::LE_READ_ADVERTISING_CHANNEL_TX_POWER, &[])
             .await;
     }
 
@@ -1304,19 +1310,19 @@ where
 
     #[cfg(feature = "version-5-0")]
     async fn le_set_advertising_enable(&mut self, enable: bool) {
-        self.write(crate::opcode::LE_SET_ADVERTISE_ENABLE, &[enable as u8])
+        self.controller_write(crate::opcode::LE_SET_ADVERTISE_ENABLE, &[enable as u8])
             .await
     }
 
     async fn le_set_scan_parameters(&mut self, params: &ScanParameters) {
         let mut bytes = [0; 7];
         params.copy_into_slice(&mut bytes);
-        self.write(crate::opcode::LE_SET_SCAN_PARAMETERS, &bytes)
+        self.controller_write(crate::opcode::LE_SET_SCAN_PARAMETERS, &bytes)
             .await;
     }
 
     async fn le_set_scan_enable(&mut self, enable: bool, filter_duplicates: bool) {
-        self.write(
+        self.controller_write(
             crate::opcode::LE_SET_SCAN_ENABLE,
             &[enable as u8, filter_duplicates as u8],
         )
@@ -1326,34 +1332,35 @@ where
     async fn le_create_connection(&mut self, params: &ConnectionParameters) {
         let mut bytes = [0; 25];
         params.copy_into_slice(&mut bytes);
-        self.write(crate::opcode::LE_CREATE_CONNECTION, &bytes)
+        self.controller_write(crate::opcode::LE_CREATE_CONNECTION, &bytes)
             .await;
     }
 
     async fn le_create_connection_cancel(&mut self) {
-        self.write(crate::opcode::LE_CREATE_CONNECTION_CANCEL, &[])
+        self.controller_write(crate::opcode::LE_CREATE_CONNECTION_CANCEL, &[])
             .await;
     }
 
     async fn le_read_white_list_size(&mut self) {
-        self.write(crate::opcode::LE_READ_WHITE_LIST_SIZE, &[])
+        self.controller_write(crate::opcode::LE_READ_WHITE_LIST_SIZE, &[])
             .await;
     }
 
     async fn le_clear_white_list(&mut self) {
-        self.write(crate::opcode::LE_CLEAR_WHITE_LIST, &[]).await;
+        self.controller_write(crate::opcode::LE_CLEAR_WHITE_LIST, &[])
+            .await;
     }
 
     async fn le_add_device_to_white_list(&mut self, addr: crate::BdAddrType) {
         let mut params = [0; 7];
         addr.copy_into_slice(&mut params);
-        self.write(crate::opcode::LE_ADD_DEVICE_TO_WHITE_LIST, &params)
+        self.controller_write(crate::opcode::LE_ADD_DEVICE_TO_WHITE_LIST, &params)
             .await;
     }
 
     #[cfg(feature = "version-5-0")]
     async fn le_add_anon_advertising_devices_to_white_list(&mut self) {
-        self.write(
+        self.controller_write(
             crate::opcode::LE_ADD_DEVICE_TO_WHITE_LIST,
             &[0xFF, 0, 0, 0, 0, 0, 0],
         )
@@ -1363,13 +1370,13 @@ where
     async fn le_remove_device_from_white_list(&mut self, addr: crate::BdAddrType) {
         let mut params = [0; 7];
         addr.copy_into_slice(&mut params);
-        self.write(crate::opcode::LE_REMOVE_DEVICE_FROM_WHITE_LIST, &params)
+        self.controller_write(crate::opcode::LE_REMOVE_DEVICE_FROM_WHITE_LIST, &params)
             .await;
     }
 
     #[cfg(feature = "version-5-0")]
     async fn le_remove_anon_advertising_devices_from_white_list(&mut self) {
-        self.write(
+        self.controller_write(
             crate::opcode::LE_REMOVE_DEVICE_FROM_WHITE_LIST,
             &[0xFF, 0, 0, 0, 0, 0, 0],
         )
@@ -1379,7 +1386,7 @@ where
     async fn le_connection_update(&mut self, params: &ConnectionUpdateParameters) {
         let mut bytes = [0; 14];
         params.copy_into_slice(&mut bytes);
-        self.write(crate::opcode::LE_CONNECTION_UPDATE, &bytes)
+        self.controller_write(crate::opcode::LE_CONNECTION_UPDATE, &bytes)
             .await;
     }
 
@@ -1393,7 +1400,7 @@ where
 
         let mut bytes = [0; 5];
         channels.copy_into_slice(&mut bytes);
-        self.write(crate::opcode::LE_SET_HOST_CHANNEL_CLASSIFICATION, &bytes)
+        self.controller_write(crate::opcode::LE_SET_HOST_CHANNEL_CLASSIFICATION, &bytes)
             .await;
 
         Ok(())
@@ -1402,13 +1409,14 @@ where
     async fn le_read_channel_map(&mut self, conn_handle: ConnectionHandle) {
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes, conn_handle.0);
-        self.write(crate::opcode::LE_READ_CHANNEL_MAP, &bytes).await;
+        self.controller_write(crate::opcode::LE_READ_CHANNEL_MAP, &bytes)
+            .await;
     }
 
     async fn le_read_remote_used_features(&mut self, conn_handle: ConnectionHandle) {
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes, conn_handle.0);
-        self.write(crate::opcode::LE_READ_REMOTE_USED_FEATURES, &bytes)
+        self.controller_write(crate::opcode::LE_READ_REMOTE_USED_FEATURES, &bytes)
             .await;
     }
 
@@ -1416,11 +1424,12 @@ where
         let mut bytes = [0; 32];
         bytes[..16].copy_from_slice(&params.key.0);
         bytes[16..].copy_from_slice(&params.plaintext_data.0);
-        self.write(crate::opcode::LE_ENCRYPT, &bytes).await;
+        self.controller_write(crate::opcode::LE_ENCRYPT, &bytes)
+            .await;
     }
 
     async fn le_rand(&mut self) {
-        self.write(crate::opcode::LE_RAND, &[]).await;
+        self.controller_write(crate::opcode::LE_RAND, &[]).await;
     }
 
     async fn le_start_encryption(&mut self, params: &EncryptionParameters) {
@@ -1429,7 +1438,8 @@ where
         LittleEndian::write_u64(&mut bytes[2..], params.random_number);
         LittleEndian::write_u16(&mut bytes[10..], params.encrypted_diversifier);
         bytes[12..].copy_from_slice(&params.long_term_key.0);
-        self.write(crate::opcode::LE_START_ENCRYPTION, &bytes).await;
+        self.controller_write(crate::opcode::LE_START_ENCRYPTION, &bytes)
+            .await;
     }
 
     async fn le_long_term_key_request_reply(
@@ -1440,19 +1450,20 @@ where
         let mut bytes = [0; 18];
         LittleEndian::write_u16(&mut bytes[0..], conn_handle.0);
         bytes[2..].copy_from_slice(&key.0);
-        self.write(crate::opcode::LE_LTK_REQUEST_REPLY, &bytes)
+        self.controller_write(crate::opcode::LE_LTK_REQUEST_REPLY, &bytes)
             .await;
     }
 
     async fn le_long_term_key_request_negative_reply(&mut self, conn_handle: ConnectionHandle) {
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes[0..], conn_handle.0);
-        self.write(crate::opcode::LE_LTK_REQUEST_NEGATIVE_REPLY, &bytes)
+        self.controller_write(crate::opcode::LE_LTK_REQUEST_NEGATIVE_REPLY, &bytes)
             .await;
     }
 
     async fn le_read_supported_states(&mut self) {
-        self.write(crate::opcode::LE_READ_STATES, &[]).await;
+        self.controller_write(crate::opcode::LE_READ_STATES, &[])
+            .await;
     }
 
     async fn le_receiver_test(&mut self, channel: u8) -> Result<(), Error<Self::VS>> {
@@ -1460,7 +1471,7 @@ where
             return Err(Error::InvalidTestChannel(channel));
         }
 
-        self.write(crate::opcode::LE_RECEIVER_TEST, &[channel])
+        self.controller_write(crate::opcode::LE_RECEIVER_TEST, &[channel])
             .await;
 
         Ok(())
@@ -1481,7 +1492,7 @@ where
             return Err(Error::InvalidTestPayloadLength(payload_length));
         }
 
-        self.write(
+        self.controller_write(
             crate::opcode::LE_TRANSMITTER_TEST,
             &[channel, payload_length as u8, payload as u8],
         )
@@ -1491,7 +1502,7 @@ where
     }
 
     async fn le_test_end(&mut self) {
-        self.write(crate::opcode::LE_TEST_END, &[]).await;
+        self.controller_write(crate::opcode::LE_TEST_END, &[]).await;
     }
 }
 

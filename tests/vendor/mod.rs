@@ -69,7 +69,7 @@ impl hci::event::VendorReturnParameters for VendorReturnParameters {
 }
 
 impl hci::Controller for RecordingSink {
-    async fn write(&mut self, opcode: Opcode, payload: &[u8]) {
+    async fn controller_write(&mut self, opcode: Opcode, payload: &[u8]) {
         const HEADER_LEN: usize = 4;
 
         self.written_data.resize(HEADER_LEN + payload.len(), 0);
@@ -82,7 +82,9 @@ impl hci::Controller for RecordingSink {
         }
     }
 
-    async fn read_into(&mut self, _buffer: &mut [u8]) {}
+    async fn controller_read(&self) -> &[u8] {
+        &[]
+    }
 }
 
 impl RecordingSink {

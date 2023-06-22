@@ -174,7 +174,7 @@ pub trait HalCommands {
 
 impl<T: Controller> HalCommands for T {
     async fn get_firmware_revision(&mut self) {
-        self.write(
+        self.controller_write(
             crate::vendor::stm32wb::opcode::HAL_GET_FIRMWARE_REVISION,
             &[],
         )
@@ -188,7 +188,7 @@ impl<T: Controller> HalCommands for T {
     );
 
     async fn read_config_data(&mut self, param: ConfigParameter) {
-        self.write(
+        self.controller_write(
             crate::vendor::stm32wb::opcode::HAL_READ_CONFIG_DATA,
             &[param as u8],
         )
@@ -201,7 +201,7 @@ impl<T: Controller> HalCommands for T {
         let mut bytes = [0; 2];
         bytes[1] = level as u8;
 
-        self.write(
+        self.controller_write(
             crate::vendor::stm32wb::opcode::HAL_SET_TX_POWER_LEVEL,
             &bytes,
         )
@@ -209,12 +209,12 @@ impl<T: Controller> HalCommands for T {
     }
 
     async fn device_standby(&mut self) {
-        self.write(crate::vendor::stm32wb::opcode::HAL_DEVICE_STANDBY, &[])
+        self.controller_write(crate::vendor::stm32wb::opcode::HAL_DEVICE_STANDBY, &[])
             .await
     }
 
     async fn get_tx_test_packet_count(&mut self) {
-        self.write(
+        self.controller_write(
             crate::vendor::stm32wb::opcode::HAL_TX_TEST_PACKET_COUNT,
             &[],
         )
@@ -227,24 +227,24 @@ impl<T: Controller> HalCommands for T {
             return Err(Error::InvalidChannel(channel));
         }
 
-        self.write(crate::vendor::stm32wb::opcode::HAL_START_TONE, &[channel])
+        self.controller_write(crate::vendor::stm32wb::opcode::HAL_START_TONE, &[channel])
             .await;
 
         Ok(())
     }
 
     async fn stop_tone(&mut self) {
-        self.write(crate::vendor::stm32wb::opcode::HAL_STOP_TONE, &[])
+        self.controller_write(crate::vendor::stm32wb::opcode::HAL_STOP_TONE, &[])
             .await
     }
 
     async fn get_link_status(&mut self) {
-        self.write(crate::vendor::stm32wb::opcode::HAL_GET_LINK_STATUS, &[])
+        self.controller_write(crate::vendor::stm32wb::opcode::HAL_GET_LINK_STATUS, &[])
             .await
     }
 
     async fn get_anchor_period(&mut self) {
-        self.write(crate::vendor::stm32wb::opcode::HAL_GET_ANCHOR_PERIOD, &[])
+        self.controller_write(crate::vendor::stm32wb::opcode::HAL_GET_ANCHOR_PERIOD, &[])
             .await
     }
 }

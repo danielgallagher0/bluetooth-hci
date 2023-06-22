@@ -91,9 +91,7 @@ where
         const EVENT_PACKET_HEADER_LENGTH: usize = 3;
         const PARAM_LEN_BYTE: usize = 2;
 
-        let mut packet = [0; MAX_EVENT_LENGTH + EVENT_PACKET_HEADER_LENGTH + PARAM_LEN_BYTE];
-
-        self.read_into(&mut packet).await;
+        let packet = self.controller_read().await;
 
         let packet_type = packet[0];
         match packet_type {

@@ -777,7 +777,7 @@ pub trait GapCommands {
 
 impl<T: Controller> GapCommands for T {
     async fn set_nondiscoverable(&mut self) {
-        self.write(crate::vendor::stm32wb::opcode::GAP_SET_NONDISCOVERABLE, &[])
+        self.controller_write(crate::vendor::stm32wb::opcode::GAP_SET_NONDISCOVERABLE, &[])
             .await
     }
 
@@ -800,7 +800,7 @@ impl<T: Controller> GapCommands for T {
     );
 
     async fn set_io_capability(&mut self, capability: IoCapability) {
-        self.write(
+        self.controller_write(
             crate::vendor::stm32wb::opcode::GAP_SET_IO_CAPABILITY,
             &[capability as u8],
         )
@@ -822,7 +822,7 @@ impl<T: Controller> GapCommands for T {
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
         bytes[2] = authorization_required as u8;
 
-        self.write(
+        self.controller_write(
             crate::vendor::stm32wb::opcode::GAP_SET_AUTHORIZATION_REQUIREMENT,
             &bytes,
         )
@@ -842,7 +842,7 @@ impl<T: Controller> GapCommands for T {
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
         LittleEndian::write_u32(&mut bytes[2..6], pin);
 
-        self.write(
+        self.controller_write(
             crate::vendor::stm32wb::opcode::GAP_PASS_KEY_RESPONSE,
             &bytes,
         )
@@ -860,7 +860,7 @@ impl<T: Controller> GapCommands for T {
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
         bytes[2] = authorization as u8;
 
-        self.write(
+        self.controller_write(
             crate::vendor::stm32wb::opcode::GAP_AUTHORIZATION_RESPONSE,
             &bytes,
         )
@@ -873,7 +873,7 @@ impl<T: Controller> GapCommands for T {
         bytes[1] = privacy_enabled as u8;
         bytes[2] = dev_name_characteristic_len;
 
-        self.write(crate::vendor::stm32wb::opcode::GAP_INIT, &bytes)
+        self.controller_write(crate::vendor::stm32wb::opcode::GAP_INIT, &bytes)
             .await;
     }
 
@@ -889,7 +889,7 @@ impl<T: Controller> GapCommands for T {
             }
         }
 
-        self.write(
+        self.controller_write(
             crate::vendor::stm32wb::opcode::GAP_SET_NONCONNECTABLE,
             &[advertising_type as u8, address_type as u8],
         )
@@ -911,7 +911,7 @@ impl<T: Controller> GapCommands for T {
             }
         }
 
-        self.write(
+        self.controller_write(
             crate::vendor::stm32wb::opcode::GAP_SET_UNDIRECTED_CONNECTABLE,
             &[filter_policy as u8, address_type as u8],
         )
@@ -936,7 +936,7 @@ impl<T: Controller> GapCommands for T {
         bytes[0] = data.len() as u8;
         bytes[1..=data.len()].copy_from_slice(data);
 
-        self.write(
+        self.controller_write(
             crate::vendor::stm32wb::opcode::GAP_UPDATE_ADVERTISING_DATA,
             &bytes[0..=data.len()],
         )
@@ -946,7 +946,7 @@ impl<T: Controller> GapCommands for T {
     }
 
     async fn delete_ad_type(&mut self, ad_type: AdvertisingDataType) {
-        self.write(
+        self.controller_write(
             crate::vendor::stm32wb::opcode::GAP_DELETE_AD_TYPE,
             &[ad_type as u8],
         )
@@ -954,7 +954,7 @@ impl<T: Controller> GapCommands for T {
     }
 
     async fn get_security_level(&mut self) {
-        self.write(crate::vendor::stm32wb::opcode::GAP_GET_SECURITY_LEVEL, &[])
+        self.controller_write(crate::vendor::stm32wb::opcode::GAP_GET_SECURITY_LEVEL, &[])
             .await
     }
 
@@ -962,12 +962,12 @@ impl<T: Controller> GapCommands for T {
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes, flags.bits());
 
-        self.write(crate::vendor::stm32wb::opcode::GAP_SET_EVENT_MASK, &bytes)
+        self.controller_write(crate::vendor::stm32wb::opcode::GAP_SET_EVENT_MASK, &bytes)
             .await
     }
 
     async fn configure_white_list(&mut self) {
-        self.write(
+        self.controller_write(
             crate::vendor::stm32wb::opcode::GAP_CONFIGURE_WHITE_LIST,
             &[],
         )
@@ -994,13 +994,13 @@ impl<T: Controller> GapCommands for T {
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
         bytes[2] = reason.into();
 
-        self.write(crate::vendor::stm32wb::opcode::GAP_TERMINATE, &bytes)
+        self.controller_write(crate::vendor::stm32wb::opcode::GAP_TERMINATE, &bytes)
             .await;
         Ok(())
     }
 
     async fn clear_security_database(&mut self) {
-        self.write(
+        self.controller_write(
             crate::vendor::stm32wb::opcode::GAP_CLEAR_SECURITY_DATABASE,
             &[],
         )
@@ -1009,7 +1009,7 @@ impl<T: Controller> GapCommands for T {
 
     #[cfg(not(feature = "ms"))]
     async fn allow_rebond(&mut self) {
-        self.write(crate::vendor::stm32wb::opcode::GAP_ALLOW_REBOND, &[])
+        self.controller_write(crate::vendor::stm32wb::opcode::GAP_ALLOW_REBOND, &[])
             .await;
     }
 
@@ -1067,7 +1067,7 @@ impl<T: Controller> GapCommands for T {
             return Err(Error::NoProcedure);
         }
 
-        self.write(
+        self.controller_write(
             crate::vendor::stm32wb::opcode::GAP_TERMINATE_PROCEDURE,
             &[procedure.bits()],
         )
@@ -1089,7 +1089,7 @@ impl<T: Controller> GapCommands for T {
     );
 
     async fn resolve_private_address(&mut self, addr: crate::BdAddr) {
-        self.write(
+        self.controller_write(
             crate::vendor::stm32wb::opcode::GAP_RESOLVE_PRIVATE_ADDRESS,
             &addr.0,
         )
@@ -1097,7 +1097,7 @@ impl<T: Controller> GapCommands for T {
     }
 
     async fn get_bonded_devices(&mut self) {
-        self.write(crate::vendor::stm32wb::opcode::GAP_GET_BONDED_DEVICES, &[])
+        self.controller_write(crate::vendor::stm32wb::opcode::GAP_GET_BONDED_DEVICES, &[])
             .await
     }
 
@@ -1119,7 +1119,7 @@ impl<T: Controller> GapCommands for T {
         let mut bytes = [0; 7];
         addr.copy_into_slice(&mut bytes);
 
-        self.write(crate::vendor::stm32wb::opcode::GAP_IS_DEVICE_BONDED, &bytes)
+        self.controller_write(crate::vendor::stm32wb::opcode::GAP_IS_DEVICE_BONDED, &bytes)
             .await
     }
 }

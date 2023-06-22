@@ -4,7 +4,7 @@ macro_rules! impl_params {
             let mut bytes = [0; $param_type::LENGTH];
             params.copy_into_slice(&mut bytes);
 
-            self.write($opcode, &bytes).await
+            self.controller_write($opcode, &bytes).await
         }
     };
 }
@@ -15,7 +15,7 @@ macro_rules! impl_value_params {
             let mut bytes = [0; $param_type::LENGTH];
             params.copy_into_slice(&mut bytes);
 
-            self.write($opcode, &bytes).await
+            self.controller_write($opcode, &bytes).await
         }
     };
 }
@@ -28,7 +28,7 @@ macro_rules! impl_validate_params {
             let mut bytes = [0; $param_type::LENGTH];
             params.copy_into_slice(&mut bytes);
 
-            self.write($opcode, &bytes).await;
+            self.controller_write($opcode, &bytes).await;
 
             Ok(())
         }
@@ -41,7 +41,7 @@ macro_rules! impl_variable_length_params {
             let mut bytes = [0; $param_type::MAX_LENGTH];
             params.copy_into_slice(&mut bytes);
 
-            self.write($opcode, &bytes).await
+            self.controller_write($opcode, &bytes).await
         }
     };
 }
@@ -54,7 +54,7 @@ macro_rules! impl_validate_variable_length_params {
             let mut bytes = [0; $param_type::MAX_LENGTH];
             let len = params.copy_into_slice(&mut bytes);
 
-            self.write($opcode, &bytes[..len]).await;
+            self.controller_write($opcode, &bytes[..len]).await;
 
             Ok(())
         }
@@ -69,7 +69,7 @@ macro_rules! impl_validate_variable_length_params {
             let mut bytes = [0; $param_type::MAX_LENGTH];
             params.copy_into_slice(&mut bytes);
 
-            self.write($opcode, &bytes).await;
+            self.controller_write($opcode, &bytes).await;
 
             Ok(())
         }
