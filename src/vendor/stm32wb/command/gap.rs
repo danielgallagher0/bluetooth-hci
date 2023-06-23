@@ -4,8 +4,8 @@ extern crate byteorder;
 
 pub use crate::host::{AdvertisingFilterPolicy, AdvertisingType, OwnAddressType};
 pub use crate::types::{ConnectionInterval, ExpectedConnectionLength, ScanWindow};
-use crate::Controller;
 pub use crate::{BdAddr, BdAddrType};
+use crate::{ConnectionHandle, Controller};
 use byteorder::{ByteOrder, LittleEndian};
 use core::time::Duration;
 
@@ -22,7 +22,7 @@ pub trait GapCommands {
     ///
     /// A [Command Complete](crate::vendor::stm32wb::event::command::ReturnParameters::GapSetNonDiscoverable) event
     /// is generated.
-    async fn set_nondiscoverable(&mut self);
+    async fn gap_set_nondiscoverable(&mut self);
 
     /// Set the device in limited discoverable mode.
     ///
@@ -436,24 +436,6 @@ pub trait GapCommands {
     /// event is generated.
     async fn clear_security_database(&mut self);
 
-    #[cfg(not(feature = "ms"))]
-    /// This command should be given by the application when it receives the
-    /// [GAP Bond Lost](::event::BlueNRGEvent::GapBondLost) event if it wants the re-bonding to happen
-    /// successfully. If this command is not given on receiving the event, the bonding procedure
-    /// will timeout.
-    ///
-    /// # Errors
-    ///
-    /// Only underlying communication errors are reported.
-    ///
-    /// # Generated events
-    ///
-    /// A [Command Complete](::event::command::ReturnParameters::GapAllowRebond) event is
-    /// generated. Even if the command is given when it is not valid, success will be returned but
-    /// internally it will have no effect.
-    async fn allow_rebond(&mut self);
-
-    #[cfg(feature = "ms")]
     /// This command should be given by the application when it receives the [GAP Bond
     /// Lost](crate::vendor::stm32wb::event::BlueNRGEvent::GapBondLost) event if it wants the re-bonding to happen
     /// successfully. If this command is not given on receiving the event, the bonding procedure
@@ -520,32 +502,6 @@ pub trait GapCommands {
     /// [LeAdvertisingReport](crate::event::Event::LeAdvertisingReport) event.
     async fn start_general_discovery_procedure(&mut self, params: &DiscoveryProcedureParameters);
 
-    /// Start the name discovery procedure.
-    ///
-    /// A [LE Create Connection](crate::host::crate::le_create_connection) call will be made to the
-    /// controller by GAP with the [initiator filter
-    /// policy](crate::host::ConnectionParameters::initiator_filter_policy) set to
-    /// [UseAddress](crate::host::ConnectionFilterPolicy::UseAddress), to "ignore whitelist and
-    /// process connectable advertising packets only for the specified device". Once a connection is
-    /// established, GATT procedure is started to read the device name characteristic. When the read
-    /// is completed (successfully or unsuccessfully), a
-    /// [ProcedureComplete](crate::vendor::stm32wb::event::BlueNRGEvent::GapProcedureComplete) event is given to the
-    /// upper layer. The event also contains the name of the device if the device name was read
-    /// successfully.
-    ///
-    /// # Errors
-    ///
-    /// Only underlying communication errors are reported.
-    ///
-    /// # Generated Events
-    ///
-    /// A [command status](crate::event::Event::CommandStatus) event is generated as soon as the
-    /// command is given. If [Success](crate::Status::Success) is returned, on completion of the
-    /// procedure, a [ProcedureComplete](crate::vendor::stm32wb::event::BlueNRGEvent::GapProcedureComplete) event is
-    /// returned with the procedure code set to
-    /// [NameDiscovery](crate::vendor::stm32wb::event::GapProcedure::NameDiscovery).
-    async fn start_name_discovery_procedure(&mut self, params: &NameDiscoveryProcedureParameters);
-
     /// Start the auto connection establishment procedure.
     ///
     /// The devices specified are added to the white list of the controller and a
@@ -563,7 +519,7 @@ pub trait GapCommands {
     ///   (such that the serialized command would not fit in 255 bytes), a
     ///   [WhiteListTooLong](Error::WhiteListTooLong) is returned. The list cannot have more than 33
     ///   elements.
-    async fn start_auto_connection_establishment(
+    async fn start_auto_connection_establishment_procedure(
         &mut self,
         params: &AutoConnectionEstablishmentParameters<'_>,
     ) -> Result<(), Error>;
@@ -585,7 +541,7 @@ pub trait GapCommands {
     /// # Errors
     ///
     /// Only underlying communication errors are reported.
-    async fn start_general_connection_establishment(
+    async fn start_general_connection_establishment_procedure(
         &mut self,
         params: &GeneralConnectionEstablishmentParameters,
     );
@@ -607,7 +563,7 @@ pub trait GapCommands {
     ///   long (such that the serialized command would not fit in 255 bytes), a
     ///   [WhiteListTooLong](Error::WhiteListTooLong) is returned. The list cannot have more than 35
     ///   elements.
-    async fn start_selective_connection_establishment(
+    async fn start_selective_connection_establishment_procedure(
         &mut self,
         params: &SelectiveConnectionEstablishmentParameters<'_>,
     ) -> Result<(), Error>;
@@ -654,7 +610,7 @@ pub trait GapCommands {
     /// will be [Success](crate::Status::Success) and a
     /// [ProcedureCompleted](crate::vendor::stm32wb::event::BlueNRGEvent::GapProcedureComplete) event is returned
     /// with the procedure code set to the corresponding procedure.
-    async fn terminate_procedure(&mut self, procedure: Procedure) -> Result<(), Error>;
+    async fn terminate_gap_procedure(&mut self, procedure: Procedure) -> Result<(), Error>;
 
     /// Start the connection update procedure.
     ///
@@ -709,20 +665,6 @@ pub trait GapCommands {
     /// address is also returned in the event.
     async fn resolve_private_address(&mut self, addr: crate::BdAddr);
 
-    /// This command gets the list of the devices which are bonded. It returns the number of
-    /// addresses and the corresponding address types and values.
-    ///
-    /// # Errors
-    ///
-    /// Only underlying communication errors are reported.
-    ///
-    /// # Generated events
-    ///
-    /// A [command complete](crate::vendor::stm32wb::event::command::ReturnParameters::GapGetBondedDevices) event is
-    /// generated.
-    async fn get_bonded_devices(&mut self);
-
-    #[cfg(feature = "ms")]
     /// This command puts the device into broadcast mode.
     ///
     /// # Errors
@@ -743,7 +685,6 @@ pub trait GapCommands {
     /// returned where the status indicates whether the command was successful.
     async fn set_broadcast_mode(&mut self, params: &BroadcastModeParameters) -> Result<(), Error>;
 
-    #[cfg(feature = "ms")]
     /// Starts an Observation procedure, when the device is in Observer Role.
     ///
     /// The host enables scanning in the controller. The advertising reports are sent to the upper
@@ -760,6 +701,19 @@ pub trait GapCommands {
     /// event is generated.
     async fn start_observation_procedure(&mut self, params: &ObservationProcedureParameters);
 
+    /// This command gets the list of the devices which are bonded. It returns the number of
+    /// addresses and the corresponding address types and values.
+    ///
+    /// # Errors
+    ///
+    /// Only underlying communication errors are reported.
+    ///
+    /// # Generated events
+    ///
+    /// A [command complete](crate::vendor::stm32wb::event::command::ReturnParameters::GapGetBondedDevices) event is
+    /// generated.
+    async fn get_bonded_devices(&mut self);
+
     /// The command finds whether the device, whose address is specified in the command, is
     /// bonded. If the device is using a resolvable private address and it has been bonded, then the
     /// command will return [Success](crate::Status::Success).
@@ -773,10 +727,116 @@ pub trait GapCommands {
     /// A [command complete](crate::vendor::stm32wb::event::command::ReturnParameters::GapIsDeviceBonded) event is
     /// generated.
     async fn is_device_bonded(&mut self, addr: crate::host::PeerAddrType);
+
+    /// This command allows the user to validate/confirm or not the numeric comparison value showed through
+    /// the [`NumericComparisonValueEvent`]
+    async fn numberic_comparison_value_confirm_yes_no(
+        _conn_handle: ConnectionHandle,
+        _confirm_yes_no: bool,
+    ) {
+        todo!("ble_gap_aci.h L1375")
+    }
+
+    /// This command permits to signal to the Stack the input type detected during Passkey input.
+    async fn passkey_input(conn_handle: ConnectionHandle, input_type: u8) {
+        todo!("ble_gap_aci.h L1395")
+    }
+
+    /// This command is sent by the user to get (i.e. to extract from the Stack) the OOB
+    /// data generated by the Stack itself.
+    async fn get_oob_data(oob_data_type: u8, address_type: u8, address: &[u8], data: &[u8]) {
+        todo!("ble_gap_aci.h L1418")
+    }
+
+    /// This command is sent (by the User) to input the OOB data arrived via OOB
+    /// communication.
+    async fn set_oob_data(
+        device_type: u8,
+        address_type: u8,
+        address: &[u8],
+        oob_data_type: u8,
+        oob_data: &[u8],
+    ) {
+        todo!("ble_gap_aci.h L1447")
+    }
+
+    /// This  command is used to add devices to the list of address translations
+    /// used to resolve Resolvable Private Addresses in the Controller.
+    async fn add_devices_to_resolving_list(
+        whitelist_identities: &[u16],
+        clear_resolving_list: bool,
+    ) {
+        todo!("ble_gap_aci.h L1468")
+    }
+
+    /// This command is used to remove a specified device from bonding table
+    async fn remove_bonded_devices(peer_identity_address_type: u8, peer_identity_address: &[u8]) {
+        todo!("ble_gap_aci.h L1484")
+    }
+
+    /// This  command is used to add specific device addresses to the white and/or resolving list.
+    async fn add_devices_to_list(list_entries: &[u16], mode: u8) {
+        todo!("ble_gap_aci.h L1505")
+    }
+
+    /// This command starts an advertising beacon. It allows additional advertising
+    /// packets to be transmitted independently of the packets transmitted with GAP
+    /// advertising commands such as ACI_GAP_SET_DISCOVERABLE or
+    /// ACI_GAP_SET_LIMITED_DISCOVERABLE.
+    async fn additional_beacon_start(
+        advertising_interval: (u16, u16),
+        advertising_channel_map: u8,
+        own_address_type: u8,
+        address: &[u8],
+        pa_level: u8,
+    ) {
+        todo!("ble_gap_aci.h L1539")
+    }
+
+    /// This command stops the advertising beacon started with
+    /// ACI_GAP_ADDITIONAL_BEACON_START.
+    async fn additional_beacon_stop() {
+        todo!("ble_gap_aci.h L1553")
+    }
+
+    /// This command sets the data transmitted by the advertising beacon started
+    /// with ACI_GAP_ADDITIONAL_BEACON_START. If the advertising beacon is already
+    /// started, the new data is used in subsequent beacon advertising events.
+    async fn additonal_beacon_set_data(advertising_data: &[u8]) {
+        todo!("ble_gap_aci.h L1565")
+    }
+
+    async fn adv_set_configuration() {
+        todo!("ble_gap_aci.h L1661")
+    }
+
+    async fn adv_set_enable() {
+        todo!("ble_gap_aci.h L1693")
+    }
+
+    async fn adv_set_adv_data() {
+        todo!("ble_gap_aci.h L1722")
+    }
+
+    async fn adv_set_scan_response_data() {
+        todo!("ble_gap_aci.h L1752")
+    }
+
+    async fn adv_remove_set() {
+        todo!("ble_gap_aci.h L1767")
+    }
+
+    async fn adv_clear_sets() {
+        todo!("ble_gap_aci.h L1776")
+    }
+
+    async fn adv_set_random_address() {
+        todo!("ble_gap_aci.h L1789")
+    }
 }
 
 impl<T: Controller> GapCommands for T {
-    async fn set_nondiscoverable(&mut self) {
+    async fn gap_set_nondiscoverable(&mut self) {
         self.controller_write(crate::vendor::stm32wb::opcode::GAP_SET_NONDISCOVERABLE, &[])
             .await
     }
@@ -1007,13 +1067,6 @@ impl<T: Controller> GapCommands for T {
         .await
     }
 
-    #[cfg(not(feature = "ms"))]
-    async fn allow_rebond(&mut self) {
-        self.controller_write(crate::vendor::stm32wb::opcode::GAP_ALLOW_REBOND, &[])
-            .await;
-    }
-
-    #[cfg(feature = "ms")]
     async fn allow_rebond(&mut self, conn_handle: crate::ConnectionHandle) {
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes, conn_handle.0);
@@ -1033,26 +1086,20 @@ impl<T: Controller> GapCommands for T {
         crate::vendor::stm32wb::opcode::GAP_START_GENERAL_DISCOVERY_PROCEDURE
     );
 
-    impl_params!(
-        start_name_discovery_procedure,
-        NameDiscoveryProcedureParameters,
-        crate::vendor::stm32wb::opcode::GAP_START_NAME_DISCOVERY_PROCEDURE
-    );
-
     impl_validate_variable_length_params!(
-        start_auto_connection_establishment<'a>,
+        start_auto_connection_establishment_procedure<'a>,
         AutoConnectionEstablishmentParameters<'a>,
         crate::vendor::stm32wb::opcode::GAP_START_AUTO_CONNECTION_ESTABLISHMENT
     );
 
     impl_params!(
-        start_general_connection_establishment,
+        start_general_connection_establishment_procedure,
         GeneralConnectionEstablishmentParameters,
         crate::vendor::stm32wb::opcode::GAP_START_GENERAL_CONNECTION_ESTABLISHMENT
     );
 
     impl_validate_variable_length_params!(
-        start_selective_connection_establishment<'a>,
+        start_selective_connection_establishment_procedure<'a>,
         SelectiveConnectionEstablishmentParameters<'a>,
         crate::vendor::stm32wb::opcode::GAP_START_SELECTIVE_CONNECTION_ESTABLISHMENT
     );
@@ -1062,7 +1109,7 @@ impl<T: Controller> GapCommands for T {
         crate::vendor::stm32wb::opcode::GAP_CREATE_CONNECTION
     );
 
-    async fn terminate_procedure(&mut self, procedure: Procedure) -> Result<(), Error> {
+    async fn terminate_gap_procedure(&mut self, procedure: Procedure) -> Result<(), Error> {
         if procedure.is_empty() {
             return Err(Error::NoProcedure);
         }
@@ -1096,24 +1143,22 @@ impl<T: Controller> GapCommands for T {
         .await
     }
 
-    async fn get_bonded_devices(&mut self) {
-        self.controller_write(crate::vendor::stm32wb::opcode::GAP_GET_BONDED_DEVICES, &[])
-            .await
-    }
-
-    #[cfg(feature = "ms")]
     impl_validate_variable_length_params!(
         set_broadcast_mode<'a, 'b>,
         BroadcastModeParameters<'a, 'b>,
         crate::vendor::stm32wb::opcode::GAP_SET_BROADCAST_MODE
     );
 
-    #[cfg(feature = "ms")]
     impl_params!(
         start_observation_procedure,
         ObservationProcedureParameters,
         crate::vendor::stm32wb::opcode::GAP_START_OBSERVATION_PROCEDURE
     );
+
+    async fn get_bonded_devices(&mut self) {
+        self.controller_write(crate::vendor::stm32wb::opcode::GAP_GET_BONDED_DEVICES, &[])
+            .await
+    }
 
     async fn is_device_bonded(&mut self, addr: crate::host::PeerAddrType) {
         let mut bytes = [0; 7];
@@ -1373,7 +1418,6 @@ pub struct DirectConnectableParameters {
     /// Address type of this device.
     pub own_address_type: OwnAddressType,
 
-    #[cfg(feature = "ms")]
     /// Advertising method for the device.
     ///
     /// Must be
@@ -1385,7 +1429,6 @@ pub struct DirectConnectableParameters {
     /// Initiator's Bluetooth address.
     pub initiator_address: BdAddrType,
 
-    #[cfg(feature = "ms")]
     /// Range of advertising interval for advertising.
     ///
     /// Range for both limits: 20 ms to 10.24 seconds.  The second value must be greater than or
@@ -1394,33 +1437,26 @@ pub struct DirectConnectableParameters {
 }
 
 impl DirectConnectableParameters {
-    #[cfg(not(feature = "ms"))]
-    const LENGTH: usize = 8;
-
-    #[cfg(feature = "ms")]
     const LENGTH: usize = 13;
 
     fn validate(&self) -> Result<(), Error> {
-        #[cfg(feature = "ms")]
+        const MIN_DURATION: Duration = Duration::from_millis(20);
+        const MAX_DURATION: Duration = Duration::from_millis(10240);
+
+        match self.advertising_type {
+            AdvertisingType::ConnectableDirectedHighDutyCycle
+            | AdvertisingType::ConnectableDirectedLowDutyCycle => (),
+            _ => return Err(Error::BadAdvertisingType(self.advertising_type)),
+        }
+
+        if self.advertising_interval.0 < MIN_DURATION
+            || self.advertising_interval.1 > MAX_DURATION
+            || self.advertising_interval.0 > self.advertising_interval.1
         {
-            const MIN_DURATION: Duration = Duration::from_millis(20);
-            const MAX_DURATION: Duration = Duration::from_millis(10240);
-
-            match self.advertising_type {
-                AdvertisingType::ConnectableDirectedHighDutyCycle
-                | AdvertisingType::ConnectableDirectedLowDutyCycle => (),
-                _ => return Err(Error::BadAdvertisingType(self.advertising_type)),
-            }
-
-            if self.advertising_interval.0 < MIN_DURATION
-                || self.advertising_interval.1 > MAX_DURATION
-                || self.advertising_interval.0 > self.advertising_interval.1
-            {
-                return Err(Error::BadAdvertisingInterval(
-                    self.advertising_interval.0,
-                    self.advertising_interval.1,
-                ));
-            }
+            return Err(Error::BadAdvertisingInterval(
+                self.advertising_interval.0,
+                self.advertising_interval.1,
+            ));
         }
 
         Ok(())
@@ -1431,24 +1467,16 @@ impl DirectConnectableParameters {
 
         bytes[0] = self.own_address_type as u8;
 
-        #[cfg(not(feature = "ms"))]
-        {
-            self.initiator_address.copy_into_slice(&mut bytes[1..8]);
-        }
-
-        #[cfg(feature = "ms")]
-        {
-            bytes[1] = self.advertising_type as u8;
-            self.initiator_address.copy_into_slice(&mut bytes[2..9]);
-            LittleEndian::write_u16(
-                &mut bytes[9..],
-                to_connection_length_value(self.advertising_interval.0),
-            );
-            LittleEndian::write_u16(
-                &mut bytes[11..],
-                to_connection_length_value(self.advertising_interval.1),
-            );
-        }
+        bytes[1] = self.advertising_type as u8;
+        self.initiator_address.copy_into_slice(&mut bytes[2..9]);
+        LittleEndian::write_u16(
+            &mut bytes[9..],
+            to_connection_length_value(self.advertising_interval.0),
+        );
+        LittleEndian::write_u16(
+            &mut bytes[11..],
+            to_connection_length_value(self.advertising_interval.1),
+        );
     }
 }
 
@@ -1761,12 +1789,6 @@ pub struct AutoConnectionEstablishmentParameters<'a> {
     /// Expected connection length
     pub expected_connection_length: ExpectedConnectionLength,
 
-    #[cfg(not(feature = "ms"))]
-    /// Reconnection address is used as our address during the procedure. The address has been
-    /// previously notified to the application through the
-    /// [ReconnectionAddress](::event::Event::ReconnectionAddress) event.
-    pub reconnection_address: Option<crate::BdAddr>,
-
     /// Addresses to white-list for automatic connection.
     pub white_list: &'a [crate::host::PeerAddrType],
 }
@@ -1776,8 +1798,7 @@ impl<'a> AutoConnectionEstablishmentParameters<'a> {
 
     fn validate(&self) -> Result<(), Error> {
         const MAX_WHITE_LIST_LENGTH: usize = 33;
-        if self.white_list.len() > MAX_WHITE_LIST_LENGTH - if cfg!(feature = "ms") { 0 } else { 1 }
-        {
+        if self.white_list.len() > MAX_WHITE_LIST_LENGTH - 0 {
             return Err(Error::WhiteListTooLong);
         }
 
@@ -1794,17 +1815,7 @@ impl<'a> AutoConnectionEstablishmentParameters<'a> {
         self.expected_connection_length
             .copy_into_slice(&mut bytes[13..17]);
 
-        #[cfg(not(feature = "ms"))]
-        {
-            if let Some(addr) = self.reconnection_address {
-                bytes[17] = 1;
-                bytes[18..24].copy_from_slice(&addr.0);
-            } else {
-                bytes[17..24].copy_from_slice(&[0; 7]);
-            }
-        }
-
-        let index = if cfg!(feature = "ms") { 17 } else { 24 };
+        let index = 17;
 
         bytes[index] = self.white_list.len() as u8;
         let index = index + 1;
@@ -1816,7 +1827,7 @@ impl<'a> AutoConnectionEstablishmentParameters<'a> {
     }
 
     fn len(&self) -> usize {
-        let reconn_addr_len = if cfg!(feature = "ms") { 0 } else { 7 };
+        let reconn_addr_len = 0;
         18 + reconn_addr_len + 7 * self.white_list.len()
     }
 }
@@ -1833,7 +1844,6 @@ pub struct GeneralConnectionEstablishmentParameters {
     /// If true, only report unique devices.
     pub filter_duplicates: bool,
 
-    #[cfg(not(feature = "ms"))]
     /// Reconnection address is used as our address during the procedure. The address has been
     /// previously notified to the application through the
     /// [ReconnectionAddress](::event::Event::ReconnectionAddress) event.
@@ -1841,10 +1851,6 @@ pub struct GeneralConnectionEstablishmentParameters {
 }
 
 impl GeneralConnectionEstablishmentParameters {
-    #[cfg(not(feature = "ms"))]
-    const LENGTH: usize = 13;
-
-    #[cfg(feature = "ms")]
     const LENGTH: usize = 6;
 
     fn copy_into_slice(&self, bytes: &mut [u8]) {
@@ -1853,16 +1859,6 @@ impl GeneralConnectionEstablishmentParameters {
         self.scan_window.copy_into_slice(&mut bytes[0..4]);
         bytes[4] = self.own_address_type as u8;
         bytes[5] = self.filter_duplicates as u8;
-
-        #[cfg(not(feature = "ms"))]
-        {
-            if let Some(addr) = self.reconnection_address {
-                bytes[6] = 1;
-                bytes[7..13].copy_from_slice(&addr.0)
-            } else {
-                bytes[6..13].copy_from_slice(&[0; 7])
-            }
-        }
     }
 }
 
@@ -1996,7 +1992,6 @@ impl PairingRequest {
     }
 }
 
-#[cfg(feature = "ms")]
 /// Parameters for the [GAP Set Broadcast Mode](Commands::set_broadcast_mode) command.
 pub struct BroadcastModeParameters<'a, 'b> {
     /// Advertising type and interval.
@@ -2027,7 +2022,6 @@ pub struct BroadcastModeParameters<'a, 'b> {
     pub white_list: &'b [crate::host::PeerAddrType],
 }
 
-#[cfg(feature = "ms")]
 impl<'a, 'b> BroadcastModeParameters<'a, 'b> {
     const MAX_LENGTH: usize = 255;
 
@@ -2077,7 +2071,6 @@ impl<'a, 'b> BroadcastModeParameters<'a, 'b> {
     }
 }
 
-#[cfg(feature = "ms")]
 /// Parameters for the [GAP Start Observation Procedure](Commands::start_observation_procedure)
 /// command.
 pub struct ObservationProcedureParameters {
@@ -2095,7 +2088,6 @@ pub struct ObservationProcedureParameters {
     pub filter_duplicates: bool,
 }
 
-#[cfg(feature = "ms")]
 impl ObservationProcedureParameters {
     const LENGTH: usize = 7;
 
