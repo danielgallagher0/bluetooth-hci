@@ -76,6 +76,23 @@ vendor_opcodes! {
         pub const GAP_START_OBSERVATION_PROCEDURE = 0x22;
         pub const GAP_GET_BONDED_DEVICES = 0x23;
         pub const GAP_IS_DEVICE_BONDED = 0x24;
+        pub const GAP_NUMERIC_COMPARISON_VALUE_YES_NO = 0x25;
+        pub const GAP_PASSKEY_INPUT = 0x26;
+        pub const GAP_GET_OOB_DATA = 0x27;
+        pub const GAP_SET_OOB_DATA = 0x28;
+        pub const GAP_ADD_DEVICES_TO_RESOLVING_LIST = 0x29;
+        pub const GAP_REMOVE_BONDED_DEVICE = 0x2A;
+        pub const GAP_ADD_DEVICES_LIST = 0x2B;
+        pub const GAP_ADDITIONAL_BEACON_START = 0x30;
+        pub const GAP_ADDITIONAL_BEACON_STOP = 0x31;
+        pub const GAP_ADDITIONAL_BEACON_SET_DATA = 0x32;
+        pub const GAP_ADV_SET_CONFIGURATION = 0x40;
+        pub const GAP_ADV_SET_ENABLE = 0x41;
+        pub const GAP_ADV_SET_ADV_DATA = 0x42;
+        pub const GAP_ADV_SET_SCAN_RESPONSE_DATA = 0x43;
+        pub const GAP_ADV_REMOVE_SET = 0x44;
+        pub const GAP_ADV_CLEAR_SETS = 0x45;
+        pub const GAP_ADV_SET_RANDOM_ADDRESS = 0x46;
     }
     Gatt = 0x2;
     {
