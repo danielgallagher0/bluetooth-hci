@@ -82,7 +82,7 @@ vendor_opcodes! {
         pub const GAP_SET_OOB_DATA = 0x28;
         pub const GAP_ADD_DEVICES_TO_RESOLVING_LIST = 0x29;
         pub const GAP_REMOVE_BONDED_DEVICE = 0x2A;
-        pub const GAP_ADD_DEVICES_LIST = 0x2B;
+        pub const GAP_ADD_DEVICES_TO_LIST = 0x2B;
         pub const GAP_ADDITIONAL_BEACON_START = 0x30;
         pub const GAP_ADDITIONAL_BEACON_STOP = 0x31;
         pub const GAP_ADDITIONAL_BEACON_SET_DATA = 0x32;

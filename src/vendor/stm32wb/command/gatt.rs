@@ -1568,7 +1568,7 @@ impl EncryptionKeySize {
     ///
     /// - [TooShort](EncryptionKeySizeError::TooShort) if the provided size is less than 7.
     /// - [TooLong](EncryptionKeySizeError::TooLong) if the provided size is greater than 16.
-    pub async fn with_value(sz: usize) -> Result<Self, EncryptionKeySizeError> {
+    pub fn with_value(sz: usize) -> Result<Self, EncryptionKeySizeError> {
         const MIN: usize = 7;
         const MAX: usize = 16;
 
@@ -1584,7 +1584,7 @@ impl EncryptionKeySize {
     }
 
     /// Retrieve the key size.
-    pub async fn value(&self) -> usize {
+    pub fn value(&self) -> usize {
         self.0 as usize
     }
 }
