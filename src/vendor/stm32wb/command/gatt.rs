@@ -1814,7 +1814,6 @@ defmt::bitflags! {
         /// [GATT Discover Characteristic by UUID or Read Using Characteristic
         /// UUID](crate::event::BlueNRGEvent::GattDiscoverOrReadCharacteristicByUuidResponse).
         const DISCOVER_OR_READ_CHARACTERISTIC_BY_UUID_RESPONSE = 0x0002_0000;
-        #[cfg(feature = "ms")]
         /// [GATT Tx Pool Available](crate::event::BlueNRGEvent::GattTxPoolAvailable)
         const TX_POOL_AVAILABLE = 0x0004_0000;
     }
