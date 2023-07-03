@@ -769,18 +769,6 @@ pub trait GattCommands {
         params: &DescriptorValueParameters<'_>,
     ) -> Result<(), Error>;
 
-    /// Reads the value of the attribute handle specified from the local GATT database.
-    ///
-    /// # Errors
-    ///
-    /// Only underlying communication errors are reported.
-    ///
-    /// # Generated events
-    ///
-    /// A [command complete](crate::event::command::ReturnParameters::GattReadHandleValue) event is
-    /// generated when this command is processed.
-    async fn read_handle_value(&mut self, handle: CharacteristicHandle);
-
     /// The command returns the value of the attribute handle from the specified offset.
     ///
     /// If the length to be returned is greater than 128, then only 128 bytes are
@@ -796,10 +784,10 @@ pub trait GattCommands {
     ///
     /// A [command complete](crate::event::command::ReturnParameters::GattReadHandleValueOffset)
     /// event is generated when this command is processed.
-    #[cfg(feature = "ms")]
     async fn read_handle_value_offset(&mut self, handle: CharacteristicHandle, offset: usize);
 
-    /// Update the Attribute Value of a Characteristic belonging to a specified service.
+    /// This is a more flexible version of ACI_GATT_UPDATE_CHAR_VALUE tp support update of Long
+    /// attribute up to 512 bytes and indicate selectively the generation of Indication/Notification
     ///
     /// This command is an extension of the
     /// [`update_characteristic_value`](Commands::update_characteristic_value) command and supports
@@ -815,10 +803,9 @@ pub trait GattCommands {
     ///
     /// When the command has completed, the controller will generate a [command
     /// complete](crate::event::command::ReturnParameters::GattUpdateLongCharacteristicValue) event.
-    #[cfg(feature = "ms")]
-    async fn update_long_characteristic_value(
+    async fn update_characteristic_value_ext(
         &mut self,
-        params: &UpdateLongCharacteristicValueParameters<'_>,
+        params: &UpdateCharacteristicValueExt<'_>,
     ) -> Result<(), Error>;
 }
 
@@ -1215,18 +1202,6 @@ impl<T: Controller> GattCommands for T {
         crate::vendor::stm32wb::opcode::GATT_SET_DESCRIPTOR_VALUE
     );
 
-    async fn read_handle_value(&mut self, handle: CharacteristicHandle) {
-        let mut bytes = [0; 2];
-        LittleEndian::write_u16(&mut bytes, handle.0);
-
-        self.controller_write(
-            crate::vendor::stm32wb::opcode::GATT_READ_HANDLE_VALUE,
-            &bytes,
-        )
-        .await
-    }
-
-    #[cfg(feature = "ms")]
     async fn read_handle_value_offset(&mut self, handle: CharacteristicHandle, offset: usize) {
         let mut bytes = [0; 3];
         LittleEndian::write_u16(&mut bytes, handle.0);
@@ -1239,10 +1214,9 @@ impl<T: Controller> GattCommands for T {
         .await
     }
 
-    #[cfg(feature = "ms")]
     impl_validate_variable_length_params!(
-        update_long_characteristic_value<'a>,
-        UpdateLongCharacteristicValueParameters<'a>,
+        update_characteristic_value_ext<'a>,
+        UpdateCharacteristicValueExt<'a>,
         crate::vendor::stm32wb::opcode::GATT_UPDATE_LONG_CHARACTERISTIC_VALUE
     );
 }
@@ -2239,8 +2213,10 @@ impl<'a> DescriptorValueParameters<'a> {
 
 /// Parameters for the [Update Long Characteristic
 /// Value](Commands::update_long_characteristic_value) command.
-#[cfg(feature = "ms")]
-pub struct UpdateLongCharacteristicValueParameters<'a> {
+pub struct UpdateCharacteristicValueExt<'a> {
+    /// Specifies the client(s) to be notified
+    pub conn_handle_to_notify: ConnectionHandleToNotify,
+
     /// Handle of the service to which characteristic belongs.
     pub service_handle: ServiceHandle,
 
@@ -2264,8 +2240,7 @@ pub struct UpdateLongCharacteristicValueParameters<'a> {
     pub value: &'a [u8],
 }
 
-#[cfg(feature = "ms")]
-impl<'a> UpdateLongCharacteristicValueParameters<'a> {
+impl<'a> UpdateCharacteristicValueExt<'a> {
     const MAX_LENGTH: usize = 255;
 
     fn validate(&self) -> Result<(), Error> {
@@ -2279,23 +2254,35 @@ impl<'a> UpdateLongCharacteristicValueParameters<'a> {
     fn copy_into_slice(&self, bytes: &mut [u8]) -> usize {
         assert!(bytes.len() >= self.len());
 
-        LittleEndian::write_u16(&mut bytes[0..2], self.service_handle.0);
-        LittleEndian::write_u16(&mut bytes[2..4], self.characteristic_handle.0);
-        bytes[4] = self.update_type.bits();
-        LittleEndian::write_u16(&mut bytes[5..7], self.total_len as u16);
-        LittleEndian::write_u16(&mut bytes[7..9], self.offset as u16);
-        bytes[9] = self.value.len() as u8;
-        bytes[10..self.len()].copy_from_slice(self.value);
+        LittleEndian::write_u16(&mut bytes[0..2], self.conn_handle_to_notify as u16);
+        LittleEndian::write_u16(&mut bytes[2..4], self.service_handle.0);
+        LittleEndian::write_u16(&mut bytes[4..6], self.characteristic_handle.0);
+        bytes[6] = self.update_type.bits();
+        LittleEndian::write_u16(&mut bytes[7..9], self.total_len as u16);
+        LittleEndian::write_u16(&mut bytes[9..11], self.offset as u16);
+        bytes[11] = self.value.len() as u8;
+        bytes[12..self.len()].copy_from_slice(self.value);
 
         self.len()
     }
 
     fn len(&self) -> usize {
-        10 + self.value.len()
+        12 + self.value.len()
     }
 }
 
-#[cfg(feature = "ms")]
+#[derive(Clone, Copy)]
+pub enum ConnectionHandleToNotify {
+    /// Notify all subscribed clients on their unenhanced ATT bearer
+    NotifyAll = 0x0000,
+    /// Notify one client on the specified unenhanced ATT bearer (the parameter us the
+    /// connection handle)
+    NotifyOneUnenhanced = 0x0EFF,
+    /// Notfiy one client on the specified enhanced ATT bearer (the LST-byte of the
+    /// parameter is the connection-oriented channel index)
+    NotifyOneEnhanced = 0xEA1F,
+}
+
 defmt::bitflags! {
     /// Flags for types of updates that the controller should signal when a characteristic value is
     /// [updated](Commands::update_long_characteristic_value).
