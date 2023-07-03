@@ -1074,7 +1074,7 @@ pub enum GapProcedure {
     /// See Vol 3, Part C, section 9.3.5.
     AutoConnectionEstablishment,
     /// See Vol 3, Part C, section 9.3.6. Contains the reconnection address.
-    GeneralConnectionEstablishment(BdAddr),
+    GeneralConnectionEstablishment,
     /// See Vol 3, Part C, section 9.3.7.
     SelectiveConnectionEstablishment,
     /// See Vol 3, Part C, section 9.3.8.
@@ -1122,12 +1122,7 @@ fn to_gap_procedure_complete(
             GapProcedure::NameDiscovery(name_len, name)
         }
         0x08 => GapProcedure::AutoConnectionEstablishment,
-        0x10 => {
-            require_len!(buffer, 10);
-            let mut addr = BdAddr([0; 6]);
-            addr.0.copy_from_slice(&buffer[4..10]);
-            GapProcedure::GeneralConnectionEstablishment(addr)
-        }
+        0x10 => GapProcedure::GeneralConnectionEstablishment,
         0x20 => GapProcedure::SelectiveConnectionEstablishment,
         0x40 => GapProcedure::DirectConnectionEstablishment,
         _ => {
