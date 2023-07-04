@@ -387,7 +387,7 @@ pub trait GattCommands {
     async fn discover_all_characteristics_of_service(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        attribute_handle_range: Range<CharacteristicHandle>,
+        attribute_handle_range: Range<AttributeHandle>,
     );
 
     /// Start the procedure to discover all the characteristics specified by the UUID.
@@ -1004,7 +1004,7 @@ impl<T: Controller> GattCommands for T {
     async fn discover_all_characteristics_of_service(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        attribute_handle_range: Range<CharacteristicHandle>,
+        attribute_handle_range: Range<AttributeHandle>,
     ) {
         let mut bytes = [0; 6];
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
@@ -1365,7 +1365,7 @@ impl<T: PartialOrd> Range<T> {
     /// # Errors
     ///
     /// - [Inverted](RangeError::Inverted) if the beginning value is greater than the ending value.
-    pub async fn new(from: T, to: T) -> Result<Self, RangeError> {
+    pub fn new(from: T, to: T) -> Result<Self, RangeError> {
         if to < from {
             return Err(RangeError::Inverted);
         }

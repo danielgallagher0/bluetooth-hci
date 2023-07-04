@@ -558,6 +558,8 @@ impl crate::event::VendorEvent for Stm32Wb5xEvent {
 
         let event_code = LittleEndian::read_u16(&buffer[0..=1]);
 
+        defmt::debug!("event code {:#x}", event_code);
+
         match event_code {
             // SHCI "C2 Ready" event
             0x9200 => Ok(Stm32Wb5xEvent::CoprocessorReady(to_coprocessor_ready(
@@ -1079,6 +1081,7 @@ pub enum GapProcedure {
     SelectiveConnectionEstablishment,
     /// See Vol 3, Part C, section 9.3.8.
     DirectConnectionEstablishment,
+    Observation,
 }
 
 /// Possible results of a [GAP procedure](Stm32Wb5xEvent::GapProcedureComplete).
@@ -1125,6 +1128,7 @@ fn to_gap_procedure_complete(
         0x10 => GapProcedure::GeneralConnectionEstablishment,
         0x20 => GapProcedure::SelectiveConnectionEstablishment,
         0x40 => GapProcedure::DirectConnectionEstablishment,
+        0x80 => GapProcedure::Observation,
         _ => {
             return Err(crate::event::Error::Vendor(
                 Stm32Wb5xError::BadGapProcedure(buffer[2]),
@@ -1171,7 +1175,7 @@ impl GattAttributeModified {
 
 /// Newtype for an attribute handle. These handles are IDs, not general integers, and should not be
 /// manipulated as such.
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, defmt::Format)]
 pub struct AttributeHandle(pub u16);
 
 // Defines the maximum length of a ATT attribute value field. This is determined by the max packet
@@ -1734,12 +1738,12 @@ pub struct AttReadByGroupTypeResponse {
     ///  The connection handle related to the response.
     pub conn_handle: ConnectionHandle,
 
-    // Number of valid bytes in `attribute_data_buf`
-    data_len: usize,
-
     // Length of the attribute data group in `attribute_data_buf`, including the attribute and group
     // end handles.
     attribute_group_len: usize,
+
+    // Number of valid bytes in `attribute_data_buf`
+    data_len: usize,
 
     // List of attribute data which is a repetition of:
     // 1. 2 octets for attribute handle.
@@ -1768,9 +1772,9 @@ impl Debug for AttReadByGroupTypeResponse {
         for attribute_data in self.attribute_data_iter() {
             write!(
                 f,
-                "{{.attribute_handle = {:?}, .group_end_handle = {:?}, .value = {:?}}}",
+                "{{.attribute_handle = {:?}, .attribute_end_handle = {:?}, .value = {:?}}}",
                 attribute_data.attribute_handle,
-                attribute_data.group_end_handle,
+                attribute_data.attribute_end_handle,
                 first_16(attribute_data.value)
             )?;
         }
@@ -1800,7 +1804,7 @@ impl<'a> Iterator for AttributeDataIterator<'a> {
             attribute_handle: AttributeHandle(LittleEndian::read_u16(
                 &self.event.attribute_data_buf[attr_handle_index..],
             )),
-            group_end_handle: GroupEndHandle(LittleEndian::read_u16(
+            attribute_end_handle: AttributeHandle(LittleEndian::read_u16(
                 &self.event.attribute_data_buf[group_end_index..],
             )),
             value: &self.event.attribute_data_buf[value_index..self.next_index],
@@ -1814,7 +1818,7 @@ pub struct AttributeData<'a> {
     /// Attribute handle
     pub attribute_handle: AttributeHandle,
     /// Group end handle
-    pub group_end_handle: GroupEndHandle,
+    pub attribute_end_handle: AttributeHandle,
     /// Attribute value
     pub value: &'a [u8],
 }
@@ -1822,12 +1826,14 @@ pub struct AttributeData<'a> {
 fn to_att_read_by_group_type_response(
     buffer: &[u8],
 ) -> Result<AttReadByGroupTypeResponse, crate::event::Error<Stm32Wb5xError>> {
+    defmt::debug!("{:#x}", buffer);
+
     require_len_at_least!(buffer, 6);
 
-    let data_len = buffer[4] as usize;
-    require_len!(buffer, 5 + data_len);
+    let data_len = buffer[5] as usize;
+    require_len!(buffer, 6 + data_len);
 
-    let attribute_group_len = buffer[5] as usize;
+    let attribute_group_len = buffer[4] as usize;
 
     if buffer[6..].len() % attribute_group_len != 0 {
         return Err(crate::event::Error::Vendor(
@@ -1836,10 +1842,10 @@ fn to_att_read_by_group_type_response(
     }
 
     let mut attribute_data_buf = [0; MAX_ATTRIBUTE_DATA_BUF_LEN];
-    attribute_data_buf[..data_len - 1].copy_from_slice(&buffer[6..]);
+    attribute_data_buf[..data_len].copy_from_slice(&buffer[6..]);
     Ok(AttReadByGroupTypeResponse {
         conn_handle: ConnectionHandle(LittleEndian::read_u16(&buffer[2..])),
-        data_len: data_len - 1, // lose 1 byte to attribute_group_len
+        data_len: data_len, // lose 1 byte to attribute_group_len
         attribute_group_len,
         attribute_data_buf,
     })
@@ -2018,11 +2024,11 @@ impl TryFrom<u8> for GattProcedureStatus {
 fn to_gatt_procedure_complete(
     buffer: &[u8],
 ) -> Result<GattProcedureComplete, crate::event::Error<Stm32Wb5xError>> {
-    require_len!(buffer, 6);
+    require_len!(buffer, 5);
 
     Ok(GattProcedureComplete {
         conn_handle: ConnectionHandle(LittleEndian::read_u16(&buffer[2..])),
-        status: buffer[5].try_into().map_err(crate::event::Error::Vendor)?,
+        status: buffer[4].try_into().map_err(crate::event::Error::Vendor)?,
     })
 }
 
@@ -2325,12 +2331,12 @@ impl TryFrom<u8> for AttRequest {
 fn to_att_error_response(
     buffer: &[u8],
 ) -> Result<AttErrorResponse, crate::event::Error<Stm32Wb5xError>> {
-    require_len!(buffer, 9);
+    require_len!(buffer, 8);
     Ok(AttErrorResponse {
         conn_handle: ConnectionHandle(LittleEndian::read_u16(&buffer[2..])),
-        request: buffer[5].try_into().map_err(crate::event::Error::Vendor)?,
-        attribute_handle: AttributeHandle(LittleEndian::read_u16(&buffer[6..])),
-        error: buffer[8]
+        request: buffer[4].try_into().map_err(crate::event::Error::Vendor)?,
+        attribute_handle: AttributeHandle(LittleEndian::read_u16(&buffer[5..])),
+        error: buffer[7]
             .try_into()
             .map_err(Stm32Wb5xError::BadAttError)
             .map_err(crate::event::Error::Vendor)?,
