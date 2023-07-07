@@ -10,6 +10,8 @@ use core::convert::{TryFrom, TryInto};
 use core::fmt::{Debug, Formatter, Result as FmtResult};
 use core::time::Duration;
 
+use super::AttributeHandle;
+
 /// Vendor-specific commands that may generate the [Command
 /// Complete](crate::event::command::ReturnParameters::Vendor) event. If the commands have defined
 /// return parameters, they are included in the enum.
@@ -749,13 +751,13 @@ pub struct GapInit {
     pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
 
     /// Handle for the GAP service
-    pub service_handle: crate::vendor::stm32wb::command::gatt::ServiceHandle,
+    pub service_handle: AttributeHandle,
 
     /// Handle for the device name characteristic added to the GAP service.
-    pub dev_name_handle: crate::vendor::stm32wb::command::gatt::CharacteristicHandle,
+    pub dev_name_handle: AttributeHandle,
 
     /// Handle for the appearance characteristic added to the GAP service.
-    pub appearance_handle: crate::vendor::stm32wb::command::gatt::CharacteristicHandle,
+    pub appearance_handle: AttributeHandle,
 }
 
 fn to_gap_init(bytes: &[u8]) -> Result<GapInit, crate::event::Error<super::Stm32Wb5xError>> {
@@ -763,15 +765,9 @@ fn to_gap_init(bytes: &[u8]) -> Result<GapInit, crate::event::Error<super::Stm32
 
     Ok(GapInit {
         status: to_status(bytes)?,
-        service_handle: crate::vendor::stm32wb::command::gatt::ServiceHandle(
-            LittleEndian::read_u16(&bytes[1..]),
-        ),
-        dev_name_handle: crate::vendor::stm32wb::command::gatt::CharacteristicHandle(
-            LittleEndian::read_u16(&bytes[3..]),
-        ),
-        appearance_handle: crate::vendor::stm32wb::command::gatt::CharacteristicHandle(
-            LittleEndian::read_u16(&bytes[5..]),
-        ),
+        service_handle: AttributeHandle(LittleEndian::read_u16(&bytes[1..])),
+        dev_name_handle: AttributeHandle(LittleEndian::read_u16(&bytes[3..])),
+        appearance_handle: AttributeHandle(LittleEndian::read_u16(&bytes[5..])),
     })
 }
 
@@ -964,7 +960,7 @@ pub struct GattService {
     /// service. Also server allocates a range of handles for this service from `service_handle` to
     /// `service_handle +
     /// [max_attribute_records](crate::vendor::stm32wb::command::gatt::ServiceParameters::max_attribute_records)`.
-    pub service_handle: crate::vendor::stm32wb::command::gatt::ServiceHandle,
+    pub service_handle: AttributeHandle,
 }
 
 fn to_gatt_service(
@@ -974,9 +970,7 @@ fn to_gatt_service(
 
     Ok(GattService {
         status: to_status(bytes)?,
-        service_handle: crate::vendor::stm32wb::command::gatt::ServiceHandle(
-            LittleEndian::read_u16(&bytes[1..3]),
-        ),
+        service_handle: AttributeHandle(LittleEndian::read_u16(&bytes[1..3])),
     })
 }
 
@@ -988,7 +982,7 @@ pub struct GattCharacteristic {
     pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
 
     /// Handle of the characteristic.
-    pub characteristic_handle: crate::vendor::stm32wb::command::gatt::CharacteristicHandle,
+    pub characteristic_handle: AttributeHandle,
 }
 
 fn to_gatt_characteristic(
@@ -998,9 +992,7 @@ fn to_gatt_characteristic(
 
     Ok(GattCharacteristic {
         status: to_status(bytes)?,
-        characteristic_handle: crate::vendor::stm32wb::command::gatt::CharacteristicHandle(
-            LittleEndian::read_u16(&bytes[1..3]),
-        ),
+        characteristic_handle: AttributeHandle(LittleEndian::read_u16(&bytes[1..3])),
     })
 }
 
@@ -1012,7 +1004,7 @@ pub struct GattCharacteristicDescriptor {
     pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
 
     /// Handle of the characteristic.
-    pub descriptor_handle: crate::vendor::stm32wb::command::gatt::DescriptorHandle,
+    pub descriptor_handle: AttributeHandle,
 }
 
 fn to_gatt_characteristic_descriptor(
@@ -1022,9 +1014,7 @@ fn to_gatt_characteristic_descriptor(
 
     Ok(GattCharacteristicDescriptor {
         status: to_status(bytes)?,
-        descriptor_handle: crate::vendor::stm32wb::command::gatt::DescriptorHandle(
-            LittleEndian::read_u16(&bytes[1..3]),
-        ),
+        descriptor_handle: AttributeHandle(LittleEndian::read_u16(&bytes[1..3])),
     })
 }
 

@@ -129,8 +129,8 @@ pub trait GattCommands {
     /// complete](crate::event::command::ReturnParameters::GattDeleteCharacteristic) event.
     async fn delete_characteristic(
         &mut self,
-        service: ServiceHandle,
-        characteristic: CharacteristicHandle,
+        service: AttributeHandle,
+        characteristic: AttributeHandle,
     );
 
     /// Delete the service specified from the GATT server database.
@@ -143,7 +143,7 @@ pub trait GattCommands {
     ///
     /// When the command has completed, the controller will generate a [command
     /// complete](crate::event::command::ReturnParameters::GattDeleteService) event.
-    async fn delete_service(&mut self, service: ServiceHandle);
+    async fn delete_service(&mut self, service: AttributeHandle);
 
     /// Delete the Include definition from the service.
     ///
@@ -210,7 +210,7 @@ pub trait GattCommands {
     async fn find_information_request(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        attribute_range: Range<CharacteristicHandle>,
+        attribute_range: Range<AttributeHandle>,
     );
 
     /// Post the Find by type value request.
@@ -368,7 +368,7 @@ pub trait GattCommands {
     async fn find_included_services(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        service_handle_range: Range<ServiceHandle>,
+        service_handle_range: Range<AttributeHandle>,
     );
 
     /// Start the procedure to discover all the characteristics of a given service.
@@ -407,7 +407,7 @@ pub trait GattCommands {
     async fn discover_characteristics_by_uuid(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        attribute_handle_range: Range<CharacteristicHandle>,
+        attribute_handle_range: Range<AttributeHandle>,
         uuid: Uuid,
     );
 
@@ -427,7 +427,7 @@ pub trait GattCommands {
     async fn discover_all_characteristic_descriptors(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        characteristic_handle_range: Range<CharacteristicHandle>,
+        characteristic_handle_range: Range<AttributeHandle>,
     );
 
     /// Start the procedure to read the attribute value.
@@ -446,7 +446,7 @@ pub trait GattCommands {
     async fn read_characteristic_value(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        characteristic_handle: CharacteristicHandle,
+        characteristic_handle: AttributeHandle,
     );
 
     /// Start the procedure to read all the characteristics specified by the UUID.
@@ -466,7 +466,7 @@ pub trait GattCommands {
     async fn read_characteristic_using_uuid(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        characteristic_handle_range: Range<CharacteristicHandle>,
+        characteristic_handle_range: Range<AttributeHandle>,
         uuid: Uuid,
     );
 
@@ -645,7 +645,7 @@ pub trait GattCommands {
     async fn read_characteristic_descriptor(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        characteristic_handle: CharacteristicHandle,
+        characteristic_handle: AttributeHandle,
     );
 
     /// Start the procedure to write a characteristic value without waiting for any response from
@@ -784,7 +784,7 @@ pub trait GattCommands {
     ///
     /// A [command complete](crate::event::command::ReturnParameters::GattReadHandleValueOffset)
     /// event is generated when this command is processed.
-    async fn read_handle_value_offset(&mut self, handle: CharacteristicHandle, offset: usize);
+    async fn read_handle_value_offset(&mut self, handle: AttributeHandle, offset: usize);
 
     /// This is a more flexible version of ACI_GATT_UPDATE_CHAR_VALUE tp support update of Long
     /// attribute up to 512 bytes and indicate selectively the generation of Indication/Notification
@@ -847,8 +847,8 @@ impl<T: Controller> GattCommands for T {
 
     async fn delete_characteristic(
         &mut self,
-        service: ServiceHandle,
-        characteristic: CharacteristicHandle,
+        service: AttributeHandle,
+        characteristic: AttributeHandle,
     ) {
         let mut bytes = [0; 4];
         LittleEndian::write_u16(&mut bytes[0..2], service.0);
@@ -861,7 +861,7 @@ impl<T: Controller> GattCommands for T {
         .await
     }
 
-    async fn delete_service(&mut self, service: ServiceHandle) {
+    async fn delete_service(&mut self, service: AttributeHandle) {
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes[0..2], service.0);
 
@@ -895,7 +895,7 @@ impl<T: Controller> GattCommands for T {
     async fn find_information_request(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        attribute_range: Range<CharacteristicHandle>,
+        attribute_range: Range<AttributeHandle>,
     ) {
         let mut bytes = [0; 6];
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
@@ -987,7 +987,7 @@ impl<T: Controller> GattCommands for T {
     async fn find_included_services(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        service_handle_range: Range<ServiceHandle>,
+        service_handle_range: Range<AttributeHandle>,
     ) {
         let mut bytes = [0; 6];
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
@@ -1021,7 +1021,7 @@ impl<T: Controller> GattCommands for T {
     async fn discover_characteristics_by_uuid(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        attribute_handle_range: Range<CharacteristicHandle>,
+        attribute_handle_range: Range<AttributeHandle>,
         uuid: Uuid,
     ) {
         let mut bytes = [0; 23];
@@ -1040,7 +1040,7 @@ impl<T: Controller> GattCommands for T {
     async fn discover_all_characteristic_descriptors(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        characteristic_handle_range: Range<CharacteristicHandle>,
+        characteristic_handle_range: Range<AttributeHandle>,
     ) {
         let mut bytes = [0; 6];
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
@@ -1057,7 +1057,7 @@ impl<T: Controller> GattCommands for T {
     async fn read_characteristic_value(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        characteristic_handle: CharacteristicHandle,
+        characteristic_handle: AttributeHandle,
     ) {
         let mut bytes = [0; 4];
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
@@ -1073,7 +1073,7 @@ impl<T: Controller> GattCommands for T {
     async fn read_characteristic_using_uuid(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        characteristic_handle_range: Range<CharacteristicHandle>,
+        characteristic_handle_range: Range<AttributeHandle>,
         uuid: Uuid,
     ) {
         let mut bytes = [0; 23];
@@ -1140,7 +1140,7 @@ impl<T: Controller> GattCommands for T {
     async fn read_characteristic_descriptor(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        characteristic_handle: CharacteristicHandle,
+        characteristic_handle: AttributeHandle,
     ) {
         let mut bytes = [0; 4];
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
@@ -1202,7 +1202,7 @@ impl<T: Controller> GattCommands for T {
         crate::vendor::stm32wb::opcode::GATT_SET_DESCRIPTOR_VALUE
     );
 
-    async fn read_handle_value_offset(&mut self, handle: CharacteristicHandle, offset: usize) {
+    async fn read_handle_value_offset(&mut self, handle: AttributeHandle, offset: usize) {
         let mut bytes = [0; 3];
         LittleEndian::write_u16(&mut bytes, handle.0);
         bytes[2] = offset as u8;
@@ -1324,10 +1324,10 @@ pub enum ServiceType {
 /// Parameters for the [GATT Include Service](Commands::include_service) command.
 pub struct IncludeServiceParameters {
     /// Handle of the service to which another service has to be included
-    pub service_handle: ServiceHandle,
+    pub service_handle: AttributeHandle,
 
     /// Range of handles of the service which has to be included in the service.
-    pub include_handle_range: Range<ServiceHandle>,
+    pub include_handle_range: Range<AttributeHandle>,
 
     /// UUID of the included service
     pub include_uuid: Uuid,
@@ -1347,10 +1347,6 @@ impl IncludeServiceParameters {
         6 + uuid_len
     }
 }
-
-/// Handle for GATT Services.
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, defmt::Format)]
-pub struct ServiceHandle(pub u16);
 
 /// Two ordered points that represent a range. The points may be identical to represent a range with
 /// only one value.
@@ -1384,7 +1380,7 @@ pub enum RangeError {
 /// Parameters for the [GATT Add Characteristic](Commands::add_characteristic) command.
 pub struct AddCharacteristicParameters {
     /// Handle of the service to which the characteristic has to be added
-    pub service_handle: ServiceHandle,
+    pub service_handle: AttributeHandle,
 
     /// UUID of the characteristic
     pub characteristic_uuid: Uuid,
@@ -1572,18 +1568,14 @@ pub enum EncryptionKeySizeError {
     TooLong,
 }
 
-/// Handle for GATT characteristics.
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, defmt::Format)]
-pub struct CharacteristicHandle(pub u16);
-
 /// Parameters for the [GATT Add Characteristic Descriptor](Commands::add_characteristic_descriptor)
 /// command.
 pub struct AddDescriptorParameters<'a> {
     /// Handle of the service to which characteristic belongs.
-    pub service_handle: ServiceHandle,
+    pub service_handle: AttributeHandle,
 
     /// Handle of the characteristic to which description is to be added.
-    pub characteristic_handle: CharacteristicHandle,
+    pub characteristic_handle: AttributeHandle,
 
     /// UUID of the characteristic descriptor.
     ///
@@ -1703,18 +1695,14 @@ defmt::bitflags! {
     }
 }
 
-/// Handle for GATT characteristic descriptors.
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
-pub struct DescriptorHandle(pub u16);
-
 /// Parameters for the [Update Characteristic Value](Commands::update_characteristic_value)
 /// command.
 pub struct UpdateCharacteristicValueParameters<'a> {
     /// Handle of the service to which characteristic belongs.
-    pub service_handle: ServiceHandle,
+    pub service_handle: AttributeHandle,
 
     /// Handle of the characteristic.
-    pub characteristic_handle: CharacteristicHandle,
+    pub characteristic_handle: AttributeHandle,
 
     /// The offset from which the attribute value has to be updated. If this is set to 0, and the
     /// attribute value is of [variable length](AddCharacteristicParameters::is_variable), then the
@@ -1757,10 +1745,10 @@ impl<'a> UpdateCharacteristicValueParameters<'a> {
 /// Parameters for the [GATT Delete Included Service](Commands::delete_included_service) command.
 pub struct DeleteIncludedServiceParameters {
     /// Handle of the service to which Include definition belongs
-    pub service: ServiceHandle,
+    pub service: AttributeHandle,
 
     /// Handle of the Included definition to be deleted.
-    pub included_service: ServiceHandle,
+    pub included_service: AttributeHandle,
 }
 
 impl DeleteIncludedServiceParameters {
@@ -1836,7 +1824,7 @@ pub struct FindByTypeValueParameters<'a> {
     pub conn_handle: crate::ConnectionHandle,
 
     /// Range of attributes to be discovered on the server.
-    pub attribute_handle_range: Range<CharacteristicHandle>,
+    pub attribute_handle_range: Range<AttributeHandle>,
 
     /// UUID to find.
     pub uuid: Uuid16,
@@ -1883,7 +1871,7 @@ pub struct ReadByTypeParameters {
     pub conn_handle: crate::ConnectionHandle,
 
     /// Range of values to be read on the server.
-    pub attribute_handle_range: Range<CharacteristicHandle>,
+    pub attribute_handle_range: Range<AttributeHandle>,
 
     /// UUID of the attribute.
     pub uuid: Uuid,
@@ -1948,7 +1936,7 @@ pub struct LongCharacteristicReadParameters {
     pub conn_handle: crate::ConnectionHandle,
 
     /// Handle of the characteristic to be read
-    pub attribute: CharacteristicHandle,
+    pub attribute: AttributeHandle,
 
     /// Offset from which the value needs to be read.
     pub offset: usize,
@@ -1973,7 +1961,7 @@ pub struct MultipleCharacteristicReadParameters<'a> {
     /// The handles for which the attribute value has to be read.
     ///
     /// The maximum length is 126 handles.
-    pub handles: &'a [CharacteristicHandle],
+    pub handles: &'a [AttributeHandle],
 }
 
 impl<'a> MultipleCharacteristicReadParameters<'a> {
@@ -2009,7 +1997,7 @@ pub struct CharacteristicValue<'a> {
     pub conn_handle: crate::ConnectionHandle,
 
     /// Handle of the characteristic to be written.
-    pub characteristic_handle: CharacteristicHandle,
+    pub characteristic_handle: AttributeHandle,
 
     /// Value to be written. The maximum length is 250 bytes.
     pub value: &'a [u8],
@@ -2049,7 +2037,7 @@ pub struct LongCharacteristicValue<'a> {
     pub conn_handle: crate::ConnectionHandle,
 
     /// Handle of the characteristic to be written.
-    pub characteristic_handle: CharacteristicHandle,
+    pub characteristic_handle: AttributeHandle,
 
     /// Offset at which the attribute has to be written.
     pub offset: usize,
@@ -2143,10 +2131,10 @@ impl<'a> WriteResponseParameters<'a> {
 pub struct SecurityPermissionParameters {
     /// Handle of the service which contains the attribute whose security permission has to be
     /// modified.
-    pub service_handle: ServiceHandle,
+    pub service_handle: AttributeHandle,
 
     /// Handle of the attribute whose security permission has to be modified.
-    pub attribute_handle: CharacteristicHandle,
+    pub attribute_handle: AttributeHandle,
 
     /// Security requirements for the attribute.
     pub permission: CharacteristicPermission,
@@ -2167,13 +2155,13 @@ impl SecurityPermissionParameters {
 /// Parameters for the [Set Descriptor Value](Commands::set_descriptor_value) command.
 pub struct DescriptorValueParameters<'a> {
     /// Handle of the service which contains the descriptor.
-    pub service_handle: ServiceHandle,
+    pub service_handle: AttributeHandle,
 
     /// Handle of the characteristic which contains the descriptor.
-    pub characteristic_handle: CharacteristicHandle,
+    pub characteristic_handle: AttributeHandle,
 
     /// Handle of the descriptor whose value has to be set.
-    pub descriptor_handle: DescriptorHandle,
+    pub descriptor_handle: AttributeHandle,
 
     /// Offset from which the descriptor value has to be updated.
     pub offset: usize,
@@ -2217,10 +2205,10 @@ pub struct UpdateCharacteristicValueExt<'a> {
     pub conn_handle_to_notify: ConnectionHandleToNotify,
 
     /// Handle of the service to which characteristic belongs.
-    pub service_handle: ServiceHandle,
+    pub service_handle: AttributeHandle,
 
     /// Handle of the characteristic.
-    pub characteristic_handle: CharacteristicHandle,
+    pub characteristic_handle: AttributeHandle,
 
     /// Controls whether an indication, notification, both, or neither is generated by the attribute
     /// update.
