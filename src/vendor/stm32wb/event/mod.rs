@@ -558,8 +558,6 @@ impl crate::event::VendorEvent for Stm32Wb5xEvent {
 
         let event_code = LittleEndian::read_u16(&buffer[0..=1]);
 
-        defmt::debug!("event code {:#x}", event_code);
-
         match event_code {
             // SHCI "C2 Ready" event
             0x9200 => Ok(Stm32Wb5xEvent::CoprocessorReady(to_coprocessor_ready(
@@ -1650,15 +1648,21 @@ pub struct HandleValuePair<'a> {
     pub value: &'a [u8],
 }
 
+impl<'a> HandleValuePair<'a> {
+    pub fn uuid(&self) -> u16 {
+        LittleEndian::read_u16(&self.value[3..])
+    }
+}
+
 fn to_att_read_by_type_response(
     buffer: &[u8],
 ) -> Result<AttReadByTypeResponse, crate::event::Error<Stm32Wb5xError>> {
     require_len_at_least!(buffer, 6);
 
-    let data_len = buffer[4] as usize;
-    require_len!(buffer, 5 + data_len);
+    let data_len = buffer[5] as usize;
+    require_len!(buffer, 6 + data_len);
 
-    let handle_value_pair_len = buffer[5] as usize;
+    let handle_value_pair_len = buffer[4] as usize;
     let handle_value_pair_buf = &buffer[6..];
     if handle_value_pair_buf.len() % handle_value_pair_len != 0 {
         return Err(crate::event::Error::Vendor(
@@ -1823,11 +1827,15 @@ pub struct AttributeData<'a> {
     pub value: &'a [u8],
 }
 
+impl<'a> AttributeData<'a> {
+    pub fn uuid(&self) -> u16 {
+        LittleEndian::read_u16(&self.value[0..])
+    }
+}
+
 fn to_att_read_by_group_type_response(
     buffer: &[u8],
 ) -> Result<AttReadByGroupTypeResponse, crate::event::Error<Stm32Wb5xError>> {
-    defmt::debug!("{:#x}", buffer);
-
     require_len_at_least!(buffer, 6);
 
     let data_len = buffer[5] as usize;

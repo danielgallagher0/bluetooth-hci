@@ -304,6 +304,7 @@ where
 
         let event_type = packet.0[EVENT_TYPE_BYTE];
         let payload = &packet.0[PACKET_HEADER_LENGTH..packet.full_length()];
+
         match event_type {
             0x03 => Ok(Event::ConnectionComplete(to_connection_complete(payload)?)),
             0x05 => Ok(Event::DisconnectionComplete(to_disconnection_complete(
