@@ -1641,7 +1641,7 @@ pub struct AuthenticationRequirements {
 }
 
 impl AuthenticationRequirements {
-    const LENGTH: usize = 26;
+    const LENGTH: usize = 12;
 
     fn validate(&self) -> Result<(), Error> {
         if self.encryption_key_size_range.0 > self.encryption_key_size_range.1 {
@@ -1658,7 +1658,7 @@ impl AuthenticationRequirements {
         }
 
         if self.identity_address_type != AddressType::Public
-            || self.identity_address_type != AddressType::Random
+            && self.identity_address_type != AddressType::Random
         {
             return Err(Error::BadAddressType(self.identity_address_type));
         }
@@ -1675,18 +1675,17 @@ impl AuthenticationRequirements {
         bytes[3] = self.keypress_notification_support as u8;
         bytes[4] = self.encryption_key_size_range.0;
         bytes[5] = self.encryption_key_size_range.1;
-        bytes[6] = self.encryption_key_size_range.1;
         match self.fixed_pin {
             Pin::Requested => {
-                bytes[7] = 1;
-                bytes[8..12].copy_from_slice(&[0; 4]);
+                bytes[6] = 1;
+                bytes[7..11].copy_from_slice(&[0; 4]);
             }
             Pin::Fixed(pin) => {
-                bytes[7] = 0;
-                LittleEndian::write_u32(&mut bytes[8..12], pin);
+                bytes[6] = 0;
+                LittleEndian::write_u32(&mut bytes[7..11], pin);
             }
         }
-        bytes[12] = self.identity_address_type as u8;
+        bytes[11] = self.identity_address_type as u8;
     }
 }
 
