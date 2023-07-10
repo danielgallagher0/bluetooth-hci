@@ -558,6 +558,8 @@ impl crate::event::VendorEvent for Stm32Wb5xEvent {
 
         let event_code = LittleEndian::read_u16(&buffer[0..=1]);
 
+        defmt::debug!("vendor event {:#x}", event_code);
+
         match event_code {
             // SHCI "C2 Ready" event
             0x9200 => Ok(Stm32Wb5xEvent::CoprocessorReady(to_coprocessor_ready(
@@ -938,7 +940,7 @@ impl TryFrom<u8> for GapPairingStatus {
 fn to_gap_pairing_complete(
     buffer: &[u8],
 ) -> Result<GapPairingComplete, crate::event::Error<Stm32Wb5xError>> {
-    require_len!(buffer, 5);
+    require_len!(buffer, 6);
     Ok(GapPairingComplete {
         conn_handle: ConnectionHandle(LittleEndian::read_u16(&buffer[2..])),
         status: buffer[4].try_into().map_err(crate::event::Error::Vendor)?,
@@ -2549,11 +2551,11 @@ pub struct NumericComparisonValue {
 fn to_numeric_comparison_value(
     buffer: &[u8],
 ) -> Result<NumericComparisonValue, crate::event::Error<Stm32Wb5xError>> {
-    require_len!(buffer, 6);
+    require_len!(buffer, 8);
 
     Ok(NumericComparisonValue {
-        connection_handle: ConnectionHandle(LittleEndian::read_u16(&buffer[0..])),
-        numeric_value: LittleEndian::read_u32(&buffer[2..]),
+        connection_handle: ConnectionHandle(LittleEndian::read_u16(&buffer[2..])),
+        numeric_value: LittleEndian::read_u32(&buffer[4..]),
     })
 }
 
