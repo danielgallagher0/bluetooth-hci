@@ -1397,24 +1397,27 @@ impl<'a> Iterator for HandleUuid128PairIterator<'a> {
 fn to_att_find_information_response(
     buffer: &[u8],
 ) -> Result<AttFindInformationResponse, crate::event::Error<Stm32Wb5xError>> {
-    require_len_at_least!(buffer, 6);
+    defmt::debug!("buffer {:#x}", buffer);
+    require_len_at_least!(buffer, 4);
 
-    let data_len = buffer[4] as usize;
-    require_len!(buffer, 5 + data_len);
+    let data_len = buffer[5] as usize;
+    require_len!(buffer, 6 + data_len);
 
     Ok(AttFindInformationResponse {
         conn_handle: to_conn_handle(buffer)?,
-        handle_uuid_pairs: match buffer[5] {
+        handle_uuid_pairs: match buffer[4] {
             1 => to_handle_uuid16_pairs(&buffer[6..]).map_err(crate::event::Error::Vendor)?,
             2 => to_handle_uuid128_pairs(&buffer[6..]).map_err(crate::event::Error::Vendor)?,
             _ => {
                 return Err(crate::event::Error::Vendor(
-                    Stm32Wb5xError::BadAttFindInformationResponseFormat(buffer[5]),
+                    Stm32Wb5xError::BadAttFindInformationResponseFormat(buffer[4]),
                 ));
             }
         },
     })
 }
+
+// [0x4, 0xc, 0x1, 0x8, 0x1, 0x8, 0x12, 0x0, 0x3, 0x5, 0x13, 0x0, 0x2, 0x29]
 
 fn to_handle_uuid16_pairs(buffer: &[u8]) -> Result<HandleUuidPairs, Stm32Wb5xError> {
     const PAIR_LEN: usize = 4;

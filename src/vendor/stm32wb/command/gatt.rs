@@ -1386,7 +1386,7 @@ pub struct AddCharacteristicParameters {
     pub characteristic_uuid: Uuid,
 
     /// Maximum length of the characteristic value
-    pub characteristic_value_len: usize,
+    pub characteristic_value_len: u16,
 
     /// Properties of the characteristic (defined in Volume 3, Part G, Section 3.3.3.1 of Bluetooth
     /// Specification 4.1)
@@ -1404,11 +1404,6 @@ pub struct AddCharacteristicParameters {
     /// If true, the attribute has a variable length value field. Otherwise, the value field length
     /// is fixed.
     pub is_variable: bool,
-
-    /// If true, the
-    /// [`characteristic_value_len`](AddCharacteristicParameters::characteristic_value_len)
-    /// parameter only takes 1 byte.
-    pub fw_version_before_v72: bool,
 }
 
 impl AddCharacteristicParameters {
@@ -1419,25 +1414,15 @@ impl AddCharacteristicParameters {
 
         LittleEndian::write_u16(&mut bytes[0..2], self.service_handle.0);
         let uuid_len = self.characteristic_uuid.copy_into_slice(&mut bytes[2..19]);
-        let mut next = 2 + uuid_len;
-        if self.fw_version_before_v72 {
-            bytes[next] = self.characteristic_value_len as u8;
-            next += 1;
-        } else {
-            LittleEndian::write_u16(
-                &mut bytes[next..next + 2],
-                self.characteristic_value_len as u16,
-            );
-            next += 2;
-        }
-        let next = next;
-        bytes[next] = self.characteristic_properties.bits();
-        bytes[next + 1] = self.security_permissions.bits();
-        bytes[next + 2] = self.gatt_event_mask.bits();
-        bytes[next + 3] = self.encryption_key_size.0;
-        bytes[next + 4] = self.is_variable as u8;
+        let next = 2 + uuid_len;
+        LittleEndian::write_u16(&mut bytes[next..next + 2], self.characteristic_value_len);
+        bytes[next + 2] = self.characteristic_properties.bits();
+        bytes[next + 3] = self.security_permissions.bits();
+        bytes[next + 4] = self.gatt_event_mask.bits();
+        bytes[next + 5] = self.encryption_key_size.0;
+        bytes[next + 6] = self.is_variable as u8;
 
-        next + 5
+        next + 6
     }
 }
 
