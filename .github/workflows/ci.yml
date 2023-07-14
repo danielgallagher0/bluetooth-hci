@@ -3,49 +3,76 @@ name: CI
 on: [pull_request, push]
 
 jobs:
-    build:
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v2
-        - uses: actions-rs/toolchain@v1
-          with:
-            toolchain: nightly
-            target: thumbv7em-none-eabihf
-            override: true
-        - run: cargo build --release --all --verbose --target=thumbv7em-none-eabihf
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          target: thumbv7em-none-eabihf
+          override: true
+      - run: cargo build --release --all --verbose --target=thumbv7em-none-eabihf
 
-    test:
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v2
-        - uses: actions-rs/toolchain@v1
-          with:
-            toolchain: nightly
-        - run: cargo test --verbose --all
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+      - run: cargo test --verbose --all
 
-    test_version_4_1:
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v2
-        - uses: actions-rs/toolchain@v1
-          with:
-            toolchain: nightly
-        - run: cargo test --verbose --all --no-default-features --features="version-4-1"
+  test_version_4_1:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+      - run: cargo test --verbose --all --no-default-features --features="version-4-1"
 
-    test_version_4_2:
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v2
-        - uses: actions-rs/toolchain@v1
-          with:
-            toolchain: nightly
-        - run: cargo test --verbose --all --no-default-features --features="version-4-2"
+  test_version_4_2:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+      - run: cargo test --verbose --all --no-default-features --features="version-4-2"
 
-    test_version_5_0:
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v2
-        - uses: actions-rs/toolchain@v1
-          with:
-            toolchain: nightly
-        - run: cargo test --verbose --all --no-default-features --features="version-5-0"
+  test_version_5_0:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+      - run: cargo test --verbose --all --no-default-features --features="version-5-0"
+
+  test_version_4_1_defmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+      - run: cargo test --verbose --all --no-default-features --features="version-4-1" --features="defmt"
+
+  test_version_4_2_defmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+      - run: cargo test --verbose --all --no-default-features --features="version-4-2" --features="defmt"
+
+  test_version_5_0_defmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+      - run: cargo test --verbose --all --no-default-features --features="version-5-0" --features="defmt"
