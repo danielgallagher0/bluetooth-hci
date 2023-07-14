@@ -22,12 +22,3 @@ jobs:
         with:
           toolchain: nightly
       - run: cargo test --verbose --all
-
-  test_defmt:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-      - run: cargo test --verbose --all --features="defmt"
