@@ -98,16 +98,6 @@ impl AdvertisingIntervalBuilder {
             return Err(AdvertisingIntervalError::TooShort(min));
         }
 
-        #[cfg(not(feature = "version-5-0"))]
-        {
-            if self.advertising_type == AdvertisingType::ScannableUndirected {
-                const SCANNABLE_MIN: Duration = Duration::from_millis(100);
-                if min < SCANNABLE_MIN {
-                    return Err(AdvertisingIntervalError::TooShort(min));
-                }
-            }
-        }
-
         const MAX: Duration = Duration::from_millis(10240);
         if max > MAX {
             return Err(AdvertisingIntervalError::TooLong(max));

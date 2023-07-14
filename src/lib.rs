@@ -129,7 +129,6 @@ pub trait Controller {
     /// # use hci::Controller as HciController;
     /// # use hci::Opcode;
     /// # struct Controller;
-    /// # #[deriv)]
     /// #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     /// # struct Error;
     /// # struct Header;
@@ -152,7 +151,6 @@ pub trait Controller {
     /// #        0
     /// #    }
     /// # }
-    /// # #[deriv)]
     /// #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     /// # struct VendorEvent;
     /// # impl hci::event::VendorEvent for VendorEvent {
@@ -346,22 +344,18 @@ pub enum Status<V> {
     MacConnectionFailed,
     /// Coarse Clock Adjustment Rejected but Will Try to Adjust Using Clock Dragging
     CoarseClockAdjustmentRejectedDraggingAttempted,
-    #[cfg(feature = "version-5-0")]
     /// Type0 Submap Not Defined
     ///
     /// First introduced in version 5.0
     Type0SubmapNotDefined,
-    #[cfg(feature = "version-5-0")]
     /// Unknown Advertising Identifier
     ///
     /// First introduced in version 5.0
     UnknownAdvertisingId,
-    #[cfg(feature = "version-5-0")]
     /// Limit Reached
     ///
     /// First introduced in version 5.0
     LimitReached,
-    #[cfg(feature = "version-5-0")]
     /// Operation Cancelled by Host
     ///
     /// First introduced in version 5.0
@@ -450,46 +444,10 @@ where
             0x3E => Ok(Status::ConnectionFailedToEstablish),
             0x3F => Ok(Status::MacConnectionFailed),
             0x40 => Ok(Status::CoarseClockAdjustmentRejectedDraggingAttempted),
-            0x41 => {
-                #[cfg(feature = "version-5-0")]
-                {
-                    Ok(Status::Type0SubmapNotDefined)
-                }
-                #[cfg(not(feature = "version-5-0"))]
-                {
-                    Ok(Status::Vendor(V::try_from(value)?))
-                }
-            }
-            0x42 => {
-                #[cfg(feature = "version-5-0")]
-                {
-                    Ok(Status::UnknownAdvertisingId)
-                }
-                #[cfg(not(feature = "version-5-0"))]
-                {
-                    Ok(Status::Vendor(V::try_from(value)?))
-                }
-            }
-            0x43 => {
-                #[cfg(feature = "version-5-0")]
-                {
-                    Ok(Status::LimitReached)
-                }
-                #[cfg(not(feature = "version-5-0"))]
-                {
-                    Ok(Status::Vendor(V::try_from(value)?))
-                }
-            }
-            0x44 => {
-                #[cfg(feature = "version-5-0")]
-                {
-                    Ok(Status::OperationCancelledByHost)
-                }
-                #[cfg(not(feature = "version-5-0"))]
-                {
-                    Ok(Status::Vendor(V::try_from(value)?))
-                }
-            }
+            0x41 => Ok(Status::Type0SubmapNotDefined),
+            0x42 => Ok(Status::UnknownAdvertisingId),
+            0x43 => Ok(Status::LimitReached),
+            0x44 => Ok(Status::OperationCancelledByHost),
             _ => Ok(Status::Vendor(V::try_from(value)?)),
         }
     }
@@ -566,28 +524,14 @@ where
             Status::ConnectionFailedToEstablish => 0x3E,
             Status::MacConnectionFailed => 0x3F,
             Status::CoarseClockAdjustmentRejectedDraggingAttempted => 0x40,
-            _ => {
-                #[cfg(feature = "version-5-0")]
-                {
-                    match val {
-                        Status::Type0SubmapNotDefined => 0x41,
-                        Status::UnknownAdvertisingId => 0x42,
-                        Status::LimitReached => 0x43,
-                        Status::OperationCancelledByHost => 0x44,
-                        Status::Vendor(v) => v.into(),
-                        _ => 0xFF,
-                    }
-                }
-
-                #[cfg(not(feature = "version-5-0"))]
-                {
-                    if let Status::Vendor(v) = val {
-                        v.into()
-                    } else {
-                        0xFF
-                    }
-                }
-            }
+            _ => match val {
+                Status::Type0SubmapNotDefined => 0x41,
+                Status::UnknownAdvertisingId => 0x42,
+                Status::LimitReached => 0x43,
+                Status::OperationCancelledByHost => 0x44,
+                Status::Vendor(v) => v.into(),
+                _ => 0xFF,
+            },
         }
     }
 }
@@ -669,40 +613,28 @@ bitflags::bitflags! {
         /// See section 4.6.5
         const LE_PING = 1 << 4;
         /// See section 4.6.6
-        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
         const LE_DATA_PACKET_LENGTH_EXTENSION = 1 << 5;
         /// See section 4.6.7
-        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
         const LL_PRIVACY = 1 << 6;
         /// See section 4.6.8
-        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
         const EXTENDED_SCANNER_FILTER_POLICIES = 1 << 7;
         /// See section 4.6.9
-        #[cfg(feature = "version-5-0")]
         const LE_2M_PHY = 1 << 8;
         /// See section 4.6.10
-        #[cfg(feature = "version-5-0")]
         const STABLE_MODULATION_INDEX_TX = 1 << 9;
         /// See section 4.6.11
-        #[cfg(feature = "version-5-0")]
         const STABLE_MODULATION_INDEX_RX = 1 << 10;
         /// Not in section 4.6
-        #[cfg(feature = "version-5-0")]
         const LE_CODED_PHY = 1 << 11;
         /// See section 4.6.12
-        #[cfg(feature = "version-5-0")]
         const LE_EXTENDED_ADVERTISING = 1 << 12;
         /// See section 4.6.13
-        #[cfg(feature = "version-5-0")]
         const LE_PERIODIC_ADVERTISING = 1 << 13;
         /// See section 4.6.14
-        #[cfg(feature = "version-5-0")]
         const CHANNEL_SELECTION_ALGORITHM_2 = 1 << 14;
         /// Not in section 4.6
-        #[cfg(feature = "version-5-0")]
         const LE_POWER_CLASS_1 = 1 << 15;
         /// See section 4.6.15
-        #[cfg(feature = "version-5-0")]
         const MINIMUM_NUMBER_OF_USED_CHANNELS_PROCEDURE = 1 << 16;
     }
 }
@@ -726,40 +658,28 @@ defmt::bitflags! {
         /// See section 4.6.5
         const LE_PING = 1 << 4;
         /// See section 4.6.6
-        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
         const LE_DATA_PACKET_LENGTH_EXTENSION = 1 << 5;
         /// See section 4.6.7
-        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
         const LL_PRIVACY = 1 << 6;
         /// See section 4.6.8
-        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
         const EXTENDED_SCANNER_FILTER_POLICIES = 1 << 7;
         /// See section 4.6.9
-        #[cfg(feature = "version-5-0")]
         const LE_2M_PHY = 1 << 8;
         /// See section 4.6.10
-        #[cfg(feature = "version-5-0")]
         const STABLE_MODULATION_INDEX_TX = 1 << 9;
         /// See section 4.6.11
-        #[cfg(feature = "version-5-0")]
         const STABLE_MODULATION_INDEX_RX = 1 << 10;
         /// Not in section 4.6
-        #[cfg(feature = "version-5-0")]
         const LE_CODED_PHY = 1 << 11;
         /// See section 4.6.12
-        #[cfg(feature = "version-5-0")]
         const LE_EXTENDED_ADVERTISING = 1 << 12;
         /// See section 4.6.13
-        #[cfg(feature = "version-5-0")]
         const LE_PERIODIC_ADVERTISING = 1 << 13;
         /// See section 4.6.14
-        #[cfg(feature = "version-5-0")]
         const CHANNEL_SELECTION_ALGORITHM_2 = 1 << 14;
         /// Not in section 4.6
-        #[cfg(feature = "version-5-0")]
         const LE_POWER_CLASS_1 = 1 << 15;
         /// See section 4.6.15
-        #[cfg(feature = "version-5-0")]
         const MINIMUM_NUMBER_OF_USED_CHANNELS_PROCEDURE = 1 << 16;
     }
 }

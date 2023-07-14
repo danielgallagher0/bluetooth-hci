@@ -18,20 +18,6 @@ fn valid() {
     assert_eq!(bytes, [0x21, 0x00, 0x40, 0x06, 0x00]);
 }
 
-#[cfg(not(feature = "version-5-0"))]
-#[test]
-fn higher_min_scannable_undirected() {
-    let err = AdvertisingInterval::for_type(AdvertisingType::ScannableUndirected)
-        .with_range(Duration::from_millis(99), Duration::from_millis(1000))
-        .err()
-        .unwrap();
-    assert_eq!(
-        err,
-        AdvertisingIntervalError::TooShort(Duration::from_millis(99))
-    );
-}
-
-#[cfg(feature = "version-5-0")]
 #[test]
 fn normal_min_scannable_undirected() {
     let interval = AdvertisingInterval::for_type(AdvertisingType::ScannableUndirected)

@@ -249,14 +249,8 @@ where
     /// Data](crate::host::Hci::le_set_scan_response_data) command.
     LeSetScanResponseData(Status<V::Status>),
 
-    /// Status returned by the [LE Set Advertise Enable](crate::host::Hci::le_set_advertise_enable)
-    /// command.
-    #[cfg(not(feature = "version-5-0"))]
-    LeSetAdvertiseEnable(Status<V::Status>),
-
     /// Status returned by the [LE Set Advertising
     /// Enable](crate::host::Hci::le_set_advertising_enable) command.
-    #[cfg(feature = "version-5-0")]
     LeSetAdvertisingEnable(Status<V::Status>),
 
     /// Status returned by the [LE Set Scan Parameters](crate::host::Hci::le_set_scan_parameters)
@@ -907,139 +901,94 @@ bitflag_array! {
     /// LE Remote Connection Parameter Request Negative Reply Command
     const LE_REMOTE_CONNECTION_PARAMETER_REQUEST_NEGATIVE_REPLY_COMMAND = 33, 1 << 5;
     /// LE Set Data Length
-    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     const LE_SET_DATA_LENGTH = 33, 1 << 6;
     /// LE Read Suggested Default Data Length
-    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     const LE_READ_SUGGESTED_DEFAULT_DATA_LENGTH = 33, 1 << 7;
     /// LE Write Suggested Default Data Length
-    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     const LE_WRITE_SUGGESTED_DEFAULT_DATA_LENGTH = 34, 1 << 0;
     /// LE Read Local P-256 Public Key
-    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     const LE_READ_LOCAL_P256_PUBLIC_KEY = 34, 1 << 1;
     /// LE Generate DH Key
-    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     const LE_GENERATE_DH_KEY = 34, 1 << 2;
     /// LE Add Device To Resolving List
-    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     const LE_ADD_DEVICE_TO_RESOLVING_LIST = 34, 1 << 3;
     /// LE Remove Device From Resolving List
-    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     const LE_REMOVE_DEVICE_FROM_RESOLVING_LIST = 34, 1 << 4;
     /// LE Clear Resolving List
-    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     const LE_CLEAR_RESOLVING_LIST = 34, 1 << 5;
     /// LE Read Resolving List Size
-    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     const LE_READ_RESOLVING_LIST_SIZE = 34, 1 << 6;
     /// LE Read Peer Resolvable Address
-    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     const LE_READ_PEER_RESOLVABLE_ADDRESS = 34, 1 << 7;
     /// LE Read Local Resolvable Address
-    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     const LE_READ_LOCAL_RESOLVABLE_ADDRESS = 35, 1 << 0;
     /// LE Set Address Resolution Enable
-    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     const LE_SET_ADDRESS_RESOLUTION_ENABLE = 35, 1 << 1;
     /// LE Set Resolvable Private Address Timeout
-    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     const LE_SET_RESOLVABLE_PRIVATE_ADDRESS_TIMEOUT = 35, 1 << 2;
     /// LE Read Maximum Data Length
-    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     const LE_READ_MAXIMUM_DATA_LENGTH = 35, 1 << 3;
     /// LE Read PHY Command
-    #[cfg(feature = "version-5-0")]
     const LE_READ_PHY_COMMAND = 35, 1 << 4;
     /// LE Set Default PHY Command
-    #[cfg(feature = "version-5-0")]
     const LE_SET_DEFAULT_PHY_COMMAND = 35, 1 << 5;
     /// LE Set PHY Command
-    #[cfg(feature = "version-5-0")]
     const LE_SET_PHY_COMMAND = 35, 1 << 6;
     /// LE Enhanced Receiver Test Command
-    #[cfg(feature = "version-5-0")]
     const LE_ENHANCED_RECEIVER_TEST_COMMAND = 35, 1 << 7;
     /// LE Enhanced Transmitter Test Command
-    #[cfg(feature = "version-5-0")]
     const LE_ENHANCED_TRANSMITTER_TEST_COMMAND = 36, 1 << 0;
     /// LE Set Advertising Set Random Address Command
-    #[cfg(feature = "version-5-0")]
     const LE_SET_ADVERTISING_SET_RANDOM_ADDRESS_COMMAND = 36, 1 << 1;
     /// LE Set Extended Advertising Parameters Command
-    #[cfg(feature = "version-5-0")]
     const LE_SET_EXTENDED_ADVERTISING_PARAMETERS_COMMAND = 36, 1 << 2;
     /// LE Set Extended Advertising Data Command
-    #[cfg(feature = "version-5-0")]
     const LE_SET_EXTENDED_ADVERTISING_DATA_COMMAND = 36, 1 << 3;
     /// LE Set Extended Scan Response Data Command
-    #[cfg(feature = "version-5-0")]
     const LE_SET_EXTENDED_SCAN_RESPONSE_DATA_COMMAND = 36, 1 << 4;
     /// LE Set Extended Advertising Enable Command
-    #[cfg(feature = "version-5-0")]
     const LE_SET_EXTENDED_ADVERTISING_ENABLE_COMMAND = 36, 1 << 5;
     /// LE Read Maximum Advertising Data Length Command
-    #[cfg(feature = "version-5-0")]
     const LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH_COMMAND = 36, 1 << 6;
     /// LE Read Number of Supported Advertising Sets Command
-    #[cfg(feature = "version-5-0")]
     const LE_READ_NUMBER_OF_SUPPORTED_ADVERTISING_SETS_COMMAND = 36, 1 << 7;
     /// LE Remove Advertising Set Command
-    #[cfg(feature = "version-5-0")]
     const LE_REMOVE_ADVERTISING_SET_COMMAND = 37, 1 << 0;
     /// LE Clear Advertising Sets Command
-    #[cfg(feature = "version-5-0")]
     const LE_CLEAR_ADVERTISING_SETS_COMMAND = 37, 1 << 1;
     /// LE Set Periodic Advertising Parameters Command
-    #[cfg(feature = "version-5-0")]
     const LE_SET_PERIODIC_ADVERTISING_PARAMETERS_COMMAND = 37, 1 << 2;
     /// LE Set Periodic Advertising Data Command
-    #[cfg(feature = "version-5-0")]
     const LE_SET_PERIODIC_ADVERTISING_DATA_COMMAND = 37, 1 << 3;
     /// LE Set Periodic Advertising Enable Command
-    #[cfg(feature = "version-5-0")]
     const LE_SET_PERIODIC_ADVERTISING_ENABLE_COMMAND = 37, 1 << 4;
     /// LE Set Extended Scan Parameters Command
-    #[cfg(feature = "version-5-0")]
     const LE_SET_EXTENDED_SCAN_PARAMETERS_COMMAND = 37, 1 << 5;
     /// LE Set Extended Scan Enable Command
-    #[cfg(feature = "version-5-0")]
     const LE_SET_EXTENDED_SCAN_ENABLE_COMMAND = 37, 1 << 6;
     /// LE Extended Create Connection Command
-    #[cfg(feature = "version-5-0")]
     const LE_EXTENDED_CREATE_CONNECTION_COMMAND = 37, 1 << 7;
     /// LE Periodic Advertising Create Sync Command
-    #[cfg(feature = "version-5-0")]
     const LE_PERIODIC_ADVERTISING_CREATE_SYNC_COMMAND = 38, 1 << 0;
     /// LE Periodic Advertising Create Sync Cancel Command
-    #[cfg(feature = "version-5-0")]
     const LE_PERIODIC_ADVERTISING_CREATE_SYNC_CANCEL_COMMAND = 38, 1 << 1;
     /// LE Periodic Advertising Terminate Sync Command
-    #[cfg(feature = "version-5-0")]
     const LE_PERIODIC_ADVERTISING_TERMINATE_SYNC_COMMAND = 38, 1 << 2;
     /// LE Add Device To Periodic Advertiser List Command
-    #[cfg(feature = "version-5-0")]
     const LE_ADD_DEVICE_TO_PERIODIC_ADVERTISER_LIST_COMMAND = 38, 1 << 3;
     /// LE Remove Device From Periodic Advertiser List Command
-    #[cfg(feature = "version-5-0")]
     const LE_REMOVE_DEVICE_FROM_PERIODIC_ADVERTISER_LIST_COMMAND = 38, 1 << 4;
     /// LE Clear Periodic Advertiser List Command
-    #[cfg(feature = "version-5-0")]
     const LE_CLEAR_PERIODIC_ADVERTISER_LIST_COMMAND = 38, 1 << 5;
     /// LE Read Periodic Advertiser List Size Command
-    #[cfg(feature = "version-5-0")]
     const LE_READ_PERIODIC_ADVERTISER_LIST_SIZE_COMMAND = 38, 1 << 6;
     /// LE Read Transmit Power Command
-    #[cfg(feature = "version-5-0")]
     const LE_READ_TRANSMIT_POWER_COMMAND = 38, 1 << 7;
     /// LE Read RF Path Compensation Command
-    #[cfg(feature = "version-5-0")]
     const LE_READ_RF_PATH_COMPENSATION_COMMAND = 39, 1 << 0;
     /// LE Write RF Path Compensation Command
-    #[cfg(feature = "version-5-0")]
     const LE_WRITE_RF_PATH_COMPENSATION_COMMAND = 39, 1 << 1;
     /// LE Set Privacy Mode
-    #[cfg(feature = "version-5-0")]
     const LE_SET_PRIVACY_MODE = 39, 1 << 2;
 }
 
@@ -1476,40 +1425,28 @@ bitflags::bitflags! {
         /// LE Ping.  Not valid from controller to controller.
         const PING = 1 << 4;
         /// LE Data Packet Length Extension.  Valid from controller to controller.
-        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
         const DATA_PACKET_LENGTH_EXTENSION = 1 << 5;
         /// LL Privacy.  Not valid from controller to controller.
-        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
         const LL_PRIVACY = 1 << 6;
         /// Extended Scanner Filter Policies.  Not valid from controller to controller.
-        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
         const EXTENDED_SCANNER_FILTER_POLICIES = 1 << 7;
         /// LE 2M PHY.  Valid from controller to controller.
-        #[cfg(feature = "version-5-0")]
         const PHY_2M = 1 << 8;
         /// Stable Modulation Index - Transmitter.  Valid from controller to controller.
-        #[cfg(feature = "version-5-0")]
         const STABLE_MODULATION_INDEX_TX = 1 << 9;
         /// Stable Modulation Index - Receiver.  Valid from controller to controller.
-        #[cfg(feature = "version-5-0")]
         const STABLE_MODULATION_INDEX_RX = 1 << 10;
         /// LE Coded PHY.  Valid from controller to controller.
-        #[cfg(feature = "version-5-0")]
         const CODED_PHY = 1 << 11;
         /// LE Extended Advertising.  Not valid from controller to controller.
-        #[cfg(feature = "version-5-0")]
         const EXTENDED_ADVERTISING = 1 << 12;
         /// LE Periodic Advertising.  Not valid from controller to controller.
-        #[cfg(feature = "version-5-0")]
         const PERIODIC_ADVERTISING = 1 << 13;
         /// Channel Selection Algorithm #2.  Valid from controller to controller.
-        #[cfg(feature = "version-5-0")]
         const CHANNEL_SELECTION_ALGORITHM_2 = 1 << 14;
         /// LE Power Class 1.  Valid from controller to controller.
-        #[cfg(feature = "version-5-0")]
         const POWER_CLASS_1 = 1 << 15;
         /// Minimum Number of Used Channels Procedure
-        #[cfg(feature = "version-5-0")]
         const MINIMUM_NUMBER_OF_USED_CHANNELS_PROCEDURE = 1 << 16;
     }
 }
@@ -1533,40 +1470,28 @@ defmt::bitflags! {
         /// LE Ping.  Not valid from controller to controller.
         const PING = 1 << 4;
         /// LE Data Packet Length Extension.  Valid from controller to controller.
-        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
         const DATA_PACKET_LENGTH_EXTENSION = 1 << 5;
         /// LL Privacy.  Not valid from controller to controller.
-        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
         const LL_PRIVACY = 1 << 6;
         /// Extended Scanner Filter Policies.  Not valid from controller to controller.
-        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
         const EXTENDED_SCANNER_FILTER_POLICIES = 1 << 7;
         /// LE 2M PHY.  Valid from controller to controller.
-        #[cfg(feature = "version-5-0")]
         const PHY_2M = 1 << 8;
         /// Stable Modulation Index - Transmitter.  Valid from controller to controller.
-        #[cfg(feature = "version-5-0")]
         const STABLE_MODULATION_INDEX_TX = 1 << 9;
         /// Stable Modulation Index - Receiver.  Valid from controller to controller.
-        #[cfg(feature = "version-5-0")]
         const STABLE_MODULATION_INDEX_RX = 1 << 10;
         /// LE Coded PHY.  Valid from controller to controller.
-        #[cfg(feature = "version-5-0")]
         const CODED_PHY = 1 << 11;
         /// LE Extended Advertising.  Not valid from controller to controller.
-        #[cfg(feature = "version-5-0")]
         const EXTENDED_ADVERTISING = 1 << 12;
         /// LE Periodic Advertising.  Not valid from controller to controller.
-        #[cfg(feature = "version-5-0")]
         const PERIODIC_ADVERTISING = 1 << 13;
         /// Channel Selection Algorithm #2.  Valid from controller to controller.
-        #[cfg(feature = "version-5-0")]
         const CHANNEL_SELECTION_ALGORITHM_2 = 1 << 14;
         /// LE Power Class 1.  Valid from controller to controller.
-        #[cfg(feature = "version-5-0")]
         const POWER_CLASS_1 = 1 << 15;
         /// Minimum Number of Used Channels Procedure
-        #[cfg(feature = "version-5-0")]
         const MINIMUM_NUMBER_OF_USED_CHANNELS_PROCEDURE = 1 << 16;
     }
 }
@@ -1611,15 +1536,6 @@ where
     })
 }
 
-#[cfg(not(feature = "version-5-0"))]
-fn to_le_set_advertise_enable<V>(status: Status<V::Status>) -> ReturnParameters<V>
-where
-    V: super::VendorEvent,
-{
-    ReturnParameters::LeSetAdvertiseEnable(status)
-}
-
-#[cfg(feature = "version-5-0")]
 fn to_le_set_advertise_enable<V>(status: Status<V::Status>) -> ReturnParameters<V>
 where
     V: super::VendorEvent,

@@ -344,15 +344,6 @@ async fn le_set_scan_response_data_too_long() {
     assert_eq!(err, Error::AdvertisingDataTooLong(32));
 }
 
-#[cfg(not(feature = "version-5-0"))]
-#[tokio::test]
-async fn le_set_advertise_enable() {
-    let mut sink = RecordingSink::new();
-    sink.le_set_advertise_enable(true).await;
-    assert_eq!(sink.written_data, [1, 0x0A, 0x20, 1, 1]);
-}
-
-#[cfg(feature = "version-5-0")]
 #[tokio::test]
 async fn le_set_advertising_enable() {
     let mut sink = RecordingSink::new();
@@ -463,7 +454,6 @@ async fn le_add_device_to_white_list() {
     );
 }
 
-#[cfg(feature = "version-5-0")]
 #[tokio::test]
 async fn le_add_anon_advertising_devices_to_white_list() {
     let mut sink = RecordingSink::new();
@@ -485,7 +475,6 @@ async fn le_remove_device_from_white_list() {
     );
 }
 
-#[cfg(feature = "version-5-0")]
 #[tokio::test]
 async fn le_remove_anon_advertising_devices_from_white_list() {
     let mut sink = RecordingSink::new();

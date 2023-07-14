@@ -23,10 +23,4 @@ defmt = { version = "0.3", optional = true }
 tokio = { version = "1.28.2", features = ["rt", "rt-multi-thread", "macros"] }
 
 [features]
-default = ["version-5-0", "ms"]
 defmt = ["dep:defmt"]
-version-4-1 = []
-version-4-2 = []
-version-5-0 = []
-
-ms = []

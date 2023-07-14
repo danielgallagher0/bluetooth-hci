@@ -129,12 +129,6 @@ pub enum ReturnParameters {
     /// Procedure](crate::gap::Commands::terminate_procedure) command.
     GapTerminateProcedure(crate::Status<crate::vendor::stm32wb::event::Status>),
 
-    #[cfg(not(feature = "ms"))]
-    /// Parameters returned by the [GAP Resolve Private
-    /// Address](crate::gap::Commands::resolve_private_address) command.
-    GapResolvePrivateAddress(crate::Status<crate::vendor::stm32wb::event::Status>),
-
-    #[cfg(feature = "ms")]
     /// Parameters returned by the [GAP Resolve Private
     /// Address](crate::gap::Commands::resolve_private_address) command.
     GapResolvePrivateAddress(GapResolvePrivateAddress),
@@ -143,12 +137,10 @@ pub enum ReturnParameters {
     /// Devices](crate::gap::Commands::get_bonded_devices) command.
     GapGetBondedDevices(GapBondedDevices),
 
-    #[cfg(feature = "ms")]
     /// Parameters returned by the [GAP Set Broadcast
     /// Mode](crate::gap::Commands::set_broadcast_mode) command.
     GapSetBroadcastMode(crate::Status<crate::vendor::stm32wb::event::Status>),
 
-    #[cfg(feature = "ms")]
     /// Parameters returned by the [GAP Start Observation
     /// Procedure](crate::gap::Commands::start_observation_procedure) command.
     GapStartObservationProcedure(crate::Status<crate::vendor::stm32wb::event::Status>),
@@ -228,12 +220,10 @@ pub enum ReturnParameters {
 
     /// Parameters returned by the [GATT Read Handle
     /// Value](crate::vendor::stm32wb::command::gatt::Commands::read_handle_value_offset) command.
-    #[cfg(feature = "ms")]
     GattReadHandleValueOffset(GattHandleValue),
 
     /// Parameters returned by the [GATT Update Long Characteristic
     /// Value](crate::vendor::stm32wb::command::gatt::Commands::update_long_characteristic_value) command.
-    #[cfg(feature = "ms")]
     GattUpdateLongCharacteristicValue(crate::Status<crate::vendor::stm32wb::event::Status>),
 
     /// Status returned by the [L2CAP Connection Parameter Update
@@ -338,53 +328,19 @@ impl crate::event::VendorReturnParameters for ReturnParameters {
                 ReturnParameters::GapTerminateProcedure(to_status(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::GAP_RESOLVE_PRIVATE_ADDRESS => {
-                #[cfg(not(feature = "ms"))]
-                {
-                    Ok(ReturnParameters::GapResolvePrivateAddress(to_status(
-                        &bytes[3..],
-                    )?))
-                }
-
-                #[cfg(feature = "ms")]
-                {
-                    Ok(ReturnParameters::GapResolvePrivateAddress(
-                        to_gap_resolve_private_address(&bytes[3..])?,
-                    ))
-                }
+                Ok(ReturnParameters::GapResolvePrivateAddress(
+                    to_gap_resolve_private_address(&bytes[3..])?,
+                ))
             }
             crate::vendor::stm32wb::opcode::GAP_GET_BONDED_DEVICES => Ok(
                 ReturnParameters::GapGetBondedDevices(to_gap_bonded_devices(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GAP_SET_BROADCAST_MODE => {
-                #[cfg(feature = "ms")]
-                {
-                    Ok(ReturnParameters::GapSetBroadcastMode(to_status(
-                        &bytes[3..],
-                    )?))
-                }
-
-                #[cfg(not(feature = "ms"))]
-                {
-                    Err(crate::event::Error::UnknownOpcode(
-                        crate::vendor::stm32wb::opcode::GAP_SET_BROADCAST_MODE,
-                    ))
-                }
-            }
-            crate::vendor::stm32wb::opcode::GAP_START_OBSERVATION_PROCEDURE => {
-                #[cfg(feature = "ms")]
-                {
-                    Ok(ReturnParameters::GapStartObservationProcedure(to_status(
-                        &bytes[3..],
-                    )?))
-                }
-
-                #[cfg(not(feature = "ms"))]
-                {
-                    Err(crate::event::Error::UnknownOpcode(
-                        crate::vendor::stm32wb::opcode::GAP_START_OBSERVATION_PROCEDURE,
-                    ))
-                }
-            }
+            crate::vendor::stm32wb::opcode::GAP_SET_BROADCAST_MODE => Ok(
+                ReturnParameters::GapSetBroadcastMode(to_status(&bytes[3..])?),
+            ),
+            crate::vendor::stm32wb::opcode::GAP_START_OBSERVATION_PROCEDURE => Ok(
+                ReturnParameters::GapStartObservationProcedure(to_status(&bytes[3..])?),
+            ),
             crate::vendor::stm32wb::opcode::GAP_IS_DEVICE_BONDED => {
                 Ok(ReturnParameters::GapIsDeviceBonded(to_status(&bytes[3..])?))
             }
@@ -444,36 +400,12 @@ impl crate::event::VendorReturnParameters for ReturnParameters {
             crate::vendor::stm32wb::opcode::GATT_READ_HANDLE_VALUE => Ok(
                 ReturnParameters::GattReadHandleValue(to_gatt_handle_value(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GATT_READ_HANDLE_VALUE_OFFSET => {
-                #[cfg(feature = "ms")]
-                {
-                    Ok(ReturnParameters::GattReadHandleValueOffset(
-                        to_gatt_handle_value(&bytes[3..])?,
-                    ))
-                }
-
-                #[cfg(not(feature = "ms"))]
-                {
-                    Err(crate::event::Error::UnknownOpcode(
-                        crate::vendor::stm32wb::opcode::GATT_READ_HANDLE_VALUE_OFFSET,
-                    ))
-                }
-            }
-            crate::vendor::stm32wb::opcode::GATT_UPDATE_LONG_CHARACTERISTIC_VALUE => {
-                #[cfg(feature = "ms")]
-                {
-                    Ok(ReturnParameters::GattUpdateLongCharacteristicValue(
-                        to_status(&bytes[3..])?,
-                    ))
-                }
-
-                #[cfg(not(feature = "ms"))]
-                {
-                    Err(crate::event::Error::UnknownOpcode(
-                        crate::vendor::stm32wb::opcode::GATT_UPDATE_LONG_CHARACTERISTIC_VALUE,
-                    ))
-                }
-            }
+            crate::vendor::stm32wb::opcode::GATT_READ_HANDLE_VALUE_OFFSET => Ok(
+                ReturnParameters::GattReadHandleValueOffset(to_gatt_handle_value(&bytes[3..])?),
+            ),
+            crate::vendor::stm32wb::opcode::GATT_UPDATE_LONG_CHARACTERISTIC_VALUE => Ok(
+                ReturnParameters::GattUpdateLongCharacteristicValue(to_status(&bytes[3..])?),
+            ),
             crate::vendor::stm32wb::opcode::L2CAP_CONN_PARAM_UPDATE_RESP => Ok(
                 ReturnParameters::L2CapConnectionParameterUpdateResponse(to_status(&bytes[3..])?),
             ),
@@ -849,7 +781,6 @@ fn to_gap_security_level(
     })
 }
 
-#[cfg(feature = "ms")]
 /// Parameters returned by the [GAP Resolve Private
 /// Address](crate::gap::Commands::resolve_private_address) command.
 #[derive(Copy, Clone, Debug)]
@@ -863,7 +794,6 @@ pub struct GapResolvePrivateAddress {
     pub bd_addr: Option<crate::BdAddr>,
 }
 
-#[cfg(feature = "ms")]
 fn to_gap_resolve_private_address(
     bytes: &[u8],
 ) -> Result<GapResolvePrivateAddress, crate::event::Error<super::Stm32Wb5xError>> {
