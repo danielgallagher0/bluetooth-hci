@@ -23,7 +23,7 @@ jobs:
           toolchain: nightly
       - run: cargo test --verbose --all
 
-  test_version_5_0_defmt:
+  test_defmt:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
