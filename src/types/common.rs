@@ -5,7 +5,8 @@
 ///
 /// [0]: https://www.bluetooth.com/specifications/assigned-numbers/
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum CommonDataType {
     /// Ref: Core Specification Supplement, Part A, Section 1.3
     Flags = 0x01,

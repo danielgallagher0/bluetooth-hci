@@ -129,8 +129,8 @@ pub trait GattCommands {
     /// complete](crate::event::command::ReturnParameters::GattDeleteCharacteristic) event.
     async fn delete_characteristic(
         &mut self,
-        service: ServiceHandle,
-        characteristic: CharacteristicHandle,
+        service: AttributeHandle,
+        characteristic: AttributeHandle,
     );
 
     /// Delete the service specified from the GATT server database.
@@ -143,7 +143,7 @@ pub trait GattCommands {
     ///
     /// When the command has completed, the controller will generate a [command
     /// complete](crate::event::command::ReturnParameters::GattDeleteService) event.
-    async fn delete_service(&mut self, service: ServiceHandle);
+    async fn delete_service(&mut self, service: AttributeHandle);
 
     /// Delete the Include definition from the service.
     ///
@@ -210,7 +210,7 @@ pub trait GattCommands {
     async fn find_information_request(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        attribute_range: Range<CharacteristicHandle>,
+        attribute_range: Range<AttributeHandle>,
     );
 
     /// Post the Find by type value request.
@@ -368,7 +368,7 @@ pub trait GattCommands {
     async fn find_included_services(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        service_handle_range: Range<ServiceHandle>,
+        service_handle_range: Range<AttributeHandle>,
     );
 
     /// Start the procedure to discover all the characteristics of a given service.
@@ -387,7 +387,7 @@ pub trait GattCommands {
     async fn discover_all_characteristics_of_service(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        attribute_handle_range: Range<CharacteristicHandle>,
+        attribute_handle_range: Range<AttributeHandle>,
     );
 
     /// Start the procedure to discover all the characteristics specified by the UUID.
@@ -407,7 +407,7 @@ pub trait GattCommands {
     async fn discover_characteristics_by_uuid(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        attribute_handle_range: Range<CharacteristicHandle>,
+        attribute_handle_range: Range<AttributeHandle>,
         uuid: Uuid,
     );
 
@@ -427,7 +427,7 @@ pub trait GattCommands {
     async fn discover_all_characteristic_descriptors(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        characteristic_handle_range: Range<CharacteristicHandle>,
+        characteristic_handle_range: Range<AttributeHandle>,
     );
 
     /// Start the procedure to read the attribute value.
@@ -446,7 +446,7 @@ pub trait GattCommands {
     async fn read_characteristic_value(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        characteristic_handle: CharacteristicHandle,
+        characteristic_handle: AttributeHandle,
     );
 
     /// Start the procedure to read all the characteristics specified by the UUID.
@@ -466,7 +466,7 @@ pub trait GattCommands {
     async fn read_characteristic_using_uuid(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        characteristic_handle_range: Range<CharacteristicHandle>,
+        characteristic_handle_range: Range<AttributeHandle>,
         uuid: Uuid,
     );
 
@@ -645,7 +645,7 @@ pub trait GattCommands {
     async fn read_characteristic_descriptor(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        characteristic_handle: CharacteristicHandle,
+        characteristic_handle: AttributeHandle,
     );
 
     /// Start the procedure to write a characteristic value without waiting for any response from
@@ -769,18 +769,6 @@ pub trait GattCommands {
         params: &DescriptorValueParameters<'_>,
     ) -> Result<(), Error>;
 
-    /// Reads the value of the attribute handle specified from the local GATT database.
-    ///
-    /// # Errors
-    ///
-    /// Only underlying communication errors are reported.
-    ///
-    /// # Generated events
-    ///
-    /// A [command complete](crate::event::command::ReturnParameters::GattReadHandleValue) event is
-    /// generated when this command is processed.
-    async fn read_handle_value(&mut self, handle: CharacteristicHandle);
-
     /// The command returns the value of the attribute handle from the specified offset.
     ///
     /// If the length to be returned is greater than 128, then only 128 bytes are
@@ -796,10 +784,10 @@ pub trait GattCommands {
     ///
     /// A [command complete](crate::event::command::ReturnParameters::GattReadHandleValueOffset)
     /// event is generated when this command is processed.
-    #[cfg(feature = "ms")]
-    async fn read_handle_value_offset(&mut self, handle: CharacteristicHandle, offset: usize);
+    async fn read_handle_value_offset(&mut self, handle: AttributeHandle, offset: usize);
 
-    /// Update the Attribute Value of a Characteristic belonging to a specified service.
+    /// This is a more flexible version of ACI_GATT_UPDATE_CHAR_VALUE tp support update of Long
+    /// attribute up to 512 bytes and indicate selectively the generation of Indication/Notification
     ///
     /// This command is an extension of the
     /// [`update_characteristic_value`](Commands::update_characteristic_value) command and supports
@@ -815,10 +803,9 @@ pub trait GattCommands {
     ///
     /// When the command has completed, the controller will generate a [command
     /// complete](crate::event::command::ReturnParameters::GattUpdateLongCharacteristicValue) event.
-    #[cfg(feature = "ms")]
-    async fn update_long_characteristic_value(
+    async fn update_characteristic_value_ext(
         &mut self,
-        params: &UpdateLongCharacteristicValueParameters<'_>,
+        params: &UpdateCharacteristicValueExt<'_>,
     ) -> Result<(), Error>;
 }
 
@@ -860,8 +847,8 @@ impl<T: Controller> GattCommands for T {
 
     async fn delete_characteristic(
         &mut self,
-        service: ServiceHandle,
-        characteristic: CharacteristicHandle,
+        service: AttributeHandle,
+        characteristic: AttributeHandle,
     ) {
         let mut bytes = [0; 4];
         LittleEndian::write_u16(&mut bytes[0..2], service.0);
@@ -874,7 +861,7 @@ impl<T: Controller> GattCommands for T {
         .await
     }
 
-    async fn delete_service(&mut self, service: ServiceHandle) {
+    async fn delete_service(&mut self, service: AttributeHandle) {
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes[0..2], service.0);
 
@@ -908,7 +895,7 @@ impl<T: Controller> GattCommands for T {
     async fn find_information_request(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        attribute_range: Range<CharacteristicHandle>,
+        attribute_range: Range<AttributeHandle>,
     ) {
         let mut bytes = [0; 6];
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
@@ -1000,7 +987,7 @@ impl<T: Controller> GattCommands for T {
     async fn find_included_services(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        service_handle_range: Range<ServiceHandle>,
+        service_handle_range: Range<AttributeHandle>,
     ) {
         let mut bytes = [0; 6];
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
@@ -1017,7 +1004,7 @@ impl<T: Controller> GattCommands for T {
     async fn discover_all_characteristics_of_service(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        attribute_handle_range: Range<CharacteristicHandle>,
+        attribute_handle_range: Range<AttributeHandle>,
     ) {
         let mut bytes = [0; 6];
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
@@ -1034,7 +1021,7 @@ impl<T: Controller> GattCommands for T {
     async fn discover_characteristics_by_uuid(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        attribute_handle_range: Range<CharacteristicHandle>,
+        attribute_handle_range: Range<AttributeHandle>,
         uuid: Uuid,
     ) {
         let mut bytes = [0; 23];
@@ -1053,7 +1040,7 @@ impl<T: Controller> GattCommands for T {
     async fn discover_all_characteristic_descriptors(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        characteristic_handle_range: Range<CharacteristicHandle>,
+        characteristic_handle_range: Range<AttributeHandle>,
     ) {
         let mut bytes = [0; 6];
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
@@ -1070,7 +1057,7 @@ impl<T: Controller> GattCommands for T {
     async fn read_characteristic_value(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        characteristic_handle: CharacteristicHandle,
+        characteristic_handle: AttributeHandle,
     ) {
         let mut bytes = [0; 4];
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
@@ -1086,7 +1073,7 @@ impl<T: Controller> GattCommands for T {
     async fn read_characteristic_using_uuid(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        characteristic_handle_range: Range<CharacteristicHandle>,
+        characteristic_handle_range: Range<AttributeHandle>,
         uuid: Uuid,
     ) {
         let mut bytes = [0; 23];
@@ -1153,7 +1140,7 @@ impl<T: Controller> GattCommands for T {
     async fn read_characteristic_descriptor(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        characteristic_handle: CharacteristicHandle,
+        characteristic_handle: AttributeHandle,
     ) {
         let mut bytes = [0; 4];
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
@@ -1215,19 +1202,7 @@ impl<T: Controller> GattCommands for T {
         crate::vendor::stm32wb::opcode::GATT_SET_DESCRIPTOR_VALUE
     );
 
-    async fn read_handle_value(&mut self, handle: CharacteristicHandle) {
-        let mut bytes = [0; 2];
-        LittleEndian::write_u16(&mut bytes, handle.0);
-
-        self.controller_write(
-            crate::vendor::stm32wb::opcode::GATT_READ_HANDLE_VALUE,
-            &bytes,
-        )
-        .await
-    }
-
-    #[cfg(feature = "ms")]
-    async fn read_handle_value_offset(&mut self, handle: CharacteristicHandle, offset: usize) {
+    async fn read_handle_value_offset(&mut self, handle: AttributeHandle, offset: usize) {
         let mut bytes = [0; 3];
         LittleEndian::write_u16(&mut bytes, handle.0);
         bytes[2] = offset as u8;
@@ -1239,10 +1214,9 @@ impl<T: Controller> GattCommands for T {
         .await
     }
 
-    #[cfg(feature = "ms")]
     impl_validate_variable_length_params!(
-        update_long_characteristic_value<'a>,
-        UpdateLongCharacteristicValueParameters<'a>,
+        update_characteristic_value_ext<'a>,
+        UpdateCharacteristicValueExt<'a>,
         crate::vendor::stm32wb::opcode::GATT_UPDATE_LONG_CHARACTERISTIC_VALUE
     );
 }
@@ -1252,7 +1226,8 @@ impl<T: Controller> GattCommands for T {
 /// Before some commands are sent to the controller, the parameters are validated. This type
 /// enumerates the potential validation errors. Must be specialized on the types of communication
 /// errors.
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Error {
     /// For the [Add Characteristic Descriptor](Commands::add_characteristic_descriptor) command:
     /// the [descriptor value](AddDescriptorParameters::descriptor_value) is longer than the
@@ -1304,7 +1279,8 @@ impl AddServiceParameters {
 }
 
 /// Types of UUID
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Uuid {
     /// 16-bit UUID
     Uuid16(u16),
@@ -1339,7 +1315,7 @@ impl Uuid {
 /// Types of GATT services
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[repr(u8)]
-#[derive(defmt::Format)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum ServiceType {
     /// Primary service
     Primary = 0x01,
@@ -1350,10 +1326,10 @@ pub enum ServiceType {
 /// Parameters for the [GATT Include Service](Commands::include_service) command.
 pub struct IncludeServiceParameters {
     /// Handle of the service to which another service has to be included
-    pub service_handle: ServiceHandle,
+    pub service_handle: AttributeHandle,
 
     /// Range of handles of the service which has to be included in the service.
-    pub include_handle_range: Range<ServiceHandle>,
+    pub include_handle_range: Range<AttributeHandle>,
 
     /// UUID of the included service
     pub include_uuid: Uuid,
@@ -1374,10 +1350,6 @@ impl IncludeServiceParameters {
     }
 }
 
-/// Handle for GATT Services.
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, defmt::Format)]
-pub struct ServiceHandle(pub u16);
-
 /// Two ordered points that represent a range. The points may be identical to represent a range with
 /// only one value.
 pub struct Range<T> {
@@ -1391,7 +1363,7 @@ impl<T: PartialOrd> Range<T> {
     /// # Errors
     ///
     /// - [Inverted](RangeError::Inverted) if the beginning value is greater than the ending value.
-    pub async fn new(from: T, to: T) -> Result<Self, RangeError> {
+    pub fn new(from: T, to: T) -> Result<Self, RangeError> {
         if to < from {
             return Err(RangeError::Inverted);
         }
@@ -1401,7 +1373,8 @@ impl<T: PartialOrd> Range<T> {
 }
 
 /// Potential errors that can occer when creating a [Range].
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum RangeError {
     /// The beginning of the range came after the end.
     Inverted,
@@ -1410,13 +1383,13 @@ pub enum RangeError {
 /// Parameters for the [GATT Add Characteristic](Commands::add_characteristic) command.
 pub struct AddCharacteristicParameters {
     /// Handle of the service to which the characteristic has to be added
-    pub service_handle: ServiceHandle,
+    pub service_handle: AttributeHandle,
 
     /// UUID of the characteristic
     pub characteristic_uuid: Uuid,
 
     /// Maximum length of the characteristic value
-    pub characteristic_value_len: usize,
+    pub characteristic_value_len: u16,
 
     /// Properties of the characteristic (defined in Volume 3, Part G, Section 3.3.3.1 of Bluetooth
     /// Specification 4.1)
@@ -1434,11 +1407,6 @@ pub struct AddCharacteristicParameters {
     /// If true, the attribute has a variable length value field. Otherwise, the value field length
     /// is fixed.
     pub is_variable: bool,
-
-    /// If true, the
-    /// [`characteristic_value_len`](AddCharacteristicParameters::characteristic_value_len)
-    /// parameter only takes 1 byte.
-    pub fw_version_before_v72: bool,
 }
 
 impl AddCharacteristicParameters {
@@ -1449,28 +1417,66 @@ impl AddCharacteristicParameters {
 
         LittleEndian::write_u16(&mut bytes[0..2], self.service_handle.0);
         let uuid_len = self.characteristic_uuid.copy_into_slice(&mut bytes[2..19]);
-        let mut next = 2 + uuid_len;
-        if self.fw_version_before_v72 {
-            bytes[next] = self.characteristic_value_len as u8;
-            next += 1;
-        } else {
-            LittleEndian::write_u16(
-                &mut bytes[next..next + 2],
-                self.characteristic_value_len as u16,
-            );
-            next += 2;
-        }
-        let next = next;
-        bytes[next] = self.characteristic_properties.bits();
-        bytes[next + 1] = self.security_permissions.bits();
-        bytes[next + 2] = self.gatt_event_mask.bits();
-        bytes[next + 3] = self.encryption_key_size.0;
-        bytes[next + 4] = self.is_variable as u8;
+        let next = 2 + uuid_len;
+        LittleEndian::write_u16(&mut bytes[next..next + 2], self.characteristic_value_len);
+        bytes[next + 2] = self.characteristic_properties.bits();
+        bytes[next + 3] = self.security_permissions.bits();
+        bytes[next + 4] = self.gatt_event_mask.bits();
+        bytes[next + 5] = self.encryption_key_size.0;
+        bytes[next + 6] = self.is_variable as u8;
 
-        next + 5
+        next + 6
     }
 }
 
+#[cfg(not(feature = "defmt"))]
+bitflags::bitflags! {
+    /// Available [properties](AddCharacteristicParameters::characteristic_properties) for
+    /// characteristics. Defined in Volume 3, Part G, Section 3.3.3.1 of Bluetooth Specification
+    /// 4.1.
+    pub struct CharacteristicProperty: u8 {
+        /// If set, permits broadcasts of the Characteristic Value using Server Characteristic
+        /// Configuration Descriptor. If set, the Server Characteristic Configuration Descriptor
+        /// shall exist.
+        const BROADCAST = 0x01;
+
+        /// If set, permits reads of the Characteristic Value using procedures defined in Volume 3,
+        /// Part G, Section 4.8 of the Bluetooth specification 4.1.
+        const READ = 0x02;
+
+        /// If set, permit writes of the Characteristic Value without response using procedures
+        /// defined in Volume 3, Part G, Section 4.9.1 of the Bluetooth specification 4.1.
+        const WRITE_WITHOUT_RESPONSE = 0x04;
+
+        /// If set, permits writes of the Characteristic Value with response using procedures
+        /// defined in Volume 3, Part Section 4.9.3 or Section 4.9.4 of the Bluetooth
+        /// specification 4.1.
+        const WRITE = 0x08;
+
+        /// If set, permits notifications of a Characteristic Value without acknowledgement using
+        /// the procedure defined in Volume 3, Part G, Section 4.10 of the Bluetooth specification
+        /// 4.1. If set, the Client Characteristic Configuration Descriptor shall exist.
+        const NOTIFY = 0x10;
+
+        /// If set, permits indications of a Characteristic Value with acknowledgement using the
+        /// procedure defined in Volume 3, Part G, Section 4.11 of the Bluetooth specification
+        /// 4.1. If set, the Client Characteristic Configuration Descriptor shall exist.
+        const INDICATE = 0x20;
+
+        /// If set, permits signed writes to the Characteristic Value using the Signed Writes
+        /// procedure defined in Volume 3, Part G, Section 4.9.2 of the Bluetooth specification
+        /// 4.1.
+        const AUTHENTICATED = 0x40;
+
+        /// If set, additional characteristic properties are defined in the Characteristic Extended
+        /// Properties Descriptor defined in Volume 3, Part G, Section 3.3.3.1 of the Bluetooth
+        /// specification 4.1. If set, the Characteristic Extended Properties Descriptor shall
+        /// exist.
+        const EXTENDED_PROPERTIES = 0x80;
+    }
+}
+
+#[cfg(feature = "defmt")]
 defmt::bitflags! {
     /// Available [properties](AddCharacteristicParameters::characteristic_properties) for
     /// characteristics. Defined in Volume 3, Part G, Section 3.3.3.1 of Bluetooth Specification
@@ -1517,6 +1523,32 @@ defmt::bitflags! {
     }
 }
 
+#[cfg(not(feature = "defmt"))]
+bitflags::bitflags! {
+    /// [Permissions](AddCharacteristicParameter::security_permissions) available for
+    /// characteristics.
+    pub struct CharacteristicPermission: u8 {
+        /// Need authentication to read.
+        const AUTHENTICATED_READ = 0x01;
+
+        /// Need authorization to read.
+        const AUTHORIZED_READ = 0x02;
+
+        /// Link should be encrypted to read.
+        const ENCRYPTED_READ = 0x04;
+
+        /// Need authentication to write.
+        const AUTHENTICATED_WRITE = 0x08;
+
+        /// Need authorization to write.
+        const AUTHORIZED_WRITE = 0x10;
+
+        /// Link should be encrypted for write.
+        const ENCRYPTED_WRITE = 0x20;
+    }
+}
+
+#[cfg(feature = "defmt")]
 defmt::bitflags! {
     /// [Permissions](AddCharacteristicParameter::security_permissions) available for
     /// characteristics.
@@ -1541,6 +1573,24 @@ defmt::bitflags! {
     }
 }
 
+#[cfg(not(feature = "defmt"))]
+bitflags::bitflags! {
+    /// Which events may be generated when a characteristic is accessed.
+    pub struct CharacteristicEvent: u8 {
+        /// The application will be notified when a client writes to this attribute.
+        const ATTRIBUTE_WRITE = 0x01;
+
+        /// The application will be notified when a write request/write command/signed write command
+        /// is received by the server for this attribute.
+        const CONFIRM_WRITE = 0x02;
+
+        /// The application will be notified when a read request of any type is got for this
+        /// attribute.
+        const CONFIRM_READ = 0x04;
+    }
+}
+
+#[cfg(feature = "defmt")]
 defmt::bitflags! {
     /// Which events may be generated when a characteristic is accessed.
     pub struct CharacteristicEvent: u8 {
@@ -1568,7 +1618,7 @@ impl EncryptionKeySize {
     ///
     /// - [TooShort](EncryptionKeySizeError::TooShort) if the provided size is less than 7.
     /// - [TooLong](EncryptionKeySizeError::TooLong) if the provided size is greater than 16.
-    pub async fn with_value(sz: usize) -> Result<Self, EncryptionKeySizeError> {
+    pub fn with_value(sz: usize) -> Result<Self, EncryptionKeySizeError> {
         const MIN: usize = 7;
         const MAX: usize = 16;
 
@@ -1584,13 +1634,14 @@ impl EncryptionKeySize {
     }
 
     /// Retrieve the key size.
-    pub async fn value(&self) -> usize {
+    pub fn value(&self) -> usize {
         self.0 as usize
     }
 }
 
 /// Errors that can occur when creating an [`EncryptionKeySize`].
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum EncryptionKeySizeError {
     /// The provided size was less than the minimum allowed size.
     TooShort,
@@ -1598,18 +1649,14 @@ pub enum EncryptionKeySizeError {
     TooLong,
 }
 
-/// Handle for GATT characteristics.
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, defmt::Format)]
-pub struct CharacteristicHandle(pub u16);
-
 /// Parameters for the [GATT Add Characteristic Descriptor](Commands::add_characteristic_descriptor)
 /// command.
 pub struct AddDescriptorParameters<'a> {
     /// Handle of the service to which characteristic belongs.
-    pub service_handle: ServiceHandle,
+    pub service_handle: AttributeHandle,
 
     /// Handle of the characteristic to which description is to be added.
-    pub characteristic_handle: CharacteristicHandle,
+    pub characteristic_handle: AttributeHandle,
 
     /// UUID of the characteristic descriptor.
     ///
@@ -1679,7 +1726,7 @@ impl<'a> AddDescriptorParameters<'a> {
 
 /// Common characteristic descriptor UUIDs.
 #[repr(u16)]
-#[derive(defmt::Format)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum KnownDescriptor {
     /// Characteristic Extended Properties Descriptor
     CharacteristicExtendedProperties = 0x2900,
@@ -1701,6 +1748,22 @@ impl From<KnownDescriptor> for Uuid {
     }
 }
 
+#[cfg(not(feature = "defmt"))]
+bitflags::bitflags! {
+    /// Permissions available for characteristic descriptors.
+    pub struct DescriptorPermission: u8 {
+        /// Authentication required.
+        const AUTHENTICATED = 0x01;
+
+        /// Authorization required.
+        const AUTHORIZED = 0x02;
+
+        /// Encryption required.
+        const ENCRYPTED = 0x04;
+    }
+}
+
+#[cfg(feature = "defmt")]
 defmt::bitflags! {
     /// Permissions available for characteristic descriptors.
     pub struct DescriptorPermission: u8 {
@@ -1715,6 +1778,22 @@ defmt::bitflags! {
     }
 }
 
+#[cfg(not(feature = "defmt"))]
+bitflags::bitflags! {
+    /// Types of access for characteristic descriptors
+    pub struct AccessPermission: u8 {
+        /// Readable
+        const READ = 0x01;
+
+        /// Writable
+        const WRITE = 0x02;
+
+        /// Readable and writeable
+        const READ_WRITE = Self::READ.bits() | Self::WRITE.bits();
+    }
+}
+
+#[cfg(feature = "defmt")]
 defmt::bitflags! {
     /// Types of access for characteristic descriptors
     pub struct AccessPermission: u8 {
@@ -1729,18 +1808,14 @@ defmt::bitflags! {
     }
 }
 
-/// Handle for GATT characteristic descriptors.
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
-pub struct DescriptorHandle(pub u16);
-
 /// Parameters for the [Update Characteristic Value](Commands::update_characteristic_value)
 /// command.
 pub struct UpdateCharacteristicValueParameters<'a> {
     /// Handle of the service to which characteristic belongs.
-    pub service_handle: ServiceHandle,
+    pub service_handle: AttributeHandle,
 
     /// Handle of the characteristic.
-    pub characteristic_handle: CharacteristicHandle,
+    pub characteristic_handle: AttributeHandle,
 
     /// The offset from which the attribute value has to be updated. If this is set to 0, and the
     /// attribute value is of [variable length](AddCharacteristicParameters::is_variable), then the
@@ -1783,10 +1858,10 @@ impl<'a> UpdateCharacteristicValueParameters<'a> {
 /// Parameters for the [GATT Delete Included Service](Commands::delete_included_service) command.
 pub struct DeleteIncludedServiceParameters {
     /// Handle of the service to which Include definition belongs
-    pub service: ServiceHandle,
+    pub service: AttributeHandle,
 
     /// Handle of the Included definition to be deleted.
-    pub included_service: ServiceHandle,
+    pub included_service: AttributeHandle,
 }
 
 impl DeleteIncludedServiceParameters {
@@ -1800,6 +1875,53 @@ impl DeleteIncludedServiceParameters {
     }
 }
 
+#[cfg(not(feature = "defmt"))]
+bitflags::bitflags! {
+    /// Flags for individual events that can be masked by the [GATT Set Event
+    /// Mask](Commands::set_event_mask) command.
+    pub struct Event: u32 {
+        /// [GATT Attribute Modified](crate::event::BlueNRGEvent::GattAttributeModified).
+        const ATTRIBUTE_MODIFIED = 0x0000_0001;
+        /// [GATT Procedure Timeout](crate::event::BlueNRGEvent::GattProcedureTimeout).
+        const PROCEDURE_TIMEOUT = 0x0000_0002;
+        /// [ATT Exchange MTU Response](crate::event::BlueNRGEvent::AttExchangeMtuResponse).
+        const EXCHANGE_MTU_RESPONSE = 0x0000_0004;
+        /// [ATT Find Information Response](crate::event::BlueNRGEvent::AttFindInformationResponse).
+        const FIND_INFORMATION_RESPONSE = 0x0000_0008;
+        /// [ATT Find By Type Value
+        /// Response](crate::event::BlueNRGEvent::AttFindByTypeValueResponse).
+        const FIND_BY_TYPE_VALUE_RESPONSE = 0x0000_0010;
+        /// [ATT Find By Type Response](crate::event::BlueNRGEvent::AttFindByTypeResponse).
+        const READ_BY_TYPE_RESPONSE = 0x0000_0020;
+        /// [ATT Read Response](crate::event::BlueNRGEvent::AttReadResponse).
+        const READ_RESPONSE = 0x0000_0040;
+        /// [ATT Read Blob Response](crate::event::BlueNRGEvent::AttReadBlobResponse).
+        const READ_BLOB_RESPONSE = 0x0000_0080;
+        /// [ATT Read Multiple Response](crate::event::BlueNRGEvent::AttReadMultipleResponse).
+        const READ_MULTIPLE_RESPONSE = 0x0000_0100;
+        /// [ATT Read By Group](crate::event::BlueNRGEvent::AttReadByGroupTypeResponse).
+        const READ_BY_GROUP_RESPONSE = 0x0000_0200;
+        /// [ATT Prepare Write Response](crate::event::BlueNRGEvent::AttPrepareWriteResponse).
+        const PREPARE_WRITE_RESPONSE = 0x0000_0800;
+        /// [ATT Execute Write Response](crate::event::BlueNRGEvent::AttExecuteWriteResponse).
+        const EXECUTE_WRITE_RESPONSE = 0x0000_1000;
+        /// [GATT Indication](crate::event::BlueNRGEvent::GattIndication).
+        const INDICATION = 0x0000_2000;
+        /// [GATT Notification](crate::event::BlueNRGEvent::GattNotification).
+        const NOTIFICATION = 0x0000_4000;
+        /// [GATT Error Response](crate::event::BlueNRGEvent::AttErrorResponse).
+        const ERROR_RESPONSE = 0x0000_8000;
+        /// [GATT Procedure Complete](crate::event::BlueNRGEvent::GattProcedureComplete).
+        const PROCEDURE_COMPLETE = 0x0001_0000;
+        /// [GATT Discover Characteristic by UUID or Read Using Characteristic
+        /// UUID](crate::event::BlueNRGEvent::GattDiscoverOrReadCharacteristicByUuidResponse).
+        const DISCOVER_OR_READ_CHARACTERISTIC_BY_UUID_RESPONSE = 0x0002_0000;
+        /// [GATT Tx Pool Available](crate::event::BlueNRGEvent::GattTxPoolAvailable)
+        const TX_POOL_AVAILABLE = 0x0004_0000;
+    }
+}
+
+#[cfg(feature = "defmt")]
 defmt::bitflags! {
     /// Flags for individual events that can be masked by the [GATT Set Event
     /// Mask](Commands::set_event_mask) command.
@@ -1840,7 +1962,6 @@ defmt::bitflags! {
         /// [GATT Discover Characteristic by UUID or Read Using Characteristic
         /// UUID](crate::event::BlueNRGEvent::GattDiscoverOrReadCharacteristicByUuidResponse).
         const DISCOVER_OR_READ_CHARACTERISTIC_BY_UUID_RESPONSE = 0x0002_0000;
-        #[cfg(feature = "ms")]
         /// [GATT Tx Pool Available](crate::event::BlueNRGEvent::GattTxPoolAvailable)
         const TX_POOL_AVAILABLE = 0x0004_0000;
     }
@@ -1863,7 +1984,7 @@ pub struct FindByTypeValueParameters<'a> {
     pub conn_handle: crate::ConnectionHandle,
 
     /// Range of attributes to be discovered on the server.
-    pub attribute_handle_range: Range<CharacteristicHandle>,
+    pub attribute_handle_range: Range<AttributeHandle>,
 
     /// UUID to find.
     pub uuid: Uuid16,
@@ -1910,7 +2031,7 @@ pub struct ReadByTypeParameters {
     pub conn_handle: crate::ConnectionHandle,
 
     /// Range of values to be read on the server.
-    pub attribute_handle_range: Range<CharacteristicHandle>,
+    pub attribute_handle_range: Range<AttributeHandle>,
 
     /// UUID of the attribute.
     pub uuid: Uuid,
@@ -1975,7 +2096,7 @@ pub struct LongCharacteristicReadParameters {
     pub conn_handle: crate::ConnectionHandle,
 
     /// Handle of the characteristic to be read
-    pub attribute: CharacteristicHandle,
+    pub attribute: AttributeHandle,
 
     /// Offset from which the value needs to be read.
     pub offset: usize,
@@ -2000,7 +2121,7 @@ pub struct MultipleCharacteristicReadParameters<'a> {
     /// The handles for which the attribute value has to be read.
     ///
     /// The maximum length is 126 handles.
-    pub handles: &'a [CharacteristicHandle],
+    pub handles: &'a [AttributeHandle],
 }
 
 impl<'a> MultipleCharacteristicReadParameters<'a> {
@@ -2036,7 +2157,7 @@ pub struct CharacteristicValue<'a> {
     pub conn_handle: crate::ConnectionHandle,
 
     /// Handle of the characteristic to be written.
-    pub characteristic_handle: CharacteristicHandle,
+    pub characteristic_handle: AttributeHandle,
 
     /// Value to be written. The maximum length is 250 bytes.
     pub value: &'a [u8],
@@ -2076,7 +2197,7 @@ pub struct LongCharacteristicValue<'a> {
     pub conn_handle: crate::ConnectionHandle,
 
     /// Handle of the characteristic to be written.
-    pub characteristic_handle: CharacteristicHandle,
+    pub characteristic_handle: AttributeHandle,
 
     /// Offset at which the attribute has to be written.
     pub offset: usize,
@@ -2170,10 +2291,10 @@ impl<'a> WriteResponseParameters<'a> {
 pub struct SecurityPermissionParameters {
     /// Handle of the service which contains the attribute whose security permission has to be
     /// modified.
-    pub service_handle: ServiceHandle,
+    pub service_handle: AttributeHandle,
 
     /// Handle of the attribute whose security permission has to be modified.
-    pub attribute_handle: CharacteristicHandle,
+    pub attribute_handle: AttributeHandle,
 
     /// Security requirements for the attribute.
     pub permission: CharacteristicPermission,
@@ -2194,13 +2315,13 @@ impl SecurityPermissionParameters {
 /// Parameters for the [Set Descriptor Value](Commands::set_descriptor_value) command.
 pub struct DescriptorValueParameters<'a> {
     /// Handle of the service which contains the descriptor.
-    pub service_handle: ServiceHandle,
+    pub service_handle: AttributeHandle,
 
     /// Handle of the characteristic which contains the descriptor.
-    pub characteristic_handle: CharacteristicHandle,
+    pub characteristic_handle: AttributeHandle,
 
     /// Handle of the descriptor whose value has to be set.
-    pub descriptor_handle: DescriptorHandle,
+    pub descriptor_handle: AttributeHandle,
 
     /// Offset from which the descriptor value has to be updated.
     pub offset: usize,
@@ -2239,13 +2360,15 @@ impl<'a> DescriptorValueParameters<'a> {
 
 /// Parameters for the [Update Long Characteristic
 /// Value](Commands::update_long_characteristic_value) command.
-#[cfg(feature = "ms")]
-pub struct UpdateLongCharacteristicValueParameters<'a> {
+pub struct UpdateCharacteristicValueExt<'a> {
+    /// Specifies the client(s) to be notified
+    pub conn_handle_to_notify: ConnectionHandleToNotify,
+
     /// Handle of the service to which characteristic belongs.
-    pub service_handle: ServiceHandle,
+    pub service_handle: AttributeHandle,
 
     /// Handle of the characteristic.
-    pub characteristic_handle: CharacteristicHandle,
+    pub characteristic_handle: AttributeHandle,
 
     /// Controls whether an indication, notification, both, or neither is generated by the attribute
     /// update.
@@ -2264,8 +2387,7 @@ pub struct UpdateLongCharacteristicValueParameters<'a> {
     pub value: &'a [u8],
 }
 
-#[cfg(feature = "ms")]
-impl<'a> UpdateLongCharacteristicValueParameters<'a> {
+impl<'a> UpdateCharacteristicValueExt<'a> {
     const MAX_LENGTH: usize = 255;
 
     fn validate(&self) -> Result<(), Error> {
@@ -2279,23 +2401,50 @@ impl<'a> UpdateLongCharacteristicValueParameters<'a> {
     fn copy_into_slice(&self, bytes: &mut [u8]) -> usize {
         assert!(bytes.len() >= self.len());
 
-        LittleEndian::write_u16(&mut bytes[0..2], self.service_handle.0);
-        LittleEndian::write_u16(&mut bytes[2..4], self.characteristic_handle.0);
-        bytes[4] = self.update_type.bits();
-        LittleEndian::write_u16(&mut bytes[5..7], self.total_len as u16);
-        LittleEndian::write_u16(&mut bytes[7..9], self.offset as u16);
-        bytes[9] = self.value.len() as u8;
-        bytes[10..self.len()].copy_from_slice(self.value);
+        LittleEndian::write_u16(&mut bytes[0..2], self.conn_handle_to_notify as u16);
+        LittleEndian::write_u16(&mut bytes[2..4], self.service_handle.0);
+        LittleEndian::write_u16(&mut bytes[4..6], self.characteristic_handle.0);
+        bytes[6] = self.update_type.bits();
+        LittleEndian::write_u16(&mut bytes[7..9], self.total_len as u16);
+        LittleEndian::write_u16(&mut bytes[9..11], self.offset as u16);
+        bytes[11] = self.value.len() as u8;
+        bytes[12..self.len()].copy_from_slice(self.value);
 
         self.len()
     }
 
     fn len(&self) -> usize {
-        10 + self.value.len()
+        12 + self.value.len()
     }
 }
 
-#[cfg(feature = "ms")]
+#[derive(Clone, Copy)]
+pub enum ConnectionHandleToNotify {
+    /// Notify all subscribed clients on their unenhanced ATT bearer
+    NotifyAll = 0x0000,
+    /// Notify one client on the specified unenhanced ATT bearer (the parameter us the
+    /// connection handle)
+    NotifyOneUnenhanced = 0x0EFF,
+    /// Notfiy one client on the specified enhanced ATT bearer (the LST-byte of the
+    /// parameter is the connection-oriented channel index)
+    NotifyOneEnhanced = 0xEA1F,
+}
+
+#[cfg(not(feature = "defmt"))]
+bitflags::bitflags! {
+    /// Flags for types of updates that the controller should signal when a characteristic value is
+    /// [updated](Commands::update_long_characteristic_value).
+    pub struct UpdateType: u8 {
+        /// A notification can be sent if enabled in the client characteristic configuration
+        /// descriptor.
+        const NOTIFICATION = 0x01;
+        /// An indication can be sent if enabled in the client characteristic configuration
+        /// descriptor.
+        const INDICATION = 0x02;
+    }
+}
+
+#[cfg(feature = "defmt")]
 defmt::bitflags! {
     /// Flags for types of updates that the controller should signal when a characteristic value is
     /// [updated](Commands::update_long_characteristic_value).

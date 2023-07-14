@@ -12,7 +12,8 @@ const PACKET_TYPE_HCI_EVENT: u8 = 0x04;
 /// Potential errors from reading or writing packets to the controller.
 ///
 /// Must be specialized both for communication errors (`E`) and vendor-specific errors (`VE`).
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Error<VE> {
     /// The host expected the controller to begin a packet, but the next byte is not a valid packet
     /// type byte. Contains the value of the byte.
@@ -22,7 +23,8 @@ pub enum Error<VE> {
 }
 
 /// Packet types that may be read from the controller.
-#[derive(Clone, Debug, defmt::Format)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Packet<Vendor>
 where
     Vendor: crate::event::VendorEvent,

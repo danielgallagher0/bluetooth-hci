@@ -494,54 +494,6 @@ pub trait HostHci {
     /// advertisements as per the advertising parameters given in the
     /// [`le_set_advertising_parameters`](Hci::le_set_advertising_parameters) command.
     ///
-    /// The Controller shall continue advertising until the Host issues this command with enable set
-    /// to `false` (Advertising is disabled) or until a connection is created or until the
-    /// advertising is timed out due to high duty cycle directed advertising. In these cases,
-    /// advertising is then disabled.
-    ///
-    /// This function is renamed `le_set_advertising_enable` in Bluetooth v5.0.
-    ///
-    /// See the Bluetooth spec, Vol 2, Part E, Section 7.8.9, in versions 4.1 and 4.2.
-    ///
-    /// # Errors
-    ///
-    /// Only underlying communication errors are reported.
-    ///
-    /// # Generated events
-    ///
-    /// When the command has completed, a [Command
-    /// Complete](crate::event::command::ReturnParameters::LeSetAdvertiseEnable) event shall be
-    /// generated.
-    ///
-    /// If the [advertising type](AdvertisingInterval::for_type) is
-    /// [`ConnectableDirectedHighDutyCycle`](AdvertisingType::ConnectableDirectedHighDutyCycle) and
-    /// the directed advertising fails to create a connection, an [LE Connection
-    /// Complete](crate::event::Event::LeConnectionComplete) event shall be generated with the
-    /// Status code set to [`AdvertisingTimeout`](Status::AdvertisingTimeout).
-    ///
-    /// If the [advertising type](AdvertisingInterval::for_type) is
-    /// [`ConnectableUndirected`](AdvertisingType::ConnectableUndirected),
-    /// [`ConnectableDirectedHighDutyCycle`](AdvertisingType::ConnectableDirectedHighDutyCycle), or
-    /// [`ConnectableDirectedLowDutyCycle`](AdvertisingType::ConnectableDirectedLowDutyCycle) and a
-    /// connection is established, an [LE Connection
-    /// Complete](crate::event::Event::LeConnectionComplete) event shall be generated.
-    ///
-    /// Note: There is a possible race condition if `enable` is set to false (Disable) and the
-    /// [advertising type](AdvertisingInterval::for_type) is
-    /// [`ConnectableUndirected`](AdvertisingType::ConnectableUndirected),
-    /// [`ConnectableDirectedHighDutyCycle`](AdvertisingType::ConnectableDirectedHighDutyCycle), or
-    /// [`ConnectableDirectedLowDutyCycle`](AdvertisingType::ConnectableDirectedLowDutyCycle). The
-    /// advertisements might not be stopped before a connection is created, and therefore both the
-    /// Command Complete event and an LE Connection Complete event could be generated. This can also
-    /// occur when high duty cycle directed advertising is timed out and this command disables
-    /// advertising.
-    #[cfg(not(feature = "version-5-0"))]
-    async fn le_set_advertise_enable(&mut self, enable: bool);
-
-    /// Requests the Controller to start or stop advertising. The Controller manages the timing of
-    /// advertisements as per the advertising parameters given in the
-    /// [`le_set_advertising_parameters`](Hci::le_set_advertising_parameters) command.
-    ///
     /// The Controller shall continue advertising until the Host issues this command with `enable`
     /// set to false (Advertising is disabled) or until a connection is created or until the
     /// advertising is timed out due to high duty cycle directed advertising. In these cases,
@@ -597,7 +549,6 @@ pub trait HostHci {
     /// Command Complete event and an LE Connection Complete event or an LE Enhanced Connection
     /// Complete event could be generated. This can also occur when high duty cycle directed
     /// advertising is timed out and this command disables advertising.
-    #[cfg(feature = "version-5-0")]
     async fn le_set_advertising_enable(&mut self, enable: bool);
 
     /// Sets the scan parameters.
@@ -780,7 +731,6 @@ pub trait HostHci {
     /// A [Command Complete](crate::event::command::ReturnParameters::LeAddDeviceToWhiteList) event
     /// is generated.  When a Controller cannot add a device to the White List because there is no
     /// space available, it shall return [`OutOfMemory`](Status::OutOfMemory).
-    #[cfg(feature = "version-5-0")]
     async fn le_add_anon_advertising_devices_to_white_list(&mut self);
 
     /// Removes a single device from the white list stored in the Controller.
@@ -822,7 +772,6 @@ pub trait HostHci {
     ///
     /// A [Command Complete](crate::event::command::ReturnParameters::LeRemoveDeviceFromWhiteList)
     /// event is generated.
-    #[cfg(feature = "version-5-0")]
     async fn le_remove_anon_advertising_devices_from_white_list(&mut self);
 
     /// Changes the Link Layer connection parameters of a connection. This command may be issued on
@@ -1099,7 +1048,8 @@ pub trait HostHci {
 
 /// Errors that may occur when sending commands to the controller.  Must be specialized on the types
 /// of communication errors.
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Error<VS> {
     /// For the [`disconnect`](Hci::disconnect) command: The provided reason is not a valid
     /// disconnection reason. Includes the reported reason.
@@ -1302,13 +1252,6 @@ where
         set_outbound_data::<T, Self::VS>(self, crate::opcode::LE_SET_SCAN_RESPONSE_DATA, data).await
     }
 
-    #[cfg(not(feature = "version-5-0"))]
-    async fn le_set_advertise_enable(&mut self, enable: bool) {
-        self.controller_write(crate::opcode::LE_SET_ADVERTISE_ENABLE, &[enable as u8])
-            .await;
-    }
-
-    #[cfg(feature = "version-5-0")]
     async fn le_set_advertising_enable(&mut self, enable: bool) {
         self.controller_write(crate::opcode::LE_SET_ADVERTISE_ENABLE, &[enable as u8])
             .await
@@ -1358,7 +1301,6 @@ where
             .await;
     }
 
-    #[cfg(feature = "version-5-0")]
     async fn le_add_anon_advertising_devices_to_white_list(&mut self) {
         self.controller_write(
             crate::opcode::LE_ADD_DEVICE_TO_WHITE_LIST,
@@ -1374,7 +1316,6 @@ where
             .await;
     }
 
-    #[cfg(feature = "version-5-0")]
     async fn le_remove_anon_advertising_devices_from_white_list(&mut self) {
         self.controller_write(
             crate::opcode::LE_REMOVE_DEVICE_FROM_WHITE_LIST,
@@ -1508,6 +1449,114 @@ where
 
 const MAX_TEST_CHANNEL: u8 = 0x27;
 
+#[cfg(not(feature = "defmt"))]
+bitflags::bitflags! {
+    /// Event flags defined for the [`set_event_mask`](Hci::set_event_mask) command.
+    #[derive(Default)]
+    pub struct EventFlags : u64 {
+        /// Inquiry complete event
+        const INQUIRY_COMPLETE = 0x0000_0000_0000_0001;
+        /// Inquiry result event
+        const INQUIRY_RESULT = 0x0000_0000_0000_0002;
+        /// Connection complete event
+        const CONNECTION_COMPLETE = 0x0000_0000_0000_0004;
+        /// Connection request event
+        const CONNECTION_REQUEST = 0x0000_0000_0000_0008;
+        /// Disconnection complete event
+        const DISCONNECTION_COMPLETE = 0x0000_0000_0000_0010;
+        /// Authentication complete event
+        const AUTHENTICATION_COMPLETE = 0x0000_0000_0000_0020;
+        /// Remote name request complete event
+        const REMOTE_NAME_REQUEST_COMPLETE = 0x0000_0000_0000_0040;
+        /// Encryption change event
+        const ENCRYPTION_CHANGE = 0x0000_0000_0000_0080;
+        /// Change connection link key complete event
+        const CHANGE_CONNECTION_LINK_KEY_COMPLETE = 0x0000_0000_0000_0100;
+        /// Master link key complete event
+        const MASTER_LINK_KEY_COMPLETE = 0x0000_0000_0000_0200;
+        /// Read remote supported features complete event
+        const READ_REMOTE_SUPPORTED_FEATURES_COMPLETE = 0x0000_0000_0000_0400;
+        /// Read remote version information complete event
+        const READ_REMOTE_VERSION_INFORMATION_COMPLETE = 0x0000_0000_0000_0800;
+        /// Qos setup complete event
+        const QOS_SETUP_COMPLETE = 0x0000_0000_0000_1000;
+        /// Hardware error event
+        const HARDWARE_ERROR = 0x0000_0000_0000_8000;
+        /// Flush occurred event
+        const FLUSH_OCCURRED = 0x0000_0000_0001_0000;
+        /// Role change event
+        const ROLE_CHANGE = 0x0000_0000_0002_0000;
+        /// Mode change event
+        const MODE_CHANGE = 0x0000_0000_0008_0000;
+        /// Return link keys event
+        const RETURN_LINK_KEYS = 0x0000_0000_0010_0000;
+        /// Pin code request event
+        const PIN_CODE_REQUEST = 0x0000_0000_0020_0000;
+        /// Link key request event
+        const LINK_KEY_REQUEST = 0x0000_0000_0040_0000;
+        /// Link key notification event
+        const LINK_KEY_NOTIFICATION = 0x0000_0000_0080_0000;
+        /// Loopback command event
+        const LOOPBACK_COMMAND = 0x0000_0000_0100_0000;
+        /// Data buffer overflow event
+        const DATA_BUFFER_OVERFLOW = 0x0000_0000_0200_0000;
+        /// Max slots change event
+        const MAX_SLOTS_CHANGE = 0x0000_0000_0400_0000;
+        /// Read clock offset complete event
+        const READ_CLOCK_OFFSET_COMPLETE = 0x0000_0000_0800_0000;
+        /// Connection packet type changed event
+        const CONNECTION_PACKET_TYPE_CHANGED = 0x0000_0000_1000_0000;
+        /// Qos violation event
+        const QOS_VIOLATION = 0x0000_0000_2000_0000;
+        /// Page scan mode change event. Deprecated in Bluetooth spec.
+        #[deprecated]
+        const PAGE_SCAN_MODE_CHANGE = 0x0000_0000_4000_0000;
+        /// Page scan repetition mode change event
+        const PAGE_SCAN_REPETITION_MODE_CHANGE = 0x0000_0000_8000_0000;
+        /// Flow specification complete event
+        const FLOW_SPECIFICATION_COMPLETE = 0x0000_0001_0000_0000;
+        /// Inquiry result with rssi event
+        const INQUIRY_RESULT_WITH_RSSI = 0x0000_0002_0000_0000;
+        /// Read remote extended features complete event
+        const READ_REMOTE_EXTENDED_FEATURES_COMPLETE = 0x0000_0004_0000_0000;
+        /// Synchronous connection complete event
+        const SYNCHRONOUS_CONNECTION_COMPLETE = 0x0000_0800_0000_0000;
+        /// Synchronous connection changed event
+        const SYNCHRONOUS_CONNECTION_CHANGED = 0x0000_1000_0000_0000;
+        /// Sniff subrating event
+        const SNIFF_SUBRATING = 0x0000_2000_0000_0000;
+        /// Extended inquiry result event
+        const EXTENDED_INQUIRY_RESULT = 0x0000_4000_0000_0000;
+        /// Encryption key refresh complete event
+        const ENCRYPTION_KEY_REFRESH_COMPLETE = 0x0000_8000_0000_0000;
+        /// Io capability request event
+        const IO_CAPABILITY_REQUEST = 0x0001_0000_0000_0000;
+        /// Io capability request reply event
+        const IO_CAPABILITY_REQUEST_REPLY = 0x0002_0000_0000_0000;
+        /// User confirmation request event
+        const USER_CONFIRMATION_REQUEST = 0x0004_0000_0000_0000;
+        /// User passkey request event
+        const USER_PASSKEY_REQUEST = 0x0008_0000_0000_0000;
+        /// Remote oob data request event
+        const REMOTE_OOB_DATA_REQUEST = 0x0010_0000_0000_0000;
+        /// Simple pairing complete event
+        const SIMPLE_PAIRING_COMPLETE = 0x0020_0000_0000_0000;
+        /// Link supervision timeout changed event
+        const LINK_SUPERVISION_TIMEOUT_CHANGED = 0x0080_0000_0000_0000;
+        /// Enhanced flush complete event
+        const ENHANCED_FLUSH_COMPLETE = 0x0100_0000_0000_0000;
+        /// User passkey notification event
+        const USER_PASSKEY_NOTIFICATION = 0x0400_0000_0000_0000;
+        /// Keypress notification event
+        const KEYPRESS_NOTIFICATION = 0x0800_0000_0000_0000;
+        /// Remote host supported features notification event
+        const REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION = 0x1000_0000_0000_0000;
+        /// LE meta-events
+        const LE_META_EVENT = 0x2000_0000_0000_0000;
+    }
+}
+
+#[cfg(feature = "defmt")]
 defmt::bitflags! {
     /// Event flags defined for the [`set_event_mask`](Hci::set_event_mask) command.
     #[derive(Default)]
@@ -1619,7 +1668,8 @@ defmt::bitflags! {
 ///
 /// See the Bluetooth spec, Vol 2, Part E, Section 7.3.35.
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum TxPowerLevel {
     /// Read Current Transmit Power Level.
     Current = 0x00,
@@ -1627,6 +1677,55 @@ pub enum TxPowerLevel {
     Maximum = 0x01,
 }
 
+#[cfg(not(feature = "defmt"))]
+bitflags::bitflags! {
+    /// Event flags defined for the [`le_set_event_mask`](Hci::le_set_event_mask) command.
+    #[derive(Default)]
+    pub struct LeEventFlags : u64 {
+        /// LE connection complete event
+        const CONNECTION_COMPLETE = 1 << 0;
+        /// LE advertising report event
+        const ADVERTISING_REPORT = 1 << 1;
+        /// LE connection update complete event
+        const CONNECTION_UPDATE_COMPLETE = 1 << 2;
+        /// LE read remote features complete event
+        const READ_REMOTE_FEATURES_COMPLETE = 1 << 3;
+        /// LE long term key request event
+        const LONG_TERM_KEY_REQUEST = 1 << 4;
+        /// LE remote connection parameter request event
+        const REMOTE_CONNECTION_PARAMETER_REQUEST = 1 << 5;
+        /// LE data length change event
+        const DATA_LENGTH_CHANGE = 1 << 6;
+        /// LE read local p256 public key complete event
+        const READ_LOCAL_P256_PUBLIC_KEY_COMPLETE = 1 << 7;
+        /// LE generate dhkey complete event
+        const GENERATE_DHKEY_COMPLETE = 1 << 8;
+        /// LE enhanced connection complete event
+        const ENHANCED_CONNECTION_COMPLETE = 1 << 9;
+        /// LE directed advertising report event
+        const DIRECTED_ADVERTISING_REPORT = 1 << 10;
+        /// LE phy update complete event
+        const PHY_UPDATE_COMPLETE = 1 << 11;
+        /// LE extended advertising report event
+        const EXTENDED_ADVERTISING_REPORT = 1 << 12;
+        /// LE periodic advertising sync established event
+        const PERIODIC_ADVERTISING_SYNC_ESTABLISHED = 1 << 13;
+        /// LE periodic advertising report event
+        const PERIODIC_ADVERTISING_REPORT = 1 << 14;
+        /// LE periodic advertising sync lost event
+        const PERIODIC_ADVERTISING_SYNC_LOST = 1 << 15;
+        /// LE extended scan timeout event
+        const EXTENDED_SCAN_TIMEOUT = 1 << 16;
+        /// LE extended advertising set terminated event
+        const EXTENDED_ADVERTISING_SET_TERMINATED = 1 << 17;
+        /// LE scan request received event
+        const SCAN_REQUEST_RECEIVED = 1 << 18;
+        /// LE channel selection algorithm event
+        const CHANNEL_SELECTION_ALGORITHM = 1 << 19;
+    }
+}
+
+#[cfg(feature = "defmt")]
 defmt::bitflags! {
     /// Event flags defined for the [`le_set_event_mask`](Hci::le_set_event_mask) command.
     #[derive(Default)]
@@ -1644,46 +1743,32 @@ defmt::bitflags! {
         /// LE remote connection parameter request event
         const REMOTE_CONNECTION_PARAMETER_REQUEST = 1 << 5;
         /// LE data length change event
-        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
         const DATA_LENGTH_CHANGE = 1 << 6;
         /// LE read local p256 public key complete event
-        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
         const READ_LOCAL_P256_PUBLIC_KEY_COMPLETE = 1 << 7;
         /// LE generate dhkey complete event
-        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
         const GENERATE_DHKEY_COMPLETE = 1 << 8;
         /// LE enhanced connection complete event
-        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
         const ENHANCED_CONNECTION_COMPLETE = 1 << 9;
         /// LE directed advertising report event
-        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
         const DIRECTED_ADVERTISING_REPORT = 1 << 10;
         /// LE phy update complete event
-        #[cfg(feature = "version-5-0")]
         const PHY_UPDATE_COMPLETE = 1 << 11;
         /// LE extended advertising report event
-        #[cfg(feature = "version-5-0")]
         const EXTENDED_ADVERTISING_REPORT = 1 << 12;
         /// LE periodic advertising sync established event
-        #[cfg(feature = "version-5-0")]
         const PERIODIC_ADVERTISING_SYNC_ESTABLISHED = 1 << 13;
         /// LE periodic advertising report event
-        #[cfg(feature = "version-5-0")]
         const PERIODIC_ADVERTISING_REPORT = 1 << 14;
         /// LE periodic advertising sync lost event
-        #[cfg(feature = "version-5-0")]
         const PERIODIC_ADVERTISING_SYNC_LOST = 1 << 15;
         /// LE extended scan timeout event
-        #[cfg(feature = "version-5-0")]
         const EXTENDED_SCAN_TIMEOUT = 1 << 16;
         /// LE extended advertising set terminated event
-        #[cfg(feature = "version-5-0")]
         const EXTENDED_ADVERTISING_SET_TERMINATED = 1 << 17;
         /// LE scan request received event
-        #[cfg(feature = "version-5-0")]
         const SCAN_REQUEST_RECEIVED = 1 << 18;
         /// LE channel selection algorithm event
-        #[cfg(feature = "version-5-0")]
         const CHANNEL_SELECTION_ALGORITHM = 1 << 19;
     }
 }
@@ -1771,7 +1856,8 @@ impl AdvertisingParameters {
 
 /// Indicates the type of address being used in the advertising packets.
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum OwnAddressType {
     /// Public Device Address (default)
     Public = 0x00,
@@ -1779,15 +1865,28 @@ pub enum OwnAddressType {
     Random = 0x01,
     /// Controller generates Resolvable Private Address based on the local IRK from resolving
     /// list. If resolving list contains no matching entry, use public address.
-    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     PrivateFallbackPublic = 0x02,
     /// Controller generates Resolvable Private Address based on the local IRK from resolving
     /// list. If resolving list contains no matching entry, use random address from
     /// [`le_set_random_address`](Hci::le_set_random_address).
-    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     PrivateFallbackRandom = 0x03,
 }
 
+#[cfg(not(feature = "defmt"))]
+bitflags::bitflags! {
+    /// The advertising channels that shall be used when transmitting advertising packets.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub struct Channels : u8 {
+        /// Channel 37 shall be used
+        const CH_37 = 0b0000_0001;
+        /// Channel 38 shall be used
+        const CH_38 = 0b0000_0010;
+        /// Channel 39 shall be used
+        const CH_39 = 0b0000_0100;
+    }
+}
+
+#[cfg(feature = "defmt")]
 defmt::bitflags! {
     /// The advertising channels that shall be used when transmitting advertising packets.
     pub struct Channels : u8 {
@@ -1810,7 +1909,8 @@ impl Default for Channels {
 ///
 /// See [`AdvertisingParameters`]($crate::host::AdvertisingParameters).
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum AdvertisingFilterPolicy {
     /// Process scan and connection requests from all devices (i.e., the White List is not in use)
     /// (default).
@@ -1858,7 +1958,7 @@ impl ScanParameters {
 /// See [`ScanParameters`] and [`le_set_scan_parameters`](Hci::le_set_scan_parameters).
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[repr(u8)]
-#[derive(defmt::Format)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum ScanType {
     /// Passive Scanning. No scanning PDUs shall be sent (default).
     Passive = 0x00,
@@ -1871,7 +1971,7 @@ pub enum ScanType {
 /// See [`ScanParameters`] and [`le_set_scan_parameters`](Hci::le_set_scan_parameters).
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[repr(u8)]
-#[derive(defmt::Format)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum ScanFilterPolicy {
     /// Accept all advertising packets except directed advertising packets not addressed to this
     /// device (default).
@@ -1884,7 +1984,6 @@ pub enum ScanFilterPolicy {
     ///
     /// Note: Directed advertising packets where the initiator's address is a resolvable private
     /// address that cannot be resolved are also accepted.
-    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     AddressedToThisDevice = 0x02,
     /// Accept all advertising packets except:
     /// - advertising packets where the advertiser's identity address is not in the White List; and
@@ -1893,7 +1992,6 @@ pub enum ScanFilterPolicy {
     ///
     /// Note: Directed advertising packets where the initiator's address is a resolvable private
     /// address that cannot be resolved are also accepted.
-    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     WhiteListAddressedToThisDevice = 0x03,
 }
 
@@ -1968,7 +2066,7 @@ impl ConnectionParameters {
 /// [`le_create_connection`](Hci::le_create_connection) command.
 #[derive(Copy, Clone, Debug)]
 #[repr(u8)]
-#[derive(defmt::Format)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum ConnectionFilterPolicy {
     /// White List is not used to determine which advertiser to connect to.  `peer_address` shall be
     /// used in the connection complete event.
@@ -1981,7 +2079,8 @@ pub enum ConnectionFilterPolicy {
 
 /// Possible values for the peer address in the [`le_create_connection`](Hci::le_create_connection)
 /// command.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum PeerAddrType {
     /// Public Device Address
     PublicDeviceAddress(crate::BdAddr),
@@ -1990,12 +2089,10 @@ pub enum PeerAddrType {
     /// Public Identity Address (Corresponds to peer's Resolvable Private Address). This value shall
     /// only be used by the Host if either the Host or the Controller does not support the LE Set
     /// Privacy Mode command.
-    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     PublicIdentityAddress(crate::BdAddr),
     /// Random (static) Identity Address (Corresponds to peer’s Resolvable Private Address). This
     /// value shall only be used by a Host if either the Host or the Controller does not support the
     /// LE Set Privacy Mode command.
-    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     RandomIdentityAddress(crate::BdAddr),
 }
 
@@ -2005,27 +2102,6 @@ impl PeerAddrType {
     /// # Panics
     ///
     /// `bytes` must be 7 bytes long.
-    #[cfg(not(any(feature = "version-4-2", feature = "version-5-0")))]
-    pub fn copy_into_slice(&self, bytes: &mut [u8]) {
-        assert_eq!(bytes.len(), 7);
-        match *self {
-            PeerAddrType::PublicDeviceAddress(bd_addr) => {
-                bytes[0] = 0x00;
-                bytes[1..7].copy_from_slice(&bd_addr.0);
-            }
-            PeerAddrType::RandomDeviceAddress(bd_addr) => {
-                bytes[0] = 0x01;
-                bytes[1..7].copy_from_slice(&bd_addr.0);
-            }
-        }
-    }
-
-    /// Serialize the peer address into the given byte buffer.
-    ///
-    /// # Panics
-    ///
-    /// `bytes` must be 7 bytes long.
-    #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
     pub fn copy_into_slice(&self, bytes: &mut [u8]) {
         assert_eq!(bytes.len(), 7);
         match *self {
@@ -2094,7 +2170,8 @@ pub struct AesParameters {
 /// Newtype for the encryption key.
 ///
 /// See [`AesParameters`]
-#[derive(Clone, PartialEq, defmt::Format)]
+#[derive(Clone, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct EncryptionKey(pub [u8; 16]);
 
 impl Debug for EncryptionKey {
@@ -2134,7 +2211,7 @@ pub struct EncryptionParameters {
 /// [`le_transmitter_test`](Hci::le_transmitter_test) command.
 #[derive(Copy, Clone, Debug)]
 #[repr(u8)]
-#[derive(defmt::Format)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum TestPacketPayload {
     /// Pseudo-Random bit sequence 9
     PrbS9 = 0x00,

@@ -98,16 +98,6 @@ impl AdvertisingIntervalBuilder {
             return Err(AdvertisingIntervalError::TooShort(min));
         }
 
-        #[cfg(not(feature = "version-5-0"))]
-        {
-            if self.advertising_type == AdvertisingType::ScannableUndirected {
-                const SCANNABLE_MIN: Duration = Duration::from_millis(100);
-                if min < SCANNABLE_MIN {
-                    return Err(AdvertisingIntervalError::TooShort(min));
-                }
-            }
-        }
-
         const MAX: Duration = Duration::from_millis(10240);
         if max > MAX {
             return Err(AdvertisingIntervalError::TooLong(max));
@@ -145,7 +135,8 @@ impl AdvertisingIntervalBuilder {
 }
 
 /// Potential errors that can occur when specifying an [`AdvertisingInterval`].
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum AdvertisingIntervalError {
     /// The minimum value was too short. Includes the invalid value.
     TooShort(Duration),
@@ -163,7 +154,8 @@ pub enum AdvertisingIntervalError {
 /// [`AdvertisingParameters`]($crate::host::AdvertisingParameters) to determine the packet type that
 /// is used for advertising when advertising is enabled.
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum AdvertisingType {
     /// Connectable undirected advertising
     ConnectableUndirected = 0x00,

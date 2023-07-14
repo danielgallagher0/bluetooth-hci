@@ -5,7 +5,7 @@ use byteorder::{ByteOrder, LittleEndian};
 use super::CommonDataType;
 
 /// LE Advertisement Type
-#[derive(defmt::Format)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Advertisement<'a> {
     /// Complete local name of the device.
     CompleteLocalName(&'a str),

@@ -67,30 +67,6 @@ pub trait HalCommands {
     /// complete](crate::event::command::ReturnParameters::HalSetTxPowerLevel) event.
     async fn set_tx_power_level(&mut self, level: PowerLevel);
 
-    /// Puts the device in standby mode.
-    ///
-    /// Normally the BlueNRG-MS will automatically enter sleep mode to save power. This command
-    /// further put the device into the Standby mode instead of the sleep mode. The difference is
-    /// that, in sleep mode, the device can still wake up itself with the internal timer. But in
-    /// standby mode, this timer is also disabled. So the only possibility to wake up the device is
-    /// by the external signals, e.g. a HCI command sent via SPI bus.
-    ///
-    /// Based on the measurement, the current consumption under sleep mode is ~2 uA. And this value
-    /// is ~1.5 uA in standby mode.
-    ///
-    /// # Errors
-    ///
-    /// Only underlying communication errors are reported.
-    ///
-    /// # Generated events
-    ///
-    /// The controller will generate a [command
-    /// complete](crate::event::command::ReturnParameters::HalDeviceStandby) event.
-    ///
-    /// The command is only accepted when there is no other Bluetooth activity. Otherwise an error
-    /// code [command disallowed](crate::Status::CommandDisallowed) will return.
-    async fn device_standby(&mut self);
-
     /// Retrieve the number of packets sent in the last TX direct test.
     ///
     /// During the Direct Test mode, in the TX tests, the number of packets sent in the test is not
@@ -132,7 +108,7 @@ pub trait HalCommands {
     ///
     /// The controller will generate a [command
     /// complete](crate::event::command::ReturnParameters::HalStartTone) event.
-    async fn start_tone(&mut self, channel: u8) -> Result<(), Error>;
+    async fn start_tone(&mut self, channel: u8, freq_offset: u8) -> Result<(), Error>;
 
     /// Stops the previously started by the [`start_tone`](Commands::start_tone) command.
     ///
@@ -208,11 +184,6 @@ impl<T: Controller> HalCommands for T {
         .await
     }
 
-    async fn device_standby(&mut self) {
-        self.controller_write(crate::vendor::stm32wb::opcode::HAL_DEVICE_STANDBY, &[])
-            .await
-    }
-
     async fn get_tx_test_packet_count(&mut self) {
         self.controller_write(
             crate::vendor::stm32wb::opcode::HAL_TX_TEST_PACKET_COUNT,
@@ -221,14 +192,17 @@ impl<T: Controller> HalCommands for T {
         .await
     }
 
-    async fn start_tone(&mut self, channel: u8) -> Result<(), Error> {
+    async fn start_tone(&mut self, channel: u8, freq_offset: u8) -> Result<(), Error> {
         const MAX_CHANNEL: u8 = 39;
         if channel > MAX_CHANNEL {
             return Err(Error::InvalidChannel(channel));
         }
 
-        self.controller_write(crate::vendor::stm32wb::opcode::HAL_START_TONE, &[channel])
-            .await;
+        self.controller_write(
+            crate::vendor::stm32wb::opcode::HAL_START_TONE,
+            &[channel, freq_offset],
+        )
+        .await;
 
         Ok(())
     }
@@ -254,7 +228,8 @@ impl<T: Controller> HalCommands for T {
 /// Before some commands are sent to the controller, the parameters are validated. This type
 /// enumerates the potential validation errors. Must be specialized on the types of communication
 /// errors.
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Error {
     /// For the [Start Tone](Commands::start_tone) command, the channel was greater than the maximum
     /// allowed channel (39). The invalid channel is returned.
@@ -534,7 +509,7 @@ impl ConfigDataCompleteBuilder {
 
 /// Roles that the server can adopt.
 #[repr(u8)]
-#[derive(defmt::Format)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Role {
     /// Peripheral and primary device.
     /// - Only one connection.
@@ -561,7 +536,7 @@ pub enum Role {
 /// Configuration parameters that are readable by the
 /// [`read_config_data`](Commands::read_config_data) command.
 #[repr(u8)]
-#[derive(defmt::Format)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum ConfigParameter {
     /// Bluetooth public address.
     PublicAddress = 0,
@@ -591,7 +566,7 @@ pub enum ConfigParameter {
 ///
 /// STM32WB5x uses single byte parameter for PA level.
 #[repr(u8)]
-#[derive(defmt::Format)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum PowerLevel {
     /// -40 dBm.
     Minus40dBm = 0x00,
