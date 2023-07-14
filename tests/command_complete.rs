@@ -6,15 +6,19 @@ use hci::event::command::*;
 use hci::event::*;
 use std::convert::{TryFrom, TryInto};
 
-#[derive(Debug, defmt::Format)]
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 struct VendorEvent;
-#[derive(Debug, defmt::Format)]
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 struct VendorError;
-#[derive(Clone, Debug, defmt::Format)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 enum VendorReturnParameters {
     Opcode10 { status: hci::Status<VendorStatus> },
 }
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum VendorStatus {
     FourFive,
     FiveZero,

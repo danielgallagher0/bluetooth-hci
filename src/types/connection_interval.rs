@@ -7,7 +7,8 @@ use core::time::Duration;
 /// Define a connection interval range with its latency and supervision timeout. This value is
 /// passed to the controller, which determines the [actual connection
 /// interval](crate::types::FixedConnectionInterval).
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct ConnectionInterval {
     interval_: (Duration, Duration),
     conn_latency_: u16,
@@ -104,7 +105,8 @@ impl ConnectionInterval {
 }
 
 /// Intermediate builder for the [`ConnectionInterval`].
-#[derive(Default, defmt::Format)]
+#[derive(Default)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct ConnectionIntervalBuilder {
     interval: Option<(Duration, Duration)>,
     conn_latency: Option<u16>,
@@ -253,7 +255,8 @@ impl ConnectionIntervalBuilder {
 }
 
 /// Types of errors that can occure when creating a [`ConnectionInterval`].
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum ConnectionIntervalError {
     /// At least one of any of [`with_range`](ConnectionIntervalBuilder::with_range),
     /// [`with_latency`](ConnectionIntervalBuilder::with_latency), or
@@ -282,7 +285,8 @@ pub enum ConnectionIntervalError {
 
 /// Define a connection interval with its latency and supervision timeout. This value is
 /// returned from the controller.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct FixedConnectionInterval {
     interval_: Duration,
     conn_latency_: u16,

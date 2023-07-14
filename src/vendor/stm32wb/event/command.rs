@@ -16,7 +16,8 @@ use super::AttributeHandle;
 /// Complete](crate::event::command::ReturnParameters::Vendor) event. If the commands have defined
 /// return parameters, they are included in the enum.
 #[allow(clippy::large_enum_variant)]
-#[derive(Clone, Debug, defmt::Format)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum ReturnParameters {
     /// Parameters returned by the [HAL Get Firmware
     /// Revision](crate::hal::Commands::get_firmware_revision) command.
@@ -504,7 +505,8 @@ fn to_status(
 
 /// Parameters returned by the [HAL Get Firmware
 /// Revision](crate::hal::Commands::get_firmware_revision) command.
-#[derive(Clone, Debug, defmt::Format)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct HalFirmwareRevision {
     /// Did the command fail, and if so, how?
     pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
@@ -526,7 +528,8 @@ fn to_hal_firmware_revision(
 
 /// Parameters returned by the [HAL Read Config Data](crate::hal::Commands::read_config_data)
 /// command.
-#[derive(Clone, Debug, defmt::Format)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct HalConfigData {
     /// Did the command fail, and if so, how?
     pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
@@ -544,7 +547,8 @@ pub struct HalConfigData {
 
 /// Potential values that can be fetched by [HAL Read Config
 /// Data](crate::hal::Commands::read_config_data).
-#[derive(Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum HalConfigParameter {
     /// Bluetooth public address. Corresponds to
     /// [PublicAddress](crate::hal::ConfigParameter::PublicAddress).
@@ -609,7 +613,8 @@ fn to_hal_config_parameter(
 
 /// Parameters returned by the [HAL Get Tx Test Packet
 /// Count](crate::hal::Commands::get_tx_test_packet_count) command.
-#[derive(Clone, Debug, defmt::Format)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct HalTxTestPacketCount {
     /// Did the command fail, and if so, how?
     pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
@@ -629,7 +634,8 @@ fn to_hal_tx_test_packet_count(
 }
 
 /// Parameters returned by the [HAL Get Link Status](crate::hal::Commands::get_link_status) command.
-#[derive(Clone, Debug, defmt::Format)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct HalLinkStatus {
     /// Did the command fail, and if so, how?
     pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
@@ -639,7 +645,8 @@ pub struct HalLinkStatus {
 }
 
 /// State of a client connection.
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct ClientStatus {
     /// Link state for the client.
     pub state: LinkState,
@@ -649,7 +656,8 @@ pub struct ClientStatus {
 }
 
 /// Potential states for a connection.
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum LinkState {
     /// Idle
     Idle,
@@ -714,7 +722,8 @@ fn to_hal_link_status(
 
 /// Parameters returned by the [HAL Get Anchor Period](crate::hal::Commands::get_anchor_period)
 /// command.
-#[derive(Clone, Debug, defmt::Format)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct HalAnchorPeriod {
     /// Did the command fail, and if so, how?
     pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
@@ -741,7 +750,8 @@ fn to_hal_anchor_period(
 }
 
 /// Parameters returned by the [GAP Init](crate::gap::Commands::init) command.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct GapInit {
     /// Did the command fail, and if so, how?
     ///
@@ -773,7 +783,8 @@ fn to_gap_init(bytes: &[u8]) -> Result<GapInit, crate::event::Error<super::Stm32
 
 /// Parameters returned by the [GAP Get Security Level](crate::gap::Commands::get_security_level)
 /// command.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct GapSecurityLevel {
     /// Did the command fail, and if so, how?
     pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
@@ -792,7 +803,8 @@ pub struct GapSecurityLevel {
 }
 
 /// Options for pass key generation.
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum PassKeyRequirement {
     /// A pass key is not required.
     NotRequired,
@@ -840,7 +852,8 @@ fn to_gap_security_level(
 #[cfg(feature = "ms")]
 /// Parameters returned by the [GAP Resolve Private
 /// Address](crate::gap::Commands::resolve_private_address) command.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct GapResolvePrivateAddress {
     /// Did the command fail, and if so, how?
     pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
@@ -875,7 +888,8 @@ fn to_gap_resolve_private_address(
 
 /// Parameters returned by the [GAP Get Bonded Devices](crate::gap::Commands::get_bonded_devices)
 /// command.
-#[derive(Copy, Clone, defmt::Format)]
+#[derive(Copy, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct GapBondedDevices {
     /// Did the command fail, and if so, how?
     pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
@@ -949,7 +963,8 @@ fn to_gap_bonded_devices(
 
 /// Parameters returned by the [GATT Add Service](crate::vendor::stm32wb::command::gatt::Commands::add_service) and [GATT
 /// Include Service](crate::vendor::stm32wb::command::gatt::Commands::include_service) commands.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct GattService {
     /// Did the command fail, and if so, how?
     pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
@@ -976,7 +991,8 @@ fn to_gatt_service(
 
 /// Parameters returned by the [GATT Add Characteristic](crate::vendor::stm32wb::command::gatt::Commands::add_characteristic)
 /// command.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct GattCharacteristic {
     /// Did the command fail, and if so, how?
     pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
@@ -998,7 +1014,8 @@ fn to_gatt_characteristic(
 
 /// Parameters returned by the [GATT Add Characteristic
 /// Descriptor](crate::vendor::stm32wb::command::gatt::Commands::add_characteristic_descriptor) command.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct GattCharacteristicDescriptor {
     /// Did the command fail, and if so, how?
     pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
@@ -1020,7 +1037,8 @@ fn to_gatt_characteristic_descriptor(
 
 /// Parameters returned by the [GATT Read Handle Value](crate::vendor::stm32wb::command::gatt::Commands::read_handle_value)
 /// command.
-#[derive(Copy, Clone, defmt::Format)]
+#[derive(Copy, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct GattHandleValue {
     /// Did the command fail, and if so, how?
     pub status: crate::Status<crate::vendor::stm32wb::event::Status>,

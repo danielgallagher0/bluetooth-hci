@@ -145,7 +145,8 @@ impl AdvertisingIntervalBuilder {
 }
 
 /// Potential errors that can occur when specifying an [`AdvertisingInterval`].
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum AdvertisingIntervalError {
     /// The minimum value was too short. Includes the invalid value.
     TooShort(Duration),
@@ -163,7 +164,8 @@ pub enum AdvertisingIntervalError {
 /// [`AdvertisingParameters`]($crate::host::AdvertisingParameters) to determine the packet type that
 /// is used for advertising when advertising is enabled.
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum AdvertisingType {
     /// Connectable undirected advertising
     ConnectableUndirected = 0x00,

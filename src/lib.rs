@@ -79,6 +79,9 @@
 
 extern crate byteorder;
 
+// This must go FIRST so that all the other modules see its macros.
+mod fmt;
+
 #[macro_use]
 pub mod bitflag_array;
 
@@ -126,7 +129,8 @@ pub trait Controller {
     /// # use hci::Controller as HciController;
     /// # use hci::Opcode;
     /// # struct Controller;
-    /// # #[derive(defmt::Format)]
+    /// # #[deriv)]
+    /// #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     /// # struct Error;
     /// # struct Header;
     /// # struct Vendor;
@@ -134,7 +138,8 @@ pub trait Controller {
     /// #     type Status = VendorStatus;
     /// #     type Event = VendorEvent;
     /// # }
-    /// # #[derive(Clone, Debug, defmt::Format)]
+    /// # #[derive(Clone, Debug)]
+    /// #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     /// # struct VendorStatus;
     /// # impl std::convert::TryFrom<u8> for VendorStatus {
     /// #     type Error = hci::BadStatusError;
@@ -147,7 +152,8 @@ pub trait Controller {
     /// #        0
     /// #    }
     /// # }
-    /// # #[derive(defmt::Format)]
+    /// # #[deriv)]
+    /// #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     /// # struct VendorEvent;
     /// # impl hci::event::VendorEvent for VendorEvent {
     /// #     type Error = Error;
@@ -160,7 +166,8 @@ pub trait Controller {
     /// #         Ok(VendorEvent{})
     /// #     }
     /// # }
-    /// # #[derive(Clone, Debug, defmt::Format)]
+    /// # #[derive(Clone, Debug)]
+    /// #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     /// # struct ReturnParameters;
     /// # impl hci::event::VendorReturnParameters for ReturnParameters {
     /// #     type Error = Error;
@@ -206,7 +213,8 @@ pub trait Vendor {
 /// List of possible error codes, Bluetooth Spec, Vol 2, Part D, Section 2.
 ///
 /// Includes an extension point for vendor-specific status codes.
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Status<V> {
     /// Success
     Success,
@@ -363,7 +371,7 @@ pub enum Status<V> {
 }
 
 /// Wrapper enum for errors converting a u8 into a [`Status`].
-#[derive(defmt::Format)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum BadStatusError {
     /// The value does not map to a [`Status`].
     BadValue(u8),
@@ -585,15 +593,18 @@ where
 }
 
 /// Newtype for a connection handle.
-#[derive(Clone, Copy, Debug, PartialEq, defmt::Format)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct ConnectionHandle(pub u16);
 
 /// Newtype for BDADDR.
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct BdAddr(pub [u8; 6]);
 
 /// Potential values for BDADDR
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum BdAddrType {
     /// Public address.
     Public(BdAddr),
@@ -639,6 +650,64 @@ pub fn to_bd_addr_type(bd_addr_type: u8, addr: BdAddr) -> Result<BdAddrType, BdA
     }
 }
 
+#[cfg(not(feature = "defmt"))]
+bitflags::bitflags! {
+    /// Bitfield for LE Remote Features.
+    ///
+    /// Fields are defined in Vol 6, Part B, Section 4.6 of the spec.  See Table 4.3 (version 4.1)
+    /// or Table 4.4 (version 4.2 and 5.0).
+    #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+    pub struct LinkLayerFeature : u64 {
+        /// See section 4.6.1
+        const LE_ENCRYPTION = 1 << 0;
+        /// See section 4.6.2
+        const CONNECTION_PARAMETERS_REQUEST_PROCEDURE = 1 << 1;
+        /// See section 4.6.3
+        const EXTENDED_REJECT_INDICATION = 1 << 2;
+        /// See section 4.6.4
+        const PERIPHERAL_INITIATED_FEATURES_EXCHANGE = 1 << 3;
+        /// See section 4.6.5
+        const LE_PING = 1 << 4;
+        /// See section 4.6.6
+        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
+        const LE_DATA_PACKET_LENGTH_EXTENSION = 1 << 5;
+        /// See section 4.6.7
+        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
+        const LL_PRIVACY = 1 << 6;
+        /// See section 4.6.8
+        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
+        const EXTENDED_SCANNER_FILTER_POLICIES = 1 << 7;
+        /// See section 4.6.9
+        #[cfg(feature = "version-5-0")]
+        const LE_2M_PHY = 1 << 8;
+        /// See section 4.6.10
+        #[cfg(feature = "version-5-0")]
+        const STABLE_MODULATION_INDEX_TX = 1 << 9;
+        /// See section 4.6.11
+        #[cfg(feature = "version-5-0")]
+        const STABLE_MODULATION_INDEX_RX = 1 << 10;
+        /// Not in section 4.6
+        #[cfg(feature = "version-5-0")]
+        const LE_CODED_PHY = 1 << 11;
+        /// See section 4.6.12
+        #[cfg(feature = "version-5-0")]
+        const LE_EXTENDED_ADVERTISING = 1 << 12;
+        /// See section 4.6.13
+        #[cfg(feature = "version-5-0")]
+        const LE_PERIODIC_ADVERTISING = 1 << 13;
+        /// See section 4.6.14
+        #[cfg(feature = "version-5-0")]
+        const CHANNEL_SELECTION_ALGORITHM_2 = 1 << 14;
+        /// Not in section 4.6
+        #[cfg(feature = "version-5-0")]
+        const LE_POWER_CLASS_1 = 1 << 15;
+        /// See section 4.6.15
+        #[cfg(feature = "version-5-0")]
+        const MINIMUM_NUMBER_OF_USED_CHANNELS_PROCEDURE = 1 << 16;
+    }
+}
+
+#[cfg(feature = "defmt")]
 defmt::bitflags! {
     /// Bitfield for LE Remote Features.
     ///
@@ -700,7 +769,8 @@ bitflag_array! {
     ///
     /// If a flag is set, its classification is "Unknown".  If the flag is cleared, it is known
     /// "bad".
-    #[derive(Copy, Clone, Debug, defmt::Format)]
+    #[derive(Copy, Clone, Debug)]
+    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     pub struct ChannelClassification : 5;
     pub struct ChannelFlag;
 

@@ -1226,7 +1226,8 @@ impl<T: Controller> GattCommands for T {
 /// Before some commands are sent to the controller, the parameters are validated. This type
 /// enumerates the potential validation errors. Must be specialized on the types of communication
 /// errors.
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Error {
     /// For the [Add Characteristic Descriptor](Commands::add_characteristic_descriptor) command:
     /// the [descriptor value](AddDescriptorParameters::descriptor_value) is longer than the
@@ -1278,7 +1279,8 @@ impl AddServiceParameters {
 }
 
 /// Types of UUID
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Uuid {
     /// 16-bit UUID
     Uuid16(u16),
@@ -1313,7 +1315,7 @@ impl Uuid {
 /// Types of GATT services
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[repr(u8)]
-#[derive(defmt::Format)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum ServiceType {
     /// Primary service
     Primary = 0x01,
@@ -1371,7 +1373,8 @@ impl<T: PartialOrd> Range<T> {
 }
 
 /// Potential errors that can occer when creating a [Range].
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum RangeError {
     /// The beginning of the range came after the end.
     Inverted,
@@ -1426,6 +1429,54 @@ impl AddCharacteristicParameters {
     }
 }
 
+#[cfg(not(feature = "defmt"))]
+bitflags::bitflags! {
+    /// Available [properties](AddCharacteristicParameters::characteristic_properties) for
+    /// characteristics. Defined in Volume 3, Part G, Section 3.3.3.1 of Bluetooth Specification
+    /// 4.1.
+    pub struct CharacteristicProperty: u8 {
+        /// If set, permits broadcasts of the Characteristic Value using Server Characteristic
+        /// Configuration Descriptor. If set, the Server Characteristic Configuration Descriptor
+        /// shall exist.
+        const BROADCAST = 0x01;
+
+        /// If set, permits reads of the Characteristic Value using procedures defined in Volume 3,
+        /// Part G, Section 4.8 of the Bluetooth specification 4.1.
+        const READ = 0x02;
+
+        /// If set, permit writes of the Characteristic Value without response using procedures
+        /// defined in Volume 3, Part G, Section 4.9.1 of the Bluetooth specification 4.1.
+        const WRITE_WITHOUT_RESPONSE = 0x04;
+
+        /// If set, permits writes of the Characteristic Value with response using procedures
+        /// defined in Volume 3, Part Section 4.9.3 or Section 4.9.4 of the Bluetooth
+        /// specification 4.1.
+        const WRITE = 0x08;
+
+        /// If set, permits notifications of a Characteristic Value without acknowledgement using
+        /// the procedure defined in Volume 3, Part G, Section 4.10 of the Bluetooth specification
+        /// 4.1. If set, the Client Characteristic Configuration Descriptor shall exist.
+        const NOTIFY = 0x10;
+
+        /// If set, permits indications of a Characteristic Value with acknowledgement using the
+        /// procedure defined in Volume 3, Part G, Section 4.11 of the Bluetooth specification
+        /// 4.1. If set, the Client Characteristic Configuration Descriptor shall exist.
+        const INDICATE = 0x20;
+
+        /// If set, permits signed writes to the Characteristic Value using the Signed Writes
+        /// procedure defined in Volume 3, Part G, Section 4.9.2 of the Bluetooth specification
+        /// 4.1.
+        const AUTHENTICATED = 0x40;
+
+        /// If set, additional characteristic properties are defined in the Characteristic Extended
+        /// Properties Descriptor defined in Volume 3, Part G, Section 3.3.3.1 of the Bluetooth
+        /// specification 4.1. If set, the Characteristic Extended Properties Descriptor shall
+        /// exist.
+        const EXTENDED_PROPERTIES = 0x80;
+    }
+}
+
+#[cfg(feature = "defmt")]
 defmt::bitflags! {
     /// Available [properties](AddCharacteristicParameters::characteristic_properties) for
     /// characteristics. Defined in Volume 3, Part G, Section 3.3.3.1 of Bluetooth Specification
@@ -1472,6 +1523,32 @@ defmt::bitflags! {
     }
 }
 
+#[cfg(not(feature = "defmt"))]
+bitflags::bitflags! {
+    /// [Permissions](AddCharacteristicParameter::security_permissions) available for
+    /// characteristics.
+    pub struct CharacteristicPermission: u8 {
+        /// Need authentication to read.
+        const AUTHENTICATED_READ = 0x01;
+
+        /// Need authorization to read.
+        const AUTHORIZED_READ = 0x02;
+
+        /// Link should be encrypted to read.
+        const ENCRYPTED_READ = 0x04;
+
+        /// Need authentication to write.
+        const AUTHENTICATED_WRITE = 0x08;
+
+        /// Need authorization to write.
+        const AUTHORIZED_WRITE = 0x10;
+
+        /// Link should be encrypted for write.
+        const ENCRYPTED_WRITE = 0x20;
+    }
+}
+
+#[cfg(feature = "defmt")]
 defmt::bitflags! {
     /// [Permissions](AddCharacteristicParameter::security_permissions) available for
     /// characteristics.
@@ -1496,6 +1573,24 @@ defmt::bitflags! {
     }
 }
 
+#[cfg(not(feature = "defmt"))]
+bitflags::bitflags! {
+    /// Which events may be generated when a characteristic is accessed.
+    pub struct CharacteristicEvent: u8 {
+        /// The application will be notified when a client writes to this attribute.
+        const ATTRIBUTE_WRITE = 0x01;
+
+        /// The application will be notified when a write request/write command/signed write command
+        /// is received by the server for this attribute.
+        const CONFIRM_WRITE = 0x02;
+
+        /// The application will be notified when a read request of any type is got for this
+        /// attribute.
+        const CONFIRM_READ = 0x04;
+    }
+}
+
+#[cfg(feature = "defmt")]
 defmt::bitflags! {
     /// Which events may be generated when a characteristic is accessed.
     pub struct CharacteristicEvent: u8 {
@@ -1545,7 +1640,8 @@ impl EncryptionKeySize {
 }
 
 /// Errors that can occur when creating an [`EncryptionKeySize`].
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum EncryptionKeySizeError {
     /// The provided size was less than the minimum allowed size.
     TooShort,
@@ -1630,7 +1726,7 @@ impl<'a> AddDescriptorParameters<'a> {
 
 /// Common characteristic descriptor UUIDs.
 #[repr(u16)]
-#[derive(defmt::Format)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum KnownDescriptor {
     /// Characteristic Extended Properties Descriptor
     CharacteristicExtendedProperties = 0x2900,
@@ -1652,6 +1748,22 @@ impl From<KnownDescriptor> for Uuid {
     }
 }
 
+#[cfg(not(feature = "defmt"))]
+bitflags::bitflags! {
+    /// Permissions available for characteristic descriptors.
+    pub struct DescriptorPermission: u8 {
+        /// Authentication required.
+        const AUTHENTICATED = 0x01;
+
+        /// Authorization required.
+        const AUTHORIZED = 0x02;
+
+        /// Encryption required.
+        const ENCRYPTED = 0x04;
+    }
+}
+
+#[cfg(feature = "defmt")]
 defmt::bitflags! {
     /// Permissions available for characteristic descriptors.
     pub struct DescriptorPermission: u8 {
@@ -1666,6 +1778,22 @@ defmt::bitflags! {
     }
 }
 
+#[cfg(not(feature = "defmt"))]
+bitflags::bitflags! {
+    /// Types of access for characteristic descriptors
+    pub struct AccessPermission: u8 {
+        /// Readable
+        const READ = 0x01;
+
+        /// Writable
+        const WRITE = 0x02;
+
+        /// Readable and writeable
+        const READ_WRITE = Self::READ.bits() | Self::WRITE.bits();
+    }
+}
+
+#[cfg(feature = "defmt")]
 defmt::bitflags! {
     /// Types of access for characteristic descriptors
     pub struct AccessPermission: u8 {
@@ -1747,6 +1875,53 @@ impl DeleteIncludedServiceParameters {
     }
 }
 
+#[cfg(not(feature = "defmt"))]
+bitflags::bitflags! {
+    /// Flags for individual events that can be masked by the [GATT Set Event
+    /// Mask](Commands::set_event_mask) command.
+    pub struct Event: u32 {
+        /// [GATT Attribute Modified](crate::event::BlueNRGEvent::GattAttributeModified).
+        const ATTRIBUTE_MODIFIED = 0x0000_0001;
+        /// [GATT Procedure Timeout](crate::event::BlueNRGEvent::GattProcedureTimeout).
+        const PROCEDURE_TIMEOUT = 0x0000_0002;
+        /// [ATT Exchange MTU Response](crate::event::BlueNRGEvent::AttExchangeMtuResponse).
+        const EXCHANGE_MTU_RESPONSE = 0x0000_0004;
+        /// [ATT Find Information Response](crate::event::BlueNRGEvent::AttFindInformationResponse).
+        const FIND_INFORMATION_RESPONSE = 0x0000_0008;
+        /// [ATT Find By Type Value
+        /// Response](crate::event::BlueNRGEvent::AttFindByTypeValueResponse).
+        const FIND_BY_TYPE_VALUE_RESPONSE = 0x0000_0010;
+        /// [ATT Find By Type Response](crate::event::BlueNRGEvent::AttFindByTypeResponse).
+        const READ_BY_TYPE_RESPONSE = 0x0000_0020;
+        /// [ATT Read Response](crate::event::BlueNRGEvent::AttReadResponse).
+        const READ_RESPONSE = 0x0000_0040;
+        /// [ATT Read Blob Response](crate::event::BlueNRGEvent::AttReadBlobResponse).
+        const READ_BLOB_RESPONSE = 0x0000_0080;
+        /// [ATT Read Multiple Response](crate::event::BlueNRGEvent::AttReadMultipleResponse).
+        const READ_MULTIPLE_RESPONSE = 0x0000_0100;
+        /// [ATT Read By Group](crate::event::BlueNRGEvent::AttReadByGroupTypeResponse).
+        const READ_BY_GROUP_RESPONSE = 0x0000_0200;
+        /// [ATT Prepare Write Response](crate::event::BlueNRGEvent::AttPrepareWriteResponse).
+        const PREPARE_WRITE_RESPONSE = 0x0000_0800;
+        /// [ATT Execute Write Response](crate::event::BlueNRGEvent::AttExecuteWriteResponse).
+        const EXECUTE_WRITE_RESPONSE = 0x0000_1000;
+        /// [GATT Indication](crate::event::BlueNRGEvent::GattIndication).
+        const INDICATION = 0x0000_2000;
+        /// [GATT Notification](crate::event::BlueNRGEvent::GattNotification).
+        const NOTIFICATION = 0x0000_4000;
+        /// [GATT Error Response](crate::event::BlueNRGEvent::AttErrorResponse).
+        const ERROR_RESPONSE = 0x0000_8000;
+        /// [GATT Procedure Complete](crate::event::BlueNRGEvent::GattProcedureComplete).
+        const PROCEDURE_COMPLETE = 0x0001_0000;
+        /// [GATT Discover Characteristic by UUID or Read Using Characteristic
+        /// UUID](crate::event::BlueNRGEvent::GattDiscoverOrReadCharacteristicByUuidResponse).
+        const DISCOVER_OR_READ_CHARACTERISTIC_BY_UUID_RESPONSE = 0x0002_0000;
+        /// [GATT Tx Pool Available](crate::event::BlueNRGEvent::GattTxPoolAvailable)
+        const TX_POOL_AVAILABLE = 0x0004_0000;
+    }
+}
+
+#[cfg(feature = "defmt")]
 defmt::bitflags! {
     /// Flags for individual events that can be masked by the [GATT Set Event
     /// Mask](Commands::set_event_mask) command.
@@ -2255,6 +2430,21 @@ pub enum ConnectionHandleToNotify {
     NotifyOneEnhanced = 0xEA1F,
 }
 
+#[cfg(not(feature = "defmt"))]
+bitflags::bitflags! {
+    /// Flags for types of updates that the controller should signal when a characteristic value is
+    /// [updated](Commands::update_long_characteristic_value).
+    pub struct UpdateType: u8 {
+        /// A notification can be sent if enabled in the client characteristic configuration
+        /// descriptor.
+        const NOTIFICATION = 0x01;
+        /// An indication can be sent if enabled in the client characteristic configuration
+        /// descriptor.
+        const INDICATION = 0x02;
+    }
+}
+
+#[cfg(feature = "defmt")]
 defmt::bitflags! {
     /// Flags for types of updates that the controller should signal when a characteristic value is
     /// [updated](Commands::update_long_characteristic_value).

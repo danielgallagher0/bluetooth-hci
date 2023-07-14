@@ -11,6 +11,7 @@ use core::time::Duration;
 /// The minimum time range is 2.5 ms, and the maximum is 10.24 s. The window must be shorter than or
 /// equal to the interval.
 #[derive(Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct ScanWindow {
     interval_width: Duration,
     window_width: Duration,
@@ -80,6 +81,7 @@ impl ScanWindow {
 }
 
 /// Intermediate builder for the [`ScanWindow`].
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct ScanWindowBuilder {
     interval: Duration,
 }
@@ -110,7 +112,8 @@ impl ScanWindowBuilder {
 }
 
 /// Types of errors that can occure when creating a [`ScanWindow`].
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum ScanWindowError {
     /// The duration is too short. Both the interval and duration must be at least 2.5 ms. Includes
     /// the invalid duration.

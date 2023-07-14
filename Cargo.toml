@@ -15,14 +15,16 @@ readme = "README.md"
 exclude = ["tests"]
 
 [dependencies]
+bitflags = "2.3.3"
 byteorder = { version = "1.4.3", default_features = false }
-defmt = { version = "0.3.5" }
+defmt = { version = "0.3.5", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1.28.2", features = ["rt", "rt-multi-thread", "macros"] }
 
 [features]
 default = ["version-5-0", "ms"]
+defmt = ["dep:defmt"]
 version-4-1 = []
 version-4-2 = []
 version-5-0 = []

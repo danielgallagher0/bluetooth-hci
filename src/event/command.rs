@@ -23,7 +23,8 @@ use core::mem;
 /// Must be specialized on the return parameters that may be returned by vendor-specific commands.
 ///
 /// Defined in the Bluetooth spec, Vol 2, Part E, Section 7.7.14.
-#[derive(Clone, Debug, defmt::Format)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct CommandComplete<V>
 where
     V: super::VendorEvent,
@@ -180,10 +181,11 @@ where
 
 /// Commands that may generate the [Command Complete](crate::event::Event::CommandComplete) event.
 /// If the commands have defined return parameters, they are included in this enum.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum ReturnParameters<V>
 where
-    V: super::VendorEvent + defmt::Format,
+    V: super::VendorEvent,
 {
     /// The controller sent an unsolicited command complete event in order to change the number of
     /// HCI command packets the Host is allowed to send.
@@ -331,7 +333,8 @@ where
 
 /// Values returned by the [Read Transmit Power Level](crate::host::Hci::read_tx_power_level)
 /// command.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct TxPowerLevel<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -359,7 +362,8 @@ where
 
 /// Values returned by [Read Local Version
 /// Information](crate::host::Hci::read_local_version_information) command.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LocalVersionInfo<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -412,7 +416,8 @@ where
 
 /// Values returned by the [Read Local Supported
 /// Commands](crate::host::Hci::read_local_supported_commands) command.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LocalSupportedCommands<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -426,7 +431,8 @@ const COMMAND_FLAGS_SIZE: usize = 64;
 bitflag_array! {
     /// Extended bit field for the command flags of the [`LocalSupportedCommands`] return
     /// parameters.
-    #[derive(Copy, Clone, defmt::Format)]
+    #[derive(Copy, Clone)]
+    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     pub struct CommandFlags : COMMAND_FLAGS_SIZE;
     pub struct CommandFlag;
 
@@ -1077,7 +1083,8 @@ where
 
 /// Values returned by the [Read Local Supported
 /// Features](crate::host::Hci::read_local_supported_features) command.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LocalSupportedFeatures<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -1086,6 +1093,125 @@ pub struct LocalSupportedFeatures<VS> {
     pub supported_features: LmpFeatures,
 }
 
+#[cfg(not(feature = "defmt"))]
+bitflags::bitflags! {
+    /// See the Bluetooth Specification, v4.1 or later, Vol 2, Part C, Section 3.3 (Table 3.2).
+    #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+    pub struct LmpFeatures : u64 {
+        /// 3-slot packets
+        const THREE_SLOT_PACKETS = 1 << 0;
+        /// 5-slot packets
+        const FIVE_SLOT_PACKETS = 1 << 1;
+        /// Encryption
+        const ENCRYPTION = 1 << 2;
+        /// Slot offset
+        const SLOT_OFFSET = 1 << 3;
+        /// Timing accuracy
+        const TIMING_ACCURACY = 1 << 4;
+        /// Role switch
+        const ROLE_SWITCH = 1 << 5;
+        /// Hold mode
+        const HOLD_MODE = 1 << 6;
+        /// Sniff mode
+        const SNIFF_MODE = 1 << 7;
+        /// Power control requests
+        const POWER_CONTROL_REQUESTS = 1 << 9;
+        /// Channel quality driven data rate (CQDDR)
+        const CHANNEL_QUALITY_DRIVEN_DATA_RATE_CQDDR = 1 << 10;
+        /// SCO link
+        const SCO_LINK = 1 << 11;
+        /// HV2 packets
+        const HV2_PACKETS = 1 << 12;
+        /// HV3 packets
+        const HV3_PACKETS = 1 << 13;
+        /// μ-law log synchronous data
+        const MU_LAW_LOG_SYNCHRONOUS_DATA = 1 << 14;
+        /// A-law log synchronous data
+        const A_LAW_LOG_SYNCHRONOUS_DATA = 1 << 15;
+        /// CVSD synchronous data
+        const CVSD_SYNCHRONOUS_DATA = 1 << 16;
+        /// Paging parameter negotiation
+        const PAGING_PARAMETER_NEGOTIATION = 1 << 17;
+        /// Power control
+        const POWER_CONTROL = 1 << 18;
+        /// Transparent synchronous data
+        const TRANSPARENT_SYNCHRONOUS_DATA = 1 << 19;
+        /// Flow control lag (least significant bit)
+        const FLOW_CONTROL_LAG_LSB = 1 << 20;
+        /// Flow control lag (middle bit)
+        const FLOW_CONTROL_LAG_MID = 1 << 21;
+        /// Flow control lag (most significant bit)
+        const FLOW_CONTROL_LAG_MSB = 1 << 22;
+        /// Broadcast Encryption
+        const BROADCAST_ENCRYPTION = 1 << 23;
+        /// Enhanced Data Rate ACL 2 Mb/s mode
+        const ENHANCED_DATA_RATE_ACL_2_MB_PER_S_MODE = 1 << 25;
+        /// Enhanced Data Rate ACL 3 Mb/s mode
+        const ENHANCED_DATA_RATE_ACL_3_MB_PER_S_MODE = 1 << 26;
+        /// Enhanced inquiry scan
+        const ENHANCED_INQUIRY_SCAN = 1 << 27;
+        /// Interlaced inquiry scan
+        const INTERLACED_INQUIRY_SCAN = 1 << 28;
+        /// Interlaced page scan
+        const INTERLACED_PAGE_SCAN = 1 << 29;
+        /// RSSI with inquiry results
+        const RSSI_WITH_INQUIRY_RESULTS = 1 << 30;
+        /// Extended SCO link (EV3 packets)
+        const EXTENDED_SCO_LINK_EV3_PACKETS = 1 << 31;
+        /// EV4 packets
+        const EV4_PACKETS = 1 << 32;
+        /// EV5 packets
+        const EV5_PACKETS = 1 << 33;
+        /// AFH capable peripheral
+        const AFH_CAPABLE_PERIPHERAL = 1 << 35;
+        /// AFH classification peripheral
+        const AFH_CLASSIFICATION_PERIPHERAL = 1 << 36;
+        /// BR/EDR Not Supported
+        const BR_EDR_NOT_SUPPORTED = 1 << 37;
+        /// LE Supported (Controller)
+        const LE_SUPPORTED_BY_CONTROLLER = 1 << 38;
+        /// 3-slot Enhanced Data Rate ACL packets
+        const THREE_SLOT_ENHANCED_DATA_RATE_ACL_PACKETS = 1 << 39;
+        /// 5-slot Enhanced Data Rate ACL packets
+        const FIVE_SLOT_ENHANCED_DATA_RATE_ACL_PACKETS = 1 << 40;
+        /// Sniff subrating
+        const SNIFF_SUBRATING = 1 << 41;
+        /// Pause encryption
+        const PAUSE_ENCRYPTION = 1 << 42;
+        /// AFH capable central device
+        const AFH_CAPABLE_CENTRAL_DEVICE = 1 << 43;
+        /// AFH classification central device
+        const AFH_CLASSIFICATION_CENTRAL_DEVICE = 1 << 44;
+        /// Enhanced Data Rate eSCO 2 Mb/s mode
+        const ENHANCED_DATA_RATE_ESCO_2_MB_PER_S_MODE = 1 << 45;
+        /// Enhanced Data Rate eSCO 3 Mb/s mode
+        const ENHANCED_DATA_RATE_ESCO_3_MB_PER_S_MODE = 1 << 46;
+        /// 3-slot Enhanced Data Rate eSCO packets
+        const THREE_SLOT_ENHANCED_DATA_RATE_ESCO_PACKETS = 1 << 47;
+        /// Extended Inquiry Response
+        const EXTENDED_INQUIRY_RESPONSE = 1 << 48;
+        /// Simultaneous LE and BR/EDR to Same Device Capable (Controller)
+        const SIMULTANEOUS_LE_AND_BR_EDR_TO_SAME_DEVICE_CAPABLE = 1 << 49;
+        /// Secure Simple Pairing
+        const SECURE_SIMPLE_PAIRING = 1 << 51;
+        /// Encapsulated PDU
+        const ENCAPSULATED_PDU = 1 << 52;
+        /// Erroneous Data Reporting
+        const ERRONEOUS_DATA_REPORTING = 1 << 53;
+        /// Non-flushable Packet Boundary Flag
+        const NON_FLUSHABLE_PACKET_BOUNDARY_FLAG = 1 << 54;
+        /// Link Supervision Timeout Changed Event
+        const LINK_SUPERVISION_TIMEOUT_CHANGED_EVENT = 1 << 56;
+        /// Inquiry TX Power Level
+        const INQUIRY_TX_POWER_LEVEL = 1 << 57;
+        /// Enhanced Power Control
+        const ENHANCED_POWER_CONTROL = 1 << 58;
+        /// Extended features
+        const EXTENDED_FEATURES = 1 << 63;
+    }
+}
+
+#[cfg(feature = "defmt")]
 defmt::bitflags! {
     /// See the Bluetooth Specification, v4.1 or later, Vol 2, Part C, Section 3.3 (Table 3.2).
     #[derive(Default)]
@@ -1217,7 +1343,8 @@ where
 }
 
 /// Values returned by the [Read BD ADDR](crate::host::Hci::read_bd_addr) command.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct ReadBdAddr<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -1240,7 +1367,8 @@ where
 }
 
 /// Values returned by the [Read RSSI](crate::host::Hci::read_rssi) command.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct ReadRssi<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -1277,7 +1405,8 @@ where
 }
 
 /// Values returned by the [LE Read Buffer Size](crate::host::Hci::le_read_buffer_size) command.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LeReadBufferSize<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -1318,7 +1447,8 @@ where
 
 /// Values returned by the [LE Read Local Supported
 /// Features](crate::host::Hci::le_read_local_supported_features) command.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LeSupportedFeatures<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -1327,6 +1457,64 @@ pub struct LeSupportedFeatures<VS> {
     pub supported_features: LeFeatures,
 }
 
+#[cfg(not(feature = "defmt"))]
+bitflags::bitflags! {
+    /// Possible LE features for the [LE Read Local Supported
+    /// Features](::host::Hci::le_read_local_supported_features) command.  See the Bluetooth
+    /// specification, Vol 6, Part B, Section 4.6.  See Table 4.3 (v4.1 of the spec), Table 4.4
+    /// (v4.2 and v5.0).
+    #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+    pub struct LeFeatures : u64 {
+        /// LE Encryption.  Valid from controller to controller.
+        const ENCRYPTION = 1 << 0;
+        /// Connection Parameters Request Procedure.  Valid from controller to controller.
+        const CONNECTION_PARAMETERS_REQUEST_PROCEDURE = 1 << 1;
+        /// Extended Reject Indication.  Valid from controller to controller.
+        const EXTENDED_REJECT_INDICATION = 1 << 2;
+        /// Peripheral-initiated Features Exchange.  Valid from controller to controller.
+        const PERIPHERALINITIATED_FEATURES_EXCHANGE = 1 << 3;
+        /// LE Ping.  Not valid from controller to controller.
+        const PING = 1 << 4;
+        /// LE Data Packet Length Extension.  Valid from controller to controller.
+        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
+        const DATA_PACKET_LENGTH_EXTENSION = 1 << 5;
+        /// LL Privacy.  Not valid from controller to controller.
+        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
+        const LL_PRIVACY = 1 << 6;
+        /// Extended Scanner Filter Policies.  Not valid from controller to controller.
+        #[cfg(any(feature = "version-4-2", feature = "version-5-0"))]
+        const EXTENDED_SCANNER_FILTER_POLICIES = 1 << 7;
+        /// LE 2M PHY.  Valid from controller to controller.
+        #[cfg(feature = "version-5-0")]
+        const PHY_2M = 1 << 8;
+        /// Stable Modulation Index - Transmitter.  Valid from controller to controller.
+        #[cfg(feature = "version-5-0")]
+        const STABLE_MODULATION_INDEX_TX = 1 << 9;
+        /// Stable Modulation Index - Receiver.  Valid from controller to controller.
+        #[cfg(feature = "version-5-0")]
+        const STABLE_MODULATION_INDEX_RX = 1 << 10;
+        /// LE Coded PHY.  Valid from controller to controller.
+        #[cfg(feature = "version-5-0")]
+        const CODED_PHY = 1 << 11;
+        /// LE Extended Advertising.  Not valid from controller to controller.
+        #[cfg(feature = "version-5-0")]
+        const EXTENDED_ADVERTISING = 1 << 12;
+        /// LE Periodic Advertising.  Not valid from controller to controller.
+        #[cfg(feature = "version-5-0")]
+        const PERIODIC_ADVERTISING = 1 << 13;
+        /// Channel Selection Algorithm #2.  Valid from controller to controller.
+        #[cfg(feature = "version-5-0")]
+        const CHANNEL_SELECTION_ALGORITHM_2 = 1 << 14;
+        /// LE Power Class 1.  Valid from controller to controller.
+        #[cfg(feature = "version-5-0")]
+        const POWER_CLASS_1 = 1 << 15;
+        /// Minimum Number of Used Channels Procedure
+        #[cfg(feature = "version-5-0")]
+        const MINIMUM_NUMBER_OF_USED_CHANNELS_PROCEDURE = 1 << 16;
+    }
+}
+
+#[cfg(feature = "defmt")]
 defmt::bitflags! {
     /// Possible LE features for the [LE Read Local Supported
     /// Features](::host::Hci::le_read_local_supported_features) command.  See the Bluetooth
@@ -1398,7 +1586,8 @@ where
 
 /// Values returned by the [LE Read Advertising Channel TX
 /// Power](crate::host::Hci::le_read_advertising_channel_tx_power) command.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LeAdvertisingChannelTxPower<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -1439,7 +1628,8 @@ where
 }
 
 /// Parameters returned by the [LE Read Channel Map](crate::host::Hci::le_read_channel_map) command.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct ChannelMapParameters<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -1471,7 +1661,8 @@ where
 }
 
 /// Parameters returned by the [LE Encrypt](crate::host::Hci::le_encrypt) command.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct EncryptedReturnParameters<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -1486,7 +1677,8 @@ pub struct EncryptedReturnParameters<VS> {
 /// Newtype for a 128-bit encrypted block of data.
 ///
 /// See [`EncryptedReturnParameters`].
-#[derive(Copy, Clone, defmt::Format)]
+#[derive(Copy, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct EncryptedBlock(pub [u8; 16]);
 
 impl Debug for EncryptedBlock {
@@ -1512,7 +1704,8 @@ where
 }
 
 /// Return parameters for the [LE Rand](crate::host::Hci::le_rand) command.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LeRandom<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -1535,7 +1728,8 @@ where
 
 /// Parameters returned by the [LE LTK Request
 /// Reply](crate::host::Hci::le_long_term_key_request_reply) command.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LeLongTermRequestReply<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -1560,7 +1754,8 @@ where
 
 /// Parameters returned by the [LE Read Supported
 /// States](crate::host::Hci::le_read_supported_states) command.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LeReadSupportedStates<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,
@@ -1570,6 +1765,100 @@ pub struct LeReadSupportedStates<VS> {
     pub supported_states: LeStates,
 }
 
+#[cfg(not(feature = "defmt"))]
+bitflags::bitflags! {
+    /// Possible LE states or state combinations for the [LE Read Supported
+    /// States](::host::Hci::le_read_supported_states) command.
+    #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+    pub struct LeStates : u64 {
+        /// Non-connectable advertising state alone.
+        const NON_CONNECTABLE_ADVERTISING = 1 << 0;
+        /// Scannable advertising state alone
+        const SCANNABLE_ADVERTISING = 1 << 1;
+        /// Connectable advertising state alone
+        const CONNECTABLE_ADVERTISING = 1 << 2;
+        /// Directed advertising (high duty cycle) state alone
+        const DIRECTED_ADVERTISING_HIGH_DUTY_CYCLE = 1 << 3;
+        /// Passive scanning state alone
+        const PASSIVE_SCANNING = 1 << 4;
+        /// Active scanning state alone
+        const ACTIVE_SCANNING = 1 << 5;
+        /// Initianing state alone
+        const INITIATING = 1 << 6;
+        /// Peripheral (slave) connection state alone
+        const PERIPHERAL_CONNECTION = 1 << 7;
+        /// Non-connectable advertising and passive scan states.
+        const NONCONN_AD_AND_PASS_SCAN = 1 << 8;
+        /// Scannable advertising and passive scan states
+        const SCAN_AD_AND_PASS_SCAN = 1 << 9;
+        /// Connectable advertising and passive scan states
+        const CONN_AD_AND_PASS_SCAN = 1 << 10;
+        /// Directed advertising (high duty cycle) and passive scan states
+        const DIR_AD_HDC_AND_PASS_SCAN = 1 << 11;
+        /// Non-connectable advertising and active scan states.
+        const NONCONN_AD_AND_ACT_SCAN = 1 << 12;
+        /// Scannable advertising and active scan states
+        const SCAN_AD_AND_ACT_SCAN = 1 << 13;
+        /// Connectable advertising and active scan states
+        const CONN_AD_AND_ACT_SCAN = 1 << 14;
+        /// Directed advertising (high duty cycle) and active scan states
+        const DIR_AD_HDC_AND_ACT_SCAN = 1 << 15;
+        /// Non-connectable advertising and initiating states.
+        const NONCONN_AD_AND_INITIATING = 1 << 16;
+        /// Scannable advertising and initiating states
+        const SCAN_AD_AND_INITIATING = 1 << 17;
+        /// Non-connectable advertising and central (master) connection states.
+        const NONCONN_AD_AND_CENTRAL_CONN = 1 << 18;
+        /// Scannable advertising and central (master) connection states
+        const SCAN_AD_AND_CENTRAL_CONN = 1 << 19;
+        /// Non-connectable advertising and peripheral (slave) connection states.
+        const NONCONN_AD_AND_PERIPH_CONN = 1 << 20;
+        /// Scannable advertising and peripheral (slave) connection states
+        const SCAN_AD_AND_PERIPH_CONN = 1 << 21;
+        /// Passive scan and initiating states
+        const PASS_SCAN_AND_INITIATING = 1 << 22;
+        /// Active scan and initiating states
+        const ACT_SCAN_AND_INITIATING = 1 << 23;
+        /// Passive scan and central (master) connection states
+        const PASS_SCAN_AND_CENTRAL_CONN = 1 << 24;
+        /// Active scan and central (master) connection states
+        const ACT_SCAN_AND_CENTRAL_CONN = 1 << 25;
+        /// Passive scan and peripheral (slave) connection states
+        const PASS_SCAN_AND_PERIPH_CONN = 1 << 26;
+        /// Active scan and peripheral (slave) connection states
+        const ACT_SCAN_AND_PERIPH_CONN = 1 << 27;
+        /// Initiating and central (master) connection states
+        const INITIATING_AND_CENTRAL_CONN = 1 << 28;
+        /// Directed advertising (low duty cycle) state alone
+        const DIRECTED_ADVERTISING_LOW_DUTY_CYCLE = 1 << 29;
+        /// Directed advertising (low duty cycle) and passive scan states
+        const DIR_AD_LDC_AND_PASS_SCAN = 1 << 30;
+        /// Directed advertising (low duty cycle) and active scan states
+        const DIR_AD_LDC_AND_ACT_SCAN = 1 << 31;
+        /// Connectable advertising and initiating states
+        const CONN_AD_AND_INITIATING = 1 << 32;
+        /// Directed advertising (high duty cycle) and initiating states
+        const DIR_AD_HDC_AND_INITIATING = 1 << 33;
+        /// Directed advertising (low duty cycle) and initiating states
+        const DIR_AD_LDC_AND_INITIATING = 1 << 34;
+        /// Connectable advertising and central (master) connection states
+        const CONN_AD_AND_CENTRAL_CONN = 1 << 35;
+        /// Directed advertising (high duty cycle) and central (master) states
+        const DIR_AD_HDC_AND_CENTRAL_CONN = 1 << 36;
+        /// Directed advertising (low duty cycle) and central (master) states
+        const DIR_AD_LDC_AND_CENTRAL_CONN = 1 << 37;
+        /// Connectable advertising and peripheral (slave) connection states
+        const CONN_AD_AND_PERIPH_CONN = 1 << 38;
+        /// Directed advertising (high duty cycle) and peripheral (slave) states
+        const DIR_AD_HDC_AND_PERIPH_CONN = 1 << 39;
+        /// Directed advertising (low duty cycle) and peripheral (slave) states
+        const DIR_AD_LDC_AND_PERIPH_CONN = 1 << 40;
+        /// Initiating and peripheral (slave) connection states
+        const INITIATING_AND_PERIPH_CONN = 1 << 41;
+    }
+}
+
+#[cfg(feature = "defmt")]
 defmt::bitflags! {
     /// Possible LE states or state combinations for the [LE Read Supported
     /// States](::host::Hci::le_read_supported_states) command.
@@ -1679,7 +1968,8 @@ where
 }
 
 /// Parameters returned by the [LE Test End](crate::host::Hci::le_test_end) command.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LeTestEnd<VS> {
     /// Did the command fail, and if so, how?
     pub status: Status<VS>,

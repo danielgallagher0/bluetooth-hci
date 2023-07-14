@@ -1224,7 +1224,8 @@ impl<T: Controller> GapCommands for T {
 /// Before some commands are sent to the controller, the parameters are validated. This type
 /// enumerates the potential validation errors. Must be specialized on the types of communication
 /// errors.
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Error {
     /// For the [GAP Set Limited Discoverable](Commands::set_limited_discoverable) and
     /// [GAP Set Discoverable](Commands::set_discoverable) commands, the connection
@@ -1314,7 +1315,7 @@ fn to_connection_length_value(d: Duration) -> u16 {
 /// Parameters for the
 /// [`set_limited_discoverable`](Commands::set_limited_discoverable) and
 /// [`set_discoverable`](Commands::set_discoverable) commands.
-#[derive(defmt::Format)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct DiscoverableParameters<'a, 'b> {
     /// Advertising method for the device.
     ///
@@ -1459,7 +1460,7 @@ impl<'a, 'b> DiscoverableParameters<'a, 'b> {
 }
 
 /// Allowed types for the local name.
-#[derive(defmt::Format)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum LocalName<'a> {
     /// The shortened local name.
     Shortened(&'a [u8]),
@@ -1470,7 +1471,7 @@ pub enum LocalName<'a> {
 
 /// Parameters for the
 /// [`set_undirected_connectable`](GapCommands::set_undirected_connectable) command.
-#[derive(defmt::Format)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct UndirectedConnectableParameters {
     /// Range of advertising interval for advertising.
     ///
@@ -1530,7 +1531,7 @@ impl UndirectedConnectableParameters {
 
 /// Parameters for the
 /// [`set_direct_connectable`](GapCommands::set_direct_connectable) command.
-#[derive(defmt::Format)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct DirectConnectableParameters {
     /// Address type of this device.
     pub own_address_type: OwnAddressType,
@@ -1600,7 +1601,8 @@ impl DirectConnectableParameters {
 /// I/O capabilities available for the [GAP Set I/O
 /// Capability](Commands::set_io_capability) command.
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum IoCapability {
     /// Display Only
     Display = 0x00,
@@ -1616,7 +1618,7 @@ pub enum IoCapability {
 
 /// Parameters for the [GAP Set Authentication
 /// Requirement](Commands::set_authentication_requirement) command.
-#[derive(defmt::Format)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct AuthenticationRequirements {
     /// Is bonding required?
     pub bonding_required: bool,
@@ -1690,7 +1692,7 @@ impl AuthenticationRequirements {
 }
 
 /// Options for [`out_of_band_auth`](AuthenticationRequirements::out_of_band_auth).
-#[derive(defmt::Format)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum OutOfBandAuthentication {
     /// Out Of Band authentication not enabled
     Disabled,
@@ -1699,7 +1701,8 @@ pub enum OutOfBandAuthentication {
 }
 
 /// Options for [`secure_connection_support`](AuthenticationRequirements)
-#[derive(Clone, Copy, defmt::Format)]
+#[derive(Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum SecureConnectionSupport {
     NotSupported = 0x00,
     Optional = 0x01,
@@ -1707,7 +1710,7 @@ pub enum SecureConnectionSupport {
 }
 
 /// Options for [`fixed_pin`](AuthenticationRequirements).
-#[derive(defmt::Format)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Pin {
     /// Do not use fixed pin during the pairing process.  In this case, GAP will generate a [GAP
     /// Pass Key Request](crate::vendor::stm32wb::event::BlueNRGEvent::GapPassKeyRequest) event to the host.
@@ -1720,7 +1723,7 @@ pub enum Pin {
 
 /// Options for the [GAP Authorization Response](Commands::authorization_response).
 #[repr(u8)]
-#[derive(defmt::Format)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Authorization {
     /// Accept the connection.
     Authorized = 0x01,
@@ -1728,6 +1731,22 @@ pub enum Authorization {
     Rejected = 0x02,
 }
 
+#[cfg(not(feature = "defmt"))]
+bitflags::bitflags! {
+    /// Roles for a [GAP service](Commands::init).
+    pub struct Role: u8 {
+        /// Peripheral
+        const PERIPHERAL = 0x01;
+        /// Broadcaster
+        const BROADCASTER = 0x02;
+        /// Central Device
+        const CENTRAL = 0x04;
+        /// Observer
+        const OBSERVER = 0x08;
+    }
+}
+
+#[cfg(feature = "defmt")]
 defmt::bitflags! {
     /// Roles for a [GAP service](Commands::init).
     pub struct Role: u8 {
@@ -1745,7 +1764,8 @@ defmt::bitflags! {
 /// Indicates the type of address being used in the advertising packets, for the
 /// [`set_nonconnectable`](Commands::set_nonconnectable).
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum AddressType {
     /// Public device address.
     Public = 0x00,
@@ -1760,7 +1780,7 @@ pub enum AddressType {
 
 /// Available types of advertising data.
 #[repr(u8)]
-#[derive(defmt::Format)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum AdvertisingDataType {
     /// Flags
     Flags = 0x01,
@@ -1798,6 +1818,27 @@ pub enum AdvertisingDataType {
     ManufacturerSpecificData = 0xFF,
 }
 
+#[cfg(not(feature = "defmt"))]
+bitflags::bitflags! {
+    /// Event types for [GAP Set Event Mask](Commands::set_event_mask).
+    #[derive(Debug, Clone, Copy)]
+    pub struct EventFlags: u16 {
+        /// [Limited Discoverable](::event::BlueNRGEvent::GapLimitedDiscoverableTimeout)
+        const LIMITED_DISCOVERABLE_TIMEOUT = 0x0001;
+        /// [Pairing Complete](::event::BlueNRGEvent::GapPairingComplete)
+        const PAIRING_COMPLETE = 0x0002;
+        /// [Pass Key Request](::event::BlueNRGEvent::GapPassKeyRequest)
+        const PASS_KEY_REQUEST = 0x0004;
+        /// [Authorization Request](::event::BlueNRGEvent::GapAuthorizationRequest)
+        const AUTHORIZATION_REQUEST = 0x0008;
+        /// [Peripheral Security Initiated](::event::BlueNRGEvent::GapPeripheralSecurityInitiated).
+        const PERIPHERAL_SECURITY_INITIATED = 0x0010;
+        /// [Bond Lost](::event::BlueNRGEvent::GapBondLost)
+        const BOND_LOST = 0x0020;
+    }
+}
+
+#[cfg(feature = "defmt")]
 defmt::bitflags! {
     /// Event types for [GAP Set Event Mask](Commands::set_event_mask).
     pub struct EventFlags: u16 {
@@ -2037,6 +2078,33 @@ impl<'a> SelectiveConnectionEstablishmentParameters<'a> {
 /// and [GAP Create Connection](Commands::create_connection) commands are identical.
 pub type ConnectionParameters = NameDiscoveryProcedureParameters;
 
+#[cfg(not(feature = "defmt"))]
+bitflags::bitflags! {
+    /// Roles for a [GAP service](Commands::init).
+    pub struct Procedure: u8 {
+        /// [Limited Discovery](Commands::start_limited_discovery_procedure) procedure.
+        const LIMITED_DISCOVERY = 0x01;
+        /// [General Discovery](Commands::start_general_discovery_procedure) procedure.
+        const GENERAL_DISCOVERY = 0x02;
+        /// [Name Discovery](Commands::start_name_discovery_procedure) procedure.
+        const NAME_DISCOVERY = 0x04;
+        /// [Auto Connection Establishment](Commands::auto_connection_establishment).
+        const AUTO_CONNECTION_ESTABLISHMENT = 0x08;
+        /// [General Connection
+        /// Establishment](Commands::general_connection_establishment).
+        const GENERAL_CONNECTION_ESTABLISHMENT = 0x10;
+        /// [Selective Connection
+        /// Establishment](Commands::selective_connection_establishment).
+        const SELECTIVE_CONNECTION_ESTABLISHMENT = 0x20;
+        /// [Direct Connection
+        /// Establishment](Commands::direct_connection_establishment).
+        const DIRECT_CONNECTION_ESTABLISHMENT = 0x40;
+        /// [Observation](Commands::start_observation_procedure) procedure.
+        const OBSERVATION = 0x80;
+    }
+}
+
+#[cfg(feature = "defmt")]
 defmt::bitflags! {
     /// Roles for a [GAP service](Commands::init).
     pub struct Procedure: u8 {

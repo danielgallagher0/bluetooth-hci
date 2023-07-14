@@ -8,6 +8,7 @@ use core::time::Duration;
 /// There is no minimum. The maximum is bounded by what is representable as a u16 at T = N * 0.625
 /// ms, so max = 65535 * 0.625 ms = 40.959375 seconds.
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct ExpectedConnectionLength {
     range: (Duration, Duration),
 }
@@ -60,7 +61,8 @@ impl ExpectedConnectionLength {
 }
 
 /// Types of errors that can occure when creating a [`ExpectedConnectionLength`].
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum ExpectedConnectionLengthError {
     /// The maximum expected length is too long. The maximum is 40.959375, because nothing higher
     /// can be represented as a u16.

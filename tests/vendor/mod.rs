@@ -10,13 +10,17 @@ pub struct RecordingSink {
 #[derive(Debug, PartialEq)]
 pub struct RecordingSinkError;
 
-#[derive(Debug, defmt::Format)]
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct VendorEvent;
-#[derive(Debug, defmt::Format)]
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct VendorError;
-#[derive(Clone, Debug, defmt::Format)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct VendorReturnParameters;
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum VendorStatus {
     FourFive,
     FiveZero,

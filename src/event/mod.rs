@@ -60,7 +60,8 @@ use core::mem;
 /// The spec defines an "LE Meta-Event" event. This event is not exposed directly. Instead,
 /// individual LE events are included in this enum.
 #[allow(clippy::large_enum_variant)]
-#[derive(Clone, Debug, defmt::Format)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Event<V>
 where
     V: VendorEvent,
@@ -121,14 +122,24 @@ where
 }
 
 /// Trait for [vendor-specific events](Event::Vendor).
-pub trait VendorEvent: defmt::Format {
+pub trait VendorEvent {
     /// Enumeration of vendor-specific errors that may occur when deserializing events. Generally,
     /// this means some values in the buffer are out of range for the event.
-    type Error: defmt::Format;
+    type Error;
 
+    #[cfg(not(feature = "defmt"))]
+    /// Enumeration of vendor-specific status codes.
+    type Status: TryFrom<u8, Error = BadStatusError> + Clone + Debug;
+
+    #[cfg(feature = "defmt")]
     /// Enumeration of vendor-specific status codes.
     type Status: TryFrom<u8, Error = BadStatusError> + Clone + Debug + defmt::Format;
 
+    #[cfg(not(feature = "defmt"))]
+    /// Enumeration of return parameters for vendor-specific commands.
+    type ReturnParameters: VendorReturnParameters<Error = Self::Error> + Clone + Debug;
+
+    #[cfg(feature = "defmt")]
     /// Enumeration of return parameters for vendor-specific commands.
     type ReturnParameters: VendorReturnParameters<Error = Self::Error>
         + Clone
@@ -164,7 +175,8 @@ pub trait VendorReturnParameters {
 
 /// Errors that may occur when deserializing an event. Must be specialized by the vendor crate to
 /// allow for vendor-specific event errors.
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Error<V> {
     /// The event type byte was unknown. The byte is provided.
     UnknownEvent(u8),
@@ -367,7 +379,8 @@ where
 ///
 /// This event also indicates to the Host which issued the connection command and then received a
 /// [Command Status](Event::CommandStatus) event, if the issued command failed or was successful.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct ConnectionComplete<VS> {
     /// Did the connection attempt fail, and if so, how?
     pub status: Status<VS>,
@@ -383,7 +396,8 @@ pub struct ConnectionComplete<VS> {
 }
 
 /// Permissible values for [`ConnectionComplete::link_type`].
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum LinkType {
     /// Synchronous, connection-oriented link
     Sco,
@@ -393,7 +407,8 @@ pub enum LinkType {
 
 /// [TODO](https://doc.rust-lang.org/std/primitive.never.html): Replace NeverError with the
 /// language's never type (!).
-#[derive(Debug, defmt::Format)]
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum NeverError {}
 
 impl TryFrom<u8> for LinkType {
@@ -411,7 +426,6 @@ impl TryFrom<u8> for LinkType {
 fn to_connection_complete<VE, VS>(payload: &[u8]) -> Result<ConnectionComplete<VS>, Error<VE>>
 where
     Status<VS>: TryFrom<u8, Error = BadStatusError>,
-    VS: defmt::Format,
 {
     require_len!(payload, 11);
 
@@ -445,7 +459,8 @@ fn try_into_encryption_enabled(value: u8) -> Result<bool, Error<NeverError>> {
 /// handle](DisconnectionComplete::conn_handle) as a parameter.
 ///
 /// See the Bluetooth v4.1 spec, Vol 2, Part E, Section 7.7.5.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct DisconnectionComplete<VS> {
     /// Indicates if the disconnection was successful or not.
     pub status: Status<VS>,
@@ -483,7 +498,8 @@ where
 /// encryption is paused or resumed; during a role switch, for example.
 ///
 /// See the Bluetooth v4.1 spec, Vol 2, Part E, Section 7.7.8.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct EncryptionChange<VS> {
     /// Indicates if the encryption change was successful or not.
     pub status: Status<VS>,
@@ -510,7 +526,8 @@ pub struct EncryptionChange<VS> {
 /// the encryption type [`Off`](Encryption::Off) when encryption is off, to [`On`](Encryption::On)
 /// when encryption is on and using E0 and to [`OnAesCcmForBrEdr`](Encryption::OnAesCcmForBrEdr)
 /// when encryption is on and using AES-CCM.
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Encryption {
     /// Encryption is disabled.
     Off,
@@ -551,7 +568,8 @@ where
 /// Controller specified by [`conn_handle`](RemoteVersionInformation::conn_handle).
 ///
 /// See [`RemoteVersionInformationComplete`](Event::ReadRemoteVersionInformationComplete).
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct RemoteVersionInformation<VS> {
     /// Status of the read event.
     pub status: Status<VS>,
@@ -609,7 +627,8 @@ where
 /// currently performing the task for this command.
 ///
 /// Defined in Vol 2, Part E, Section 7.7.15 of the spec.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct CommandStatus<VS> {
     /// Status of the command that has started.
     pub status: Status<VS>,
@@ -640,7 +659,8 @@ where
 /// failure has occurred in the Controller.
 ///
 /// Defined in Vol 2, Part E, Section 7.7.16 of the spec.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct HardwareError {
     /// These hardware codes will be implementation-specific, and can be assigned to indicate
     /// various hardware problems.
@@ -658,7 +678,8 @@ fn to_hardware_error<VE>(payload: &[u8]) -> Result<HardwareError, Error<VE>> {
 /// sent to the Host.
 ///
 /// Defined in Vol 2, Part E, Section 7.7.19 of the spec.
-#[derive(Copy, Clone, defmt::Format)]
+#[derive(Copy, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct NumberOfCompletedPackets {
     /// Number of connection handles whose data is sent in this event.
     num_handles: usize,
@@ -693,7 +714,7 @@ impl NumberOfCompletedPackets {
 
 /// Iterator over the connection handle-number of completed packet pairs from the
 /// [`NumberOfCompletedPackets`] event.
-#[derive(defmt::Format)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct NumberOfCompletedPacketsIterator<'a> {
     event: &'a NumberOfCompletedPackets,
     next_index: usize,
@@ -721,7 +742,8 @@ impl<'a> Iterator for NumberOfCompletedPacketsIterator<'a> {
 
 /// The [`NumberOfCompletedPackets`] event includes a series of connection handle-number of
 /// completed packets pairs.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct NumberOfCompletedPacketsPair {
     /// Connection handle
     pub conn_handle: ConnectionHandle,
@@ -751,7 +773,8 @@ fn to_number_of_completed_packets<VE>(
 /// has sent more packets than allowed.
 ///
 /// Defined in Vol 2, Part E, Section 7.7.26 of the spec.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct DataBufferOverflow {
     /// Indicates whether the overflow was caused by ACL or synchronous data.
     pub link_type: LinkType,
@@ -783,7 +806,8 @@ fn to_data_buffer_overflow<VE>(payload: &[u8]) -> Result<DataBufferOverflow, Err
 /// shall be sent prior to the Role Change event.
 ///
 /// Defined in Vol 2, Part E, Section 7.7.39 of the spec.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct EncryptionKeyRefreshComplete<VS> {
     /// Did the encryption key refresh fail, and if so, how?
     pub status: Status<VS>,
@@ -815,7 +839,8 @@ where
 /// Status](Event::CommandStatus) event if the connection establishment failed or was successful.
 ///
 /// Defined in Vol 2, Part E, Section 7.7.65.1 of the spec.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LeConnectionComplete<VS> {
     /// Did the LE Connection fail, and if so, how?
     pub status: Status<VS>,
@@ -839,7 +864,8 @@ pub struct LeConnectionComplete<VS> {
 }
 
 /// Connection roles as returned by the [LE Connection Complete](Event::LeConnectionComplete) event.
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum ConnectionRole {
     /// The device is the central device for the connection.
     ///
@@ -864,7 +890,8 @@ impl TryFrom<u8> for ConnectionRole {
 
 /// Values for the central (master) clock accuracy as returned by the [LE Connection
 /// Complete](Event::LeConnectionComplete) event.
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum CentralClockAccuracy {
     /// The central clock is accurate to at least 500 parts-per-million.  This value is also used
     /// when the device is a central device.
@@ -935,7 +962,8 @@ where
 /// events that used legacy advertising PDUs.
 ///
 /// Defined in Vol 2, Part E, Section 7.7.65.2 of the spec.
-#[derive(Copy, Clone, defmt::Format)]
+#[derive(Copy, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LeAdvertisingReport {
     data_len: usize,
     data_buf: [u8; MAX_ADVERTISING_REPORT_LEN],
@@ -1008,12 +1036,12 @@ impl Debug for LeAdvertisingReport {
 
 /// Iterator over the individual LE advertisement responses in the [LE Advertising
 /// Report](Event::LeAdvertisingReport) event.
-#[derive(defmt::Format)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LeAdvertisingReportIterator<'a> {
     inner_iter: LeAdvertisingReportInnerIterator<'a, NeverError>,
 }
 
-#[derive(defmt::Format)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 struct LeAdvertisingReportInnerIterator<'a, VE> {
     event_data: &'a [u8],
     next_index: usize,
@@ -1069,7 +1097,8 @@ impl<'a, VE> LeAdvertisingReportInnerIterator<'a, VE> {
 
 /// A single advertising report returned by the [LE Advertising Report](Event::LeAdvertisingReport)
 /// event.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LeAdvertisement<'a> {
     /// Advertising respons type
     pub event_type: AdvertisementEvent,
@@ -1089,7 +1118,8 @@ pub struct LeAdvertisement<'a> {
 /// Types of advertisement reports.
 ///
 /// See [`LeAdvertisement`]($crate::event::LeAdvertisement).
-#[derive(Copy, Clone, Debug, PartialEq, defmt::Format)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum AdvertisementEvent {
     /// Connectable undirected advertising
     Advertisement,
@@ -1149,7 +1179,8 @@ fn to_le_advertising_report<VE>(payload: &[u8]) -> Result<LeAdvertisingReport, E
 /// command or the LE Remote Connection Parameter Request Reply command (Section 7.8.31).
 ///
 /// Defined in Vol 2, Part E, Section 7.7.65.3 of the spec.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LeConnectionUpdateComplete<VS> {
     /// Did the LE Connection Update fail, and if so, how?
     pub status: Status<VS>,
@@ -1186,7 +1217,8 @@ where
 /// than fetching the feature mask again.
 ///
 /// Defined in Vol 2, Part E, Section 7.7.65.4 of the spec.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LeReadRemoteUsedFeaturesComplete<VS> {
     /// Did the read fail, and if so, how?
     pub status: Status<VS>,
@@ -1218,7 +1250,8 @@ where
 /// the Host. (See Vol 6, Part B, Section 5.1.3).
 ///
 /// Defined in Vol 2, Part E, Section 7.7.65.5 of the spec.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LeLongTermKeyRequest {
     /// Connection handle to be used to identify a connection between two Bluetooth devices.
     pub conn_handle: ConnectionHandle,
@@ -1245,7 +1278,8 @@ fn to_le_ltk_request<VE>(payload: &[u8]) -> Result<LeLongTermKeyRequest, Error<V
 /// This event is only generated if any of the values have changed.
 ///
 /// Defined in Vol 2, Part E, Section 7.7.65.7 of the spec.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LeDataLengthChangeEvent {
     /// Connection handle to be used to identify a connection between two Bluetooth devices.
     pub conn_handle: ConnectionHandle,
@@ -1282,7 +1316,8 @@ fn to_le_data_length_change_event<VE>(
 /// PHY types supported by Bluetooth LE.
 ///
 /// See Vol 1, Part A, Section 3.2.2 of the spec.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Phy {
     /// The LE 1M PHY supports a datarate of 1 MBit/s.
     Le1M,
@@ -1312,7 +1347,8 @@ impl TryFrom<u8> for Phy {
 /// or when the controller does an autonomous PHY update.
 ///
 /// Defined in Vol 4, Part E, Section 7.7.65.12 of the spec.
-#[derive(Copy, Clone, Debug, defmt::Format)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LePhyUpdateComplete<VS> {
     /// Connection handle to be used to identify a connection between two Bluetooth devices.
     pub conn_handle: ConnectionHandle,
