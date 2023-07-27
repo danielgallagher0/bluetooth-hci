@@ -560,8 +560,6 @@ impl crate::event::VendorEvent for Stm32Wb5xEvent {
 
         let event_code = LittleEndian::read_u16(&buffer[0..=1]);
 
-        debug!("vendor event {:#x}", event_code);
-
         match event_code {
             // SHCI "C2 Ready" event
             0x9200 => Ok(Stm32Wb5xEvent::CoprocessorReady(to_coprocessor_ready(
@@ -1421,7 +1419,6 @@ impl<'a> Iterator for HandleUuid128PairIterator<'a> {
 fn to_att_find_information_response(
     buffer: &[u8],
 ) -> Result<AttFindInformationResponse, crate::event::Error<Stm32Wb5xError>> {
-    debug!("buffer {:#x}", buffer);
     require_len_at_least!(buffer, 4);
 
     let data_len = buffer[5] as usize;
@@ -2589,8 +2586,8 @@ fn to_att_prepare_write_permit_request(
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct NumericComparisonValue {
-    connection_handle: ConnectionHandle,
-    numeric_value: u32,
+    pub connection_handle: ConnectionHandle,
+    pub numeric_value: u32,
 }
 
 fn to_numeric_comparison_value(
@@ -2613,10 +2610,10 @@ fn to_keypress_notification(buffer: &[u8]) -> Result<u8, crate::event::Error<Stm
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct L2CapCommandReject {
-    conn_handle: ConnectionHandle,
-    identifier: u8,
-    reason: u16,
-    data: [u8; 247],
+    pub conn_handle: ConnectionHandle,
+    pub identifier: u8,
+    pub reason: u16,
+    pub data: [u8; 247],
 }
 
 fn to_l2cap_command_reject(

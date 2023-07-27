@@ -1,7 +1,7 @@
 [package]
 edition = "2021"
 name = "stm32wb-hci"
-version = "0.1.3"
+version = "0.1.4"
 authors = [
     "Daniel Gallagher <pdanielgallagher@gmail.com>",
     "Ghaith Oueslati <ghaith.oueslati@enis.tn>",

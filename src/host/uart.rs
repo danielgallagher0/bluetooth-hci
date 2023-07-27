@@ -88,7 +88,7 @@ where
     T: crate::Controller,
 {
     async fn read(&mut self) -> Result<Packet<Stm32Wb5xEvent>, Error<Stm32Wb5xError>> {
-        const MAX_EVENT_LENGTH: usize = 255;
+        const MAX_EVENT_LENGTH: usize = 256;
         const PACKET_HEADER_LENGTH: usize = 1;
         const EVENT_PACKET_HEADER_LENGTH: usize = 3;
         const PARAM_LEN_BYTE: usize = 2;
