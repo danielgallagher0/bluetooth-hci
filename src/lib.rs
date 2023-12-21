@@ -75,7 +75,7 @@
 //! [`bluenrg`]: https://github.com/danielgallagher0/bluenrg
 
 #![no_std]
-#![feature(async_fn_in_trait)]
+#![allow(async_fn_in_trait)]
 
 extern crate byteorder;
 
