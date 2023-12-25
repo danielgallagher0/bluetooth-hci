@@ -1885,7 +1885,7 @@ fn to_att_read_by_group_type_response(
     attribute_data_buf[..data_len].copy_from_slice(&buffer[6..]);
     Ok(AttReadByGroupTypeResponse {
         conn_handle: ConnectionHandle(LittleEndian::read_u16(&buffer[2..])),
-        data_len: data_len, // lose 1 byte to attribute_group_len
+        data_len, // lose 1 byte to attribute_group_len
         attribute_group_len,
         attribute_data_buf,
     })
