@@ -67,22 +67,22 @@ where
     V: VendorEvent,
 {
     /// Vol 2, Part E, Section 7.7.3
-    ConnectionComplete(ConnectionComplete<V::Status>),
+    ConnectionComplete(ConnectionComplete),
 
     /// Vol 2, Part E, Section 7.7.5
-    DisconnectionComplete(DisconnectionComplete<V::Status>),
+    DisconnectionComplete(DisconnectionComplete),
 
     /// Vol 2, Part E, Section 7.7.8
-    EncryptionChange(EncryptionChange<V::Status>),
+    EncryptionChange(EncryptionChange),
 
     /// Vol 2, Part E, Section 7.7.12
-    ReadRemoteVersionInformationComplete(RemoteVersionInformation<V::Status>),
+    ReadRemoteVersionInformationComplete(RemoteVersionInformation),
 
     /// Vol 2, Part E, Section 7.7.14
     CommandComplete(command::CommandComplete<V>),
 
     /// Vol 2, Part E, Section 7.7.15
-    CommandStatus(CommandStatus<V::Status>),
+    CommandStatus(CommandStatus),
 
     /// Vol 2, Part E, Section 7.7.16
     HardwareError(HardwareError),
@@ -94,19 +94,19 @@ where
     DataBufferOverflow(DataBufferOverflow),
 
     /// Vol 2, Part E, Section 7.7.39
-    EncryptionKeyRefreshComplete(EncryptionKeyRefreshComplete<V::Status>),
+    EncryptionKeyRefreshComplete(EncryptionKeyRefreshComplete),
 
     /// Vol 2, Part E, Section 7.7.65.1
-    LeConnectionComplete(LeConnectionComplete<V::Status>),
+    LeConnectionComplete(LeConnectionComplete),
 
     /// Vol 2, Part E, Section 7.7.65.2
     LeAdvertisingReport(LeAdvertisingReport),
 
     /// Vol 2, Part E, Section 7.7.65.3
-    LeConnectionUpdateComplete(LeConnectionUpdateComplete<V::Status>),
+    LeConnectionUpdateComplete(LeConnectionUpdateComplete),
 
     /// Vol 2, Part E, Section 7.7.65.4
-    LeReadRemoteUsedFeaturesComplete(LeReadRemoteUsedFeaturesComplete<V::Status>),
+    LeReadRemoteUsedFeaturesComplete(LeReadRemoteUsedFeaturesComplete),
 
     /// Vol 2, Part E, Section 7.7.65.5
     LeLongTermKeyRequest(LeLongTermKeyRequest),
@@ -115,7 +115,7 @@ where
     LeDataLengthChangeEvent(LeDataLengthChangeEvent),
 
     /// Vol 2, Part E, Section 7.7.65.12
-    LePhyUpdateComplete(LePhyUpdateComplete<V::Status>),
+    LePhyUpdateComplete(LePhyUpdateComplete),
 
     /// Vendor-specific events (opcode 0xFF)
     Vendor(V),
@@ -381,9 +381,9 @@ where
 /// [Command Status](Event::CommandStatus) event, if the issued command failed or was successful.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct ConnectionComplete<VS> {
+pub struct ConnectionComplete {
     /// Did the connection attempt fail, and if so, how?
-    pub status: Status<VS>,
+    pub status: Status,
     /// Identifies a connection between two BR/ EDR Controllers. This is used as an identifier for
     /// transmitting and receiving voice or data.
     pub conn_handle: ConnectionHandle,
@@ -423,9 +423,9 @@ impl TryFrom<u8> for LinkType {
     }
 }
 
-fn to_connection_complete<VE, VS>(payload: &[u8]) -> Result<ConnectionComplete<VS>, Error<VE>>
+fn to_connection_complete<VE>(payload: &[u8]) -> Result<ConnectionComplete, Error<VE>>
 where
-    Status<VS>: TryFrom<u8, Error = BadStatusError>,
+    Status: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(payload, 11);
 
@@ -461,9 +461,9 @@ fn try_into_encryption_enabled(value: u8) -> Result<bool, Error<NeverError>> {
 /// See the Bluetooth v4.1 spec, Vol 2, Part E, Section 7.7.5.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct DisconnectionComplete<VS> {
+pub struct DisconnectionComplete {
     /// Indicates if the disconnection was successful or not.
-    pub status: Status<VS>,
+    pub status: Status,
 
     /// Connection handle which was disconnected.
     pub conn_handle: ConnectionHandle,
@@ -474,12 +474,12 @@ pub struct DisconnectionComplete<VS> {
     /// [Disconnect](crate::host::Hci::disconnect) command and there was a parameter error, or the
     /// command was not presently allowed, or a connection handle that didn't correspond to a
     /// connection was given.
-    pub reason: Status<VS>,
+    pub reason: Status,
 }
 
-fn to_disconnection_complete<VE, VS>(payload: &[u8]) -> Result<DisconnectionComplete<VS>, Error<VE>>
+fn to_disconnection_complete<VE>(payload: &[u8]) -> Result<DisconnectionComplete, Error<VE>>
 where
-    Status<VS>: TryFrom<u8, Error = BadStatusError>,
+    Status: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(payload, 4);
 
@@ -500,9 +500,9 @@ where
 /// See the Bluetooth v4.1 spec, Vol 2, Part E, Section 7.7.8.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct EncryptionChange<VS> {
+pub struct EncryptionChange {
     /// Indicates if the encryption change was successful or not.
-    pub status: Status<VS>,
+    pub status: Status,
 
     /// Connection handle for which the link layer encryption has been enabled/disabled for all
     /// connection handles with the same BR/EDR Controller endpoint as the specified
@@ -550,9 +550,9 @@ impl TryFrom<u8> for Encryption {
     }
 }
 
-fn to_encryption_change<VE, VS>(payload: &[u8]) -> Result<EncryptionChange<VS>, Error<VE>>
+fn to_encryption_change<VE>(payload: &[u8]) -> Result<EncryptionChange, Error<VE>>
 where
-    Status<VS>: TryFrom<u8, Error = BadStatusError>,
+    Status: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(payload, 4);
     Ok(EncryptionChange {
@@ -570,9 +570,9 @@ where
 /// See [`RemoteVersionInformationComplete`](Event::ReadRemoteVersionInformationComplete).
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct RemoteVersionInformation<VS> {
+pub struct RemoteVersionInformation {
     /// Status of the read event.
-    pub status: Status<VS>,
+    pub status: Status,
 
     /// Connection Handle which was used for the
     /// [`read_remote_version_information`](crate::host::Hci::read_remote_version_information)
@@ -608,9 +608,9 @@ pub struct RemoteVersionInformation<VS> {
     pub subversion: u16,
 }
 
-fn to_remote_version_info<VE, VS>(payload: &[u8]) -> Result<RemoteVersionInformation<VS>, Error<VE>>
+fn to_remote_version_info<VE>(payload: &[u8]) -> Result<RemoteVersionInformation, Error<VE>>
 where
-    Status<VS>: TryFrom<u8, Error = BadStatusError>,
+    Status: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(payload, 8);
     Ok(RemoteVersionInformation {
@@ -629,9 +629,9 @@ where
 /// Defined in Vol 2, Part E, Section 7.7.15 of the spec.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct CommandStatus<VS> {
+pub struct CommandStatus {
     /// Status of the command that has started.
-    pub status: Status<VS>,
+    pub status: Status,
 
     /// Number of HCI Command packets that can be sent to the controller from the host.
     pub num_hci_command_packets: u8,
@@ -642,9 +642,9 @@ pub struct CommandStatus<VS> {
     pub opcode: crate::opcode::Opcode,
 }
 
-fn to_command_status<VE, VS>(buffer: &[u8]) -> Result<CommandStatus<VS>, Error<VE>>
+fn to_command_status<VE>(buffer: &[u8]) -> Result<CommandStatus, Error<VE>>
 where
-    Status<VS>: TryFrom<u8, Error = BadStatusError>,
+    Status: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(buffer, 4);
 
@@ -808,18 +808,18 @@ fn to_data_buffer_overflow<VE>(payload: &[u8]) -> Result<DataBufferOverflow, Err
 /// Defined in Vol 2, Part E, Section 7.7.39 of the spec.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct EncryptionKeyRefreshComplete<VS> {
+pub struct EncryptionKeyRefreshComplete {
     /// Did the encryption key refresh fail, and if so, how?
-    pub status: Status<VS>,
+    pub status: Status,
     /// Connection Handle for the ACL connection to have the encryption key refreshed on.
     pub conn_handle: ConnectionHandle,
 }
 
-fn to_encryption_key_refresh_complete<VE, VS>(
+fn to_encryption_key_refresh_complete<VE>(
     payload: &[u8],
-) -> Result<EncryptionKeyRefreshComplete<VS>, Error<VE>>
+) -> Result<EncryptionKeyRefreshComplete, Error<VE>>
 where
-    Status<VS>: TryFrom<u8, Error = BadStatusError>,
+    Status: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(payload, 3);
     Ok(EncryptionKeyRefreshComplete {
@@ -841,9 +841,9 @@ where
 /// Defined in Vol 2, Part E, Section 7.7.65.1 of the spec.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct LeConnectionComplete<VS> {
+pub struct LeConnectionComplete {
     /// Did the LE Connection fail, and if so, how?
-    pub status: Status<VS>,
+    pub status: Status,
 
     /// Connection handle to be used to identify a connection between two Bluetooth devices. The
     /// connection handle is used as an identifier for transmitting and receiving data.
@@ -929,9 +929,9 @@ impl TryFrom<u8> for CentralClockAccuracy {
     }
 }
 
-fn to_le_connection_complete<VE, VS>(payload: &[u8]) -> Result<LeConnectionComplete<VS>, Error<VE>>
+fn to_le_connection_complete<VE>(payload: &[u8]) -> Result<LeConnectionComplete, Error<VE>>
 where
-    Status<VS>: TryFrom<u8, Error = BadStatusError>,
+    Status: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(payload, 19);
     let mut bd_addr = crate::BdAddr([0; 6]);
@@ -1181,9 +1181,9 @@ fn to_le_advertising_report<VE>(payload: &[u8]) -> Result<LeAdvertisingReport, E
 /// Defined in Vol 2, Part E, Section 7.7.65.3 of the spec.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct LeConnectionUpdateComplete<VS> {
+pub struct LeConnectionUpdateComplete {
     /// Did the LE Connection Update fail, and if so, how?
-    pub status: Status<VS>,
+    pub status: Status,
 
     /// Connection handle to be used to identify a connection between two Bluetooth devices. The
     /// connection handle is used as an identifier for transmitting and receiving data.
@@ -1193,11 +1193,11 @@ pub struct LeConnectionUpdateComplete<VS> {
     pub conn_interval: FixedConnectionInterval,
 }
 
-fn to_le_connection_update_complete<VE, VS>(
+fn to_le_connection_update_complete<VE>(
     payload: &[u8],
-) -> Result<LeConnectionUpdateComplete<VS>, Error<VE>>
+) -> Result<LeConnectionUpdateComplete, Error<VE>>
 where
-    Status<VS>: TryFrom<u8, Error = BadStatusError>,
+    Status: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(payload, 10);
     Ok(LeConnectionUpdateComplete {
@@ -1219,20 +1219,20 @@ where
 /// Defined in Vol 2, Part E, Section 7.7.65.4 of the spec.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct LeReadRemoteUsedFeaturesComplete<VS> {
+pub struct LeReadRemoteUsedFeaturesComplete {
     /// Did the read fail, and if so, how?
-    pub status: Status<VS>,
+    pub status: Status,
     /// Connection handle to be used to identify a connection between two Bluetooth devices.
     pub conn_handle: ConnectionHandle,
     /// Bit Mask List of used LE features.
     pub features: crate::LinkLayerFeature,
 }
 
-fn to_le_read_remote_used_features_complete<VE, VS>(
+fn to_le_read_remote_used_features_complete<VE>(
     payload: &[u8],
-) -> Result<LeReadRemoteUsedFeaturesComplete<VS>, Error<VE>>
+) -> Result<LeReadRemoteUsedFeaturesComplete, Error<VE>>
 where
-    Status<VS>: TryFrom<u8, Error = BadStatusError>,
+    Status: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(payload, 12);
 
@@ -1349,20 +1349,20 @@ impl TryFrom<u8> for Phy {
 /// Defined in Vol 4, Part E, Section 7.7.65.12 of the spec.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct LePhyUpdateComplete<VS> {
+pub struct LePhyUpdateComplete {
     /// Connection handle to be used to identify a connection between two Bluetooth devices.
     pub conn_handle: ConnectionHandle,
     /// Status of the PHY update.
-    pub status: Status<VS>,
+    pub status: Status,
     /// PHY used for transmission.
     pub tx_phy: Phy,
     /// PHY used for reception.
     pub rx_phy: Phy,
 }
 
-fn to_le_phy_update_complete<VS, VE>(payload: &[u8]) -> Result<LePhyUpdateComplete<VS>, Error<VE>>
+fn to_le_phy_update_complete<VE>(payload: &[u8]) -> Result<LePhyUpdateComplete, Error<VE>>
 where
-    Status<VS>: TryFrom<u8, Error = BadStatusError>,
+    Status: TryFrom<u8, Error = BadStatusError>,
 {
     require_len!(payload, 6);
 

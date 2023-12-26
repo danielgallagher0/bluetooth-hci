@@ -2244,7 +2244,7 @@ pub struct WriteResponseParameters<'a> {
     pub attribute_handle: AttributeHandle,
 
     /// Is the command rejected, and if so, why?
-    pub status: Result<(), crate::Status<crate::vendor::stm32wb::event::Status>>,
+    pub status: Result<(), crate::Status>,
 
     /// Value as passed in the [Write Permit
     /// Request](crate::event::BlueNRGEvent::AttWritePermitRequest) event.

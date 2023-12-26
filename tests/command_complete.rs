@@ -13,7 +13,7 @@ struct VendorError;
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 enum VendorReturnParameters {
-    Opcode10 { status: hci::Status<VendorStatus> },
+    Opcode10 { status: hci::Status },
 }
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]

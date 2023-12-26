@@ -25,7 +25,7 @@ pub enum ReturnParameters {
 
     /// Status returned by the [HAL Write Config Data](crate::hal::Commands::write_config_data)
     /// command.
-    HalWriteConfigData(crate::Status<crate::vendor::stm32wb::event::Status>),
+    HalWriteConfigData(crate::Status),
 
     /// Parameters returned by the [HAL Read Config Data](crate::hal::Commands::read_config_data)
     /// command.
@@ -33,20 +33,20 @@ pub enum ReturnParameters {
 
     /// Status returned by the [HAL Set Tx Power Level](crate::hal::Commands::set_tx_power_level)
     /// command.
-    HalSetTxPowerLevel(crate::Status<crate::vendor::stm32wb::event::Status>),
+    HalSetTxPowerLevel(crate::Status),
 
     /// Status returned by the [HAL Device Standby](crate::hal::Commands::device_standby) command.
-    HalDeviceStandby(crate::Status<crate::vendor::stm32wb::event::Status>),
+    HalDeviceStandby(crate::Status),
 
     /// Parameters returned by the [HAL Get Tx Test Packet
     /// Count](crate::hal::Commands::get_tx_test_packet_count) command.
     HalGetTxTestPacketCount(HalTxTestPacketCount),
 
     /// Status returned by the [HAL Start Tone](crate::hal::Commands::start_tone) command.
-    HalStartTone(crate::Status<crate::vendor::stm32wb::event::Status>),
+    HalStartTone(crate::Status),
 
     /// Status returned by the [HAL Stop Tone](crate::hal::Commands::stop_tone) command.
-    HalStopTone(crate::Status<crate::vendor::stm32wb::event::Status>),
+    HalStopTone(crate::Status),
 
     /// Status returned by the [HAL Get Link Status](crate::hal::Commands::get_link_status) command.
     HalGetLinkStatus(HalLinkStatus),
@@ -57,54 +57,54 @@ pub enum ReturnParameters {
 
     /// Status returned by the [GAP Set Non-Discoverable](crate::gap::Commands::set_nondiscoverable)
     /// command.
-    GapSetNonDiscoverable(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GapSetNonDiscoverable(crate::Status),
 
     /// Status returned by the [GAP Set Discoverable](crate::gap::Commands::set_discoverable)
     /// command.
-    GapSetDiscoverable(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GapSetDiscoverable(crate::Status),
 
     /// Status returned by the [GAP Set Direct
     /// Connectable](crate::gap::Commands::set_direct_connectable) command.
-    GapSetDirectConnectable(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GapSetDirectConnectable(crate::Status),
 
     /// Status returned by the [GAP Set IO Capability](crate::gap::Commands::set_io_capability)
     /// command.
-    GapSetIoCapability(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GapSetIoCapability(crate::Status),
 
     /// Status returned by the [GAP Set Authentication
     /// Requirement](crate::gap::Commands::set_authentication_requirement) command.
-    GapSetAuthenticationRequirement(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GapSetAuthenticationRequirement(crate::Status),
 
     /// Status returned by the [GAP Set Authorization
     /// Requirement](crate::gap::Commands::set_authorization_requirement) command.
-    GapSetAuthorizationRequirement(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GapSetAuthorizationRequirement(crate::Status),
 
     /// Status returned by the [GAP Pass Key Response](crate::gap::Commands::pass_key_response)
     /// command.
-    GapPassKeyResponse(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GapPassKeyResponse(crate::Status),
 
     /// Status returned by the [GAP Authorization
     /// Response](crate::gap::Commands::authorization_response) command.
-    GapAuthorizationResponse(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GapAuthorizationResponse(crate::Status),
 
     /// Parameters returned by the [GAP Init](crate::gap::Commands::init) command.
     GapInit(GapInit),
 
     /// Parameters returned by the [GAP Set
     /// Non-Connectable](crate::gap::Commands::set_nonconnectable) command.
-    GapSetNonConnectable(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GapSetNonConnectable(crate::Status),
 
     /// Parameters returned by the [GAP Set
     /// Undirected Connectable](crate::gap::Commands::set_undirected_connectable) command.
-    GapSetUndirectedConnectable(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GapSetUndirectedConnectable(crate::Status),
 
     /// Parameters returned by the [GAP Update Advertising
     /// Data](crate::gap::Commands::update_advertising_data) command.
-    GapUpdateAdvertisingData(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GapUpdateAdvertisingData(crate::Status),
 
     /// Parameters returned by the [GAP Delete AD Type](crate::gap::Commands::delete_ad_type)
     /// command.
-    GapDeleteAdType(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GapDeleteAdType(crate::Status),
 
     /// Parameters returned by the [GAP Get Security
     /// Level](crate::gap::Commands::get_security_level) command.
@@ -112,22 +112,22 @@ pub enum ReturnParameters {
 
     /// Parameters returned by the [GAP Set Event Mask](crate::gap::Commands::set_event_mask)
     /// command.
-    GapSetEventMask(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GapSetEventMask(crate::Status),
 
     /// Parameters returned by the [GAP Configure
     /// White List](crate::gap::Commands::configure_white_list) command.
-    GapConfigureWhiteList(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GapConfigureWhiteList(crate::Status),
 
     /// Parameters returned by the [GAP Clear Security
     /// Database](crate::gap::Commands::clear_security_database) command.
-    GapClearSecurityDatabase(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GapClearSecurityDatabase(crate::Status),
 
     /// Parameters returned by the [GAP Allow Rebond](crate::gap::Commands::allow_rebond) command.
-    GapAllowRebond(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GapAllowRebond(crate::Status),
 
     /// Parameters returned by the [GAP Terminate
     /// Procedure](crate::gap::Commands::terminate_procedure) command.
-    GapTerminateProcedure(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GapTerminateProcedure(crate::Status),
 
     /// Parameters returned by the [GAP Resolve Private
     /// Address](crate::gap::Commands::resolve_private_address) command.
@@ -139,18 +139,18 @@ pub enum ReturnParameters {
 
     /// Parameters returned by the [GAP Set Broadcast
     /// Mode](crate::gap::Commands::set_broadcast_mode) command.
-    GapSetBroadcastMode(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GapSetBroadcastMode(crate::Status),
 
     /// Parameters returned by the [GAP Start Observation
     /// Procedure](crate::gap::Commands::start_observation_procedure) command.
-    GapStartObservationProcedure(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GapStartObservationProcedure(crate::Status),
 
     /// Parameters returned by the [GAP Is Device Bonded](crate::gap::Commands::is_device_bonded)
     /// command.
-    GapIsDeviceBonded(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GapIsDeviceBonded(crate::Status),
 
     /// Parameters returned by the [GATT Init](crate::vendor::stm32wb::command::gatt::Commands::init) command.
-    GattInit(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GattInit(crate::Status),
 
     /// Parameters returned by the [GATT Add Service](crate::vendor::stm32wb::command::gatt::Commands::add_service) command.
     GattAddService(GattService),
@@ -169,50 +169,50 @@ pub enum ReturnParameters {
 
     /// Parameters returned by the [GATT Update Characteristic
     /// Value](crate::vendor::stm32wb::command::gatt::Commands::update_characteristic_value) command.
-    GattUpdateCharacteristicValue(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GattUpdateCharacteristicValue(crate::Status),
 
     /// Parameters returned by the [GATT Delete
     /// Characteristic](crate::vendor::stm32wb::command::gatt::Commands::delete_characteristic) command.
-    GattDeleteCharacteristic(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GattDeleteCharacteristic(crate::Status),
 
     /// Parameters returned by the [GATT Delete Service](crate::vendor::stm32wb::command::gatt::Commands::delete_service)
     /// command.
-    GattDeleteService(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GattDeleteService(crate::Status),
 
     /// Parameters returned by the [GATT Delete Included
     /// Service](crate::vendor::stm32wb::command::gatt::Commands::delete_included_service) command.
-    GattDeleteIncludedService(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GattDeleteIncludedService(crate::Status),
 
     /// Parameters returned by the [GATT Set Event Mask](crate::vendor::stm32wb::command::gatt::Commands::set_event_mask)
     /// command.
-    GattSetEventMask(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GattSetEventMask(crate::Status),
 
     /// Parameters returned by the [GATT Write Without
     /// Response](crate::vendor::stm32wb::command::gatt::Commands::write_without_response) command.
-    GattWriteWithoutResponse(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GattWriteWithoutResponse(crate::Status),
 
     /// Parameters returned by the [GATT Signed Write Without
     /// Response](crate::vendor::stm32wb::command::gatt::Commands::signed_write_without_response) command.
-    GattSignedWriteWithoutResponse(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GattSignedWriteWithoutResponse(crate::Status),
 
     /// Parameters returned by the [GATT Confirm
     /// Indication](crate::vendor::stm32wb::command::gatt::Commands::confirm_indication) command.
-    GattConfirmIndication(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GattConfirmIndication(crate::Status),
 
     /// Parameters returned by the [GATT Write Response](crate::vendor::stm32wb::command::gatt::Commands::write_response)
     /// command.
-    GattWriteResponse(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GattWriteResponse(crate::Status),
 
     /// Parameters returned by the [GATT Allow Read](crate::vendor::stm32wb::command::gatt::Commands::allow_read) command.
-    GattAllowRead(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GattAllowRead(crate::Status),
 
     /// Parameters returned by the [GATT Set Security
     /// Permission](crate::vendor::stm32wb::command::gatt::Commands::set_security_permission) command.
-    GattSetSecurityPermission(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GattSetSecurityPermission(crate::Status),
 
     /// Parameters returned by the [GATT Set Descriptor
     /// Value](crate::vendor::stm32wb::command::gatt::Commands::set_descriptor_value) command.
-    GattSetDescriptorValue(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GattSetDescriptorValue(crate::Status),
 
     /// Parameters returned by the [GATT Read Handle
     /// Value](crate::vendor::stm32wb::command::gatt::Commands::read_handle_value) command.
@@ -224,11 +224,11 @@ pub enum ReturnParameters {
 
     /// Parameters returned by the [GATT Update Long Characteristic
     /// Value](crate::vendor::stm32wb::command::gatt::Commands::update_long_characteristic_value) command.
-    GattUpdateLongCharacteristicValue(crate::Status<crate::vendor::stm32wb::event::Status>),
+    GattUpdateLongCharacteristicValue(crate::Status),
 
     /// Status returned by the [L2CAP Connection Parameter Update
     /// Response](crate::l2cap::Commands::connection_parameter_update_response) command.
-    L2CapConnectionParameterUpdateResponse(crate::Status<crate::vendor::stm32wb::event::Status>),
+    L2CapConnectionParameterUpdateResponse(crate::Status),
 }
 
 impl crate::event::VendorReturnParameters for ReturnParameters {
@@ -425,12 +425,7 @@ fn check_len_at_least(
     }
 }
 
-fn to_status(
-    bytes: &[u8],
-) -> Result<
-    crate::Status<crate::vendor::stm32wb::event::Status>,
-    crate::event::Error<super::Stm32Wb5xError>,
-> {
+fn to_status(bytes: &[u8]) -> Result<crate::Status, crate::event::Error<super::Stm32Wb5xError>> {
     require_len_at_least!(bytes, 1);
     bytes[0].try_into().map_err(crate::event::rewrap_bad_status)
 }
@@ -441,7 +436,7 @@ fn to_status(
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct HalFirmwareRevision {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
+    pub status: crate::Status,
 
     /// The firmware revision number.
     pub revision: u16,
@@ -464,7 +459,7 @@ fn to_hal_firmware_revision(
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct HalConfigData {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
+    pub status: crate::Status,
 
     /// Requested value.
     ///
@@ -549,7 +544,7 @@ fn to_hal_config_parameter(
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct HalTxTestPacketCount {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
+    pub status: crate::Status,
 
     /// Number of packets sent during the last Direct TX test.
     pub packet_count: u32,
@@ -570,7 +565,7 @@ fn to_hal_tx_test_packet_count(
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct HalLinkStatus {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
+    pub status: crate::Status,
 
     /// State of the client connections.
     pub clients: [ClientStatus; 8],
@@ -658,7 +653,7 @@ fn to_hal_link_status(
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct HalAnchorPeriod {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
+    pub status: crate::Status,
 
     /// Duration between the beginnings of sniff anchor points.
     pub anchor_interval: Duration,
@@ -690,7 +685,7 @@ pub struct GapInit {
     /// Should be one of:
     /// - [Success](crate::Status::Success)
     /// - [InvalidParameters](crate::Status::InvalidParameters)
-    pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
+    pub status: crate::Status,
 
     /// Handle for the GAP service
     pub service_handle: AttributeHandle,
@@ -719,7 +714,7 @@ fn to_gap_init(bytes: &[u8]) -> Result<GapInit, crate::event::Error<super::Stm32
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct GapSecurityLevel {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
+    pub status: crate::Status,
 
     /// Is MITM (man-in-the-middle) protection required?
     pub mitm_protection_required: bool,
@@ -787,7 +782,7 @@ fn to_gap_security_level(
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct GapResolvePrivateAddress {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
+    pub status: crate::Status,
 
     /// If the address was successfully resolved, the peer address is returned.  This value is
     /// `None` if the address could not be resolved.
@@ -822,7 +817,7 @@ fn to_gap_resolve_private_address(
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct GapBondedDevices {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
+    pub status: crate::Status,
 
     // Number of peer addresses in the event, and a buffer that can hold all of the addresses.
     address_count: usize,
@@ -897,7 +892,7 @@ fn to_gap_bonded_devices(
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct GattService {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
+    pub status: crate::Status,
 
     /// Handle of the Service
     ///
@@ -925,7 +920,7 @@ fn to_gatt_service(
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct GattCharacteristic {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
+    pub status: crate::Status,
 
     /// Handle of the characteristic.
     pub characteristic_handle: AttributeHandle,
@@ -948,7 +943,7 @@ fn to_gatt_characteristic(
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct GattCharacteristicDescriptor {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
+    pub status: crate::Status,
 
     /// Handle of the characteristic.
     pub descriptor_handle: AttributeHandle,
@@ -971,7 +966,7 @@ fn to_gatt_characteristic_descriptor(
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct GattHandleValue {
     /// Did the command fail, and if so, how?
-    pub status: crate::Status<crate::vendor::stm32wb::event::Status>,
+    pub status: crate::Status,
 
     value_buf: [u8; GattHandleValue::MAX_VALUE_BUF],
     value_len: usize,

@@ -421,7 +421,7 @@ pub trait GapCommands {
     async fn terminate(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        reason: crate::Status<crate::vendor::stm32wb::event::Status>,
+        reason: crate::Status,
     ) -> Result<(), Error>;
 
     /// Clear the security database. All the devices in the security database will be removed.
@@ -978,7 +978,7 @@ impl<T: Controller> GapCommands for T {
     async fn terminate(
         &mut self,
         conn_handle: crate::ConnectionHandle,
-        reason: crate::Status<crate::vendor::stm32wb::event::Status>,
+        reason: crate::Status,
     ) -> Result<(), Error> {
         match reason {
             crate::Status::AuthFailure
@@ -1275,7 +1275,7 @@ pub enum Error {
 
     /// For the [GAP Terminate](Commands::terminate) command, the termination reason was
     /// not one of the allowed reason. The reason is returned.
-    BadTerminationReason(crate::Status<crate::vendor::stm32wb::event::Status>),
+    BadTerminationReason(crate::Status),
 
     /// For the [GAP Start Auto Connection
     /// Establishment](Commands::start_auto_connection_establishment) or [GAP Start

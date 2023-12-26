@@ -124,12 +124,11 @@ pub trait Controller {
     ///
     /// // host calls:
     ///
-    /// # #![feature(async_fn_in_trait)]
     /// # extern crate stm32wb_hci as hci;
     /// # use hci::Controller as HciController;
     /// # use hci::Opcode;
     /// # struct Controller;
-    /// #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+    /// # #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     /// # struct Error;
     /// # struct Header;
     /// # struct Vendor;
@@ -138,7 +137,7 @@ pub trait Controller {
     /// #     type Event = VendorEvent;
     /// # }
     /// # #[derive(Clone, Debug)]
-    /// #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+    /// # #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     /// # struct VendorStatus;
     /// # impl std::convert::TryFrom<u8> for VendorStatus {
     /// #     type Error = hci::BadStatusError;
@@ -151,7 +150,7 @@ pub trait Controller {
     /// #        0
     /// #    }
     /// # }
-    /// #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+    /// # #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     /// # struct VendorEvent;
     /// # impl hci::event::VendorEvent for VendorEvent {
     /// #     type Error = Error;
@@ -165,7 +164,7 @@ pub trait Controller {
     /// #     }
     /// # }
     /// # #[derive(Clone, Debug)]
-    /// #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+    /// # #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     /// # struct ReturnParameters;
     /// # impl hci::event::VendorReturnParameters for ReturnParameters {
     /// #     type Error = Error;
@@ -213,7 +212,7 @@ pub trait Vendor {
 /// Includes an extension point for vendor-specific status codes.
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub enum Status<V> {
+pub enum Status {
     /// Success
     Success,
     /// Unknown HCI Command
@@ -361,7 +360,7 @@ pub enum Status<V> {
     /// First introduced in version 5.0
     OperationCancelledByHost,
     /// Vendor-specific status code
-    Vendor(V),
+    Vendor(crate::vendor::stm32wb::event::VendorStatus),
 }
 
 /// Wrapper enum for errors converting a u8 into a [`Status`].
@@ -371,13 +370,10 @@ pub enum BadStatusError {
     BadValue(u8),
 }
 
-impl<V> core::convert::TryFrom<u8> for Status<V>
-where
-    V: core::convert::TryFrom<u8>,
-{
-    type Error = V::Error;
+impl core::convert::TryFrom<u8> for Status {
+    type Error = crate::BadStatusError;
 
-    fn try_from(value: u8) -> Result<Status<V>, Self::Error> {
+    fn try_from(value: u8) -> Result<Status, Self::Error> {
         match value {
             0x00 => Ok(Status::Success),
             0x01 => Ok(Status::UnknownCommand),
@@ -448,16 +444,15 @@ where
             0x42 => Ok(Status::UnknownAdvertisingId),
             0x43 => Ok(Status::LimitReached),
             0x44 => Ok(Status::OperationCancelledByHost),
-            _ => Ok(Status::Vendor(V::try_from(value)?)),
+            _ => Ok(Status::Vendor(
+                crate::vendor::stm32wb::event::VendorStatus::try_from(value)?,
+            )),
         }
     }
 }
 
-impl<V> core::convert::From<Status<V>> for u8
-where
-    V: core::convert::Into<u8>,
-{
-    fn from(val: Status<V>) -> Self {
+impl core::convert::From<Status> for u8 {
+    fn from(val: Status) -> Self {
         match val {
             Status::Success => 0x00,
             Status::UnknownCommand => 0x01,

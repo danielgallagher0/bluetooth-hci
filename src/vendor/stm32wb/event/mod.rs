@@ -239,7 +239,7 @@ pub enum Stm32Wb5xEvent {
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[repr(u8)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub enum Status {
+pub enum VendorStatus {
     /// The command cannot be executed due to the current state of the device.
     Failed = 0x41,
     /// Some parameters are invalid.
@@ -315,50 +315,50 @@ pub enum Status {
     NullParameter = 0xF1,
 }
 
-impl TryFrom<u8> for Status {
+impl TryFrom<u8> for VendorStatus {
     type Error = crate::BadStatusError;
 
     fn try_from(value: u8) -> Result<Self, <Self as TryFrom<u8>>::Error> {
         match value {
-            0x41 => Ok(Status::Failed),
-            0x42 => Ok(Status::InvalidParameters),
-            0x46 => Ok(Status::NotAllowed),
-            0x47 => Ok(Status::Error),
-            0x48 => Ok(Status::AddressNotResolved),
-            0x49 => Ok(Status::FlashReadFailed),
-            0x4A => Ok(Status::FlashWriteFailed),
-            0x4B => Ok(Status::FlashEraseFailed),
-            0x50 => Ok(Status::InvalidCid),
-            0x54 => Ok(Status::TimerNotValidLayer),
-            0x55 => Ok(Status::TimerInsufficientResources),
-            0x5A => Ok(Status::CsrkNotFound),
-            0x5B => Ok(Status::IrkNotFound),
-            0x5C => Ok(Status::DeviceNotFoundInDatabase),
-            0x5D => Ok(Status::SecurityDatabaseFull),
-            0x5E => Ok(Status::DeviceNotBonded),
-            0x5F => Ok(Status::DeviceInBlacklist),
-            0x60 => Ok(Status::InvalidHandle),
-            0x61 => Ok(Status::InvalidParameter),
-            0x62 => Ok(Status::OutOfHandle),
-            0x63 => Ok(Status::InvalidOperation),
-            0x64 => Ok(Status::InsufficientResources),
-            0x65 => Ok(Status::InsufficientEncryptionKeySize),
-            0x66 => Ok(Status::CharacteristicAlreadyExists),
-            0x82 => Ok(Status::NoValidSlot),
-            0x83 => Ok(Status::ScanWindowTooShort),
-            0x84 => Ok(Status::NewIntervalFailed),
-            0x85 => Ok(Status::IntervalTooLarge),
-            0x86 => Ok(Status::LengthFailed),
-            0xFF => Ok(Status::Timeout),
-            0xF0 => Ok(Status::ProfileAlreadyInitialized),
-            0xF1 => Ok(Status::NullParameter),
+            0x41 => Ok(VendorStatus::Failed),
+            0x42 => Ok(VendorStatus::InvalidParameters),
+            0x46 => Ok(VendorStatus::NotAllowed),
+            0x47 => Ok(VendorStatus::Error),
+            0x48 => Ok(VendorStatus::AddressNotResolved),
+            0x49 => Ok(VendorStatus::FlashReadFailed),
+            0x4A => Ok(VendorStatus::FlashWriteFailed),
+            0x4B => Ok(VendorStatus::FlashEraseFailed),
+            0x50 => Ok(VendorStatus::InvalidCid),
+            0x54 => Ok(VendorStatus::TimerNotValidLayer),
+            0x55 => Ok(VendorStatus::TimerInsufficientResources),
+            0x5A => Ok(VendorStatus::CsrkNotFound),
+            0x5B => Ok(VendorStatus::IrkNotFound),
+            0x5C => Ok(VendorStatus::DeviceNotFoundInDatabase),
+            0x5D => Ok(VendorStatus::SecurityDatabaseFull),
+            0x5E => Ok(VendorStatus::DeviceNotBonded),
+            0x5F => Ok(VendorStatus::DeviceInBlacklist),
+            0x60 => Ok(VendorStatus::InvalidHandle),
+            0x61 => Ok(VendorStatus::InvalidParameter),
+            0x62 => Ok(VendorStatus::OutOfHandle),
+            0x63 => Ok(VendorStatus::InvalidOperation),
+            0x64 => Ok(VendorStatus::InsufficientResources),
+            0x65 => Ok(VendorStatus::InsufficientEncryptionKeySize),
+            0x66 => Ok(VendorStatus::CharacteristicAlreadyExists),
+            0x82 => Ok(VendorStatus::NoValidSlot),
+            0x83 => Ok(VendorStatus::ScanWindowTooShort),
+            0x84 => Ok(VendorStatus::NewIntervalFailed),
+            0x85 => Ok(VendorStatus::IntervalTooLarge),
+            0x86 => Ok(VendorStatus::LengthFailed),
+            0xFF => Ok(VendorStatus::Timeout),
+            0xF0 => Ok(VendorStatus::ProfileAlreadyInitialized),
+            0xF1 => Ok(VendorStatus::NullParameter),
             _ => Err(crate::BadStatusError::BadValue(value)),
         }
     }
 }
 
-impl From<Status> for u8 {
-    fn from(val: Status) -> Self {
+impl From<VendorStatus> for u8 {
+    fn from(val: VendorStatus) -> Self {
         val as u8
     }
 }
@@ -552,7 +552,7 @@ fn first_16<T>(buffer: &[T]) -> &[T] {
 
 impl crate::event::VendorEvent for Stm32Wb5xEvent {
     type Error = Stm32Wb5xError;
-    type Status = Status;
+    type Status = VendorStatus;
     type ReturnParameters = command::ReturnParameters;
 
     fn new(buffer: &[u8]) -> Result<Self, crate::event::Error<Stm32Wb5xError>> {
