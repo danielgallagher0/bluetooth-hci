@@ -18,7 +18,7 @@ use super::AttributeHandle;
 #[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub enum ReturnParameters {
+pub enum VendorReturnParameters {
     /// Parameters returned by the [HAL Get Firmware
     /// Revision](crate::hal::Commands::get_firmware_revision) command.
     HalGetFirmwareRevision(HalFirmwareRevision),
@@ -231,193 +231,194 @@ pub enum ReturnParameters {
     L2CapConnectionParameterUpdateResponse(crate::Status),
 }
 
-impl crate::event::VendorReturnParameters for ReturnParameters {
-    type Error = super::Stm32Wb5xError;
-
-    fn new(bytes: &[u8]) -> Result<Self, crate::event::Error<Self::Error>> {
+impl VendorReturnParameters {
+    pub(crate) fn new(bytes: &[u8]) -> Result<Self, crate::event::Error> {
         check_len_at_least(bytes, 3)?;
 
         match crate::Opcode(LittleEndian::read_u16(&bytes[1..])) {
-            crate::vendor::stm32wb::opcode::HAL_GET_FIRMWARE_REVISION => Ok(
-                ReturnParameters::HalGetFirmwareRevision(to_hal_firmware_revision(&bytes[3..])?),
-            ),
+            crate::vendor::stm32wb::opcode::HAL_GET_FIRMWARE_REVISION => {
+                Ok(VendorReturnParameters::HalGetFirmwareRevision(
+                    to_hal_firmware_revision(&bytes[3..])?,
+                ))
+            }
             crate::vendor::stm32wb::opcode::HAL_WRITE_CONFIG_DATA => Ok(
-                ReturnParameters::HalWriteConfigData(to_status(&bytes[3..])?),
+                VendorReturnParameters::HalWriteConfigData(to_status(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::HAL_READ_CONFIG_DATA => Ok(
-                ReturnParameters::HalReadConfigData(to_hal_config_data(&bytes[3..])?),
+                VendorReturnParameters::HalReadConfigData(to_hal_config_data(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::HAL_SET_TX_POWER_LEVEL => Ok(
-                ReturnParameters::HalSetTxPowerLevel(to_status(&bytes[3..])?),
+                VendorReturnParameters::HalSetTxPowerLevel(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::HAL_DEVICE_STANDBY => {
-                Ok(ReturnParameters::HalDeviceStandby(to_status(&bytes[3..])?))
-            }
+            crate::vendor::stm32wb::opcode::HAL_DEVICE_STANDBY => Ok(
+                VendorReturnParameters::HalDeviceStandby(to_status(&bytes[3..])?),
+            ),
             crate::vendor::stm32wb::opcode::HAL_TX_TEST_PACKET_COUNT => {
-                Ok(ReturnParameters::HalGetTxTestPacketCount(
+                Ok(VendorReturnParameters::HalGetTxTestPacketCount(
                     to_hal_tx_test_packet_count(&bytes[3..])?,
                 ))
             }
-            crate::vendor::stm32wb::opcode::HAL_START_TONE => {
-                Ok(ReturnParameters::HalStartTone(to_status(&bytes[3..])?))
-            }
+            crate::vendor::stm32wb::opcode::HAL_START_TONE => Ok(
+                VendorReturnParameters::HalStartTone(to_status(&bytes[3..])?),
+            ),
             crate::vendor::stm32wb::opcode::HAL_STOP_TONE => {
-                Ok(ReturnParameters::HalStopTone(to_status(&bytes[3..])?))
+                Ok(VendorReturnParameters::HalStopTone(to_status(&bytes[3..])?))
             }
             crate::vendor::stm32wb::opcode::HAL_GET_LINK_STATUS => Ok(
-                ReturnParameters::HalGetLinkStatus(to_hal_link_status(&bytes[3..])?),
+                VendorReturnParameters::HalGetLinkStatus(to_hal_link_status(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::HAL_GET_ANCHOR_PERIOD => Ok(
-                ReturnParameters::HalGetAnchorPeriod(to_hal_anchor_period(&bytes[3..])?),
+                VendorReturnParameters::HalGetAnchorPeriod(to_hal_anchor_period(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::GAP_SET_NONDISCOVERABLE => Ok(
-                ReturnParameters::GapSetNonDiscoverable(to_status(&bytes[3..])?),
+                VendorReturnParameters::GapSetNonDiscoverable(to_status(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::GAP_SET_DISCOVERABLE => Ok(
-                ReturnParameters::GapSetDiscoverable(to_status(&bytes[3..])?),
+                VendorReturnParameters::GapSetDiscoverable(to_status(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::GAP_SET_DIRECT_CONNECTABLE => Ok(
-                ReturnParameters::GapSetDirectConnectable(to_status(&bytes[3..])?),
+                VendorReturnParameters::GapSetDirectConnectable(to_status(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::GAP_SET_IO_CAPABILITY => Ok(
-                ReturnParameters::GapSetIoCapability(to_status(&bytes[3..])?),
+                VendorReturnParameters::GapSetIoCapability(to_status(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::GAP_SET_AUTHENTICATION_REQUIREMENT => Ok(
-                ReturnParameters::GapSetAuthenticationRequirement(to_status(&bytes[3..])?),
+                VendorReturnParameters::GapSetAuthenticationRequirement(to_status(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::GAP_SET_AUTHORIZATION_REQUIREMENT => Ok(
-                ReturnParameters::GapSetAuthorizationRequirement(to_status(&bytes[3..])?),
+                VendorReturnParameters::GapSetAuthorizationRequirement(to_status(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::GAP_PASS_KEY_RESPONSE => Ok(
-                ReturnParameters::GapPassKeyResponse(to_status(&bytes[3..])?),
+                VendorReturnParameters::GapPassKeyResponse(to_status(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::GAP_AUTHORIZATION_RESPONSE => Ok(
-                ReturnParameters::GapAuthorizationResponse(to_status(&bytes[3..])?),
+                VendorReturnParameters::GapAuthorizationResponse(to_status(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::GAP_INIT => {
-                Ok(ReturnParameters::GapInit(to_gap_init(&bytes[3..])?))
+                Ok(VendorReturnParameters::GapInit(to_gap_init(&bytes[3..])?))
             }
             crate::vendor::stm32wb::opcode::GAP_SET_NONCONNECTABLE => Ok(
-                ReturnParameters::GapSetNonConnectable(to_status(&bytes[3..])?),
+                VendorReturnParameters::GapSetNonConnectable(to_status(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::GAP_SET_UNDIRECTED_CONNECTABLE => Ok(
-                ReturnParameters::GapSetUndirectedConnectable(to_status(&bytes[3..])?),
+                VendorReturnParameters::GapSetUndirectedConnectable(to_status(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::GAP_UPDATE_ADVERTISING_DATA => Ok(
-                ReturnParameters::GapUpdateAdvertisingData(to_status(&bytes[3..])?),
+                VendorReturnParameters::GapUpdateAdvertisingData(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GAP_DELETE_AD_TYPE => {
-                Ok(ReturnParameters::GapDeleteAdType(to_status(&bytes[3..])?))
-            }
+            crate::vendor::stm32wb::opcode::GAP_DELETE_AD_TYPE => Ok(
+                VendorReturnParameters::GapDeleteAdType(to_status(&bytes[3..])?),
+            ),
             crate::vendor::stm32wb::opcode::GAP_GET_SECURITY_LEVEL => Ok(
-                ReturnParameters::GapGetSecurityLevel(to_gap_security_level(&bytes[3..])?),
+                VendorReturnParameters::GapGetSecurityLevel(to_gap_security_level(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GAP_SET_EVENT_MASK => {
-                Ok(ReturnParameters::GapSetEventMask(to_status(&bytes[3..])?))
-            }
+            crate::vendor::stm32wb::opcode::GAP_SET_EVENT_MASK => Ok(
+                VendorReturnParameters::GapSetEventMask(to_status(&bytes[3..])?),
+            ),
             crate::vendor::stm32wb::opcode::GAP_CONFIGURE_WHITE_LIST => Ok(
-                ReturnParameters::GapConfigureWhiteList(to_status(&bytes[3..])?),
+                VendorReturnParameters::GapConfigureWhiteList(to_status(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::GAP_CLEAR_SECURITY_DATABASE => Ok(
-                ReturnParameters::GapClearSecurityDatabase(to_status(&bytes[3..])?),
+                VendorReturnParameters::GapClearSecurityDatabase(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GAP_ALLOW_REBOND => {
-                Ok(ReturnParameters::GapAllowRebond(to_status(&bytes[3..])?))
-            }
+            crate::vendor::stm32wb::opcode::GAP_ALLOW_REBOND => Ok(
+                VendorReturnParameters::GapAllowRebond(to_status(&bytes[3..])?),
+            ),
             crate::vendor::stm32wb::opcode::GAP_TERMINATE_PROCEDURE => Ok(
-                ReturnParameters::GapTerminateProcedure(to_status(&bytes[3..])?),
+                VendorReturnParameters::GapTerminateProcedure(to_status(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::GAP_RESOLVE_PRIVATE_ADDRESS => {
-                Ok(ReturnParameters::GapResolvePrivateAddress(
+                Ok(VendorReturnParameters::GapResolvePrivateAddress(
                     to_gap_resolve_private_address(&bytes[3..])?,
                 ))
             }
             crate::vendor::stm32wb::opcode::GAP_GET_BONDED_DEVICES => Ok(
-                ReturnParameters::GapGetBondedDevices(to_gap_bonded_devices(&bytes[3..])?),
+                VendorReturnParameters::GapGetBondedDevices(to_gap_bonded_devices(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::GAP_SET_BROADCAST_MODE => Ok(
-                ReturnParameters::GapSetBroadcastMode(to_status(&bytes[3..])?),
+                VendorReturnParameters::GapSetBroadcastMode(to_status(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::GAP_START_OBSERVATION_PROCEDURE => Ok(
-                ReturnParameters::GapStartObservationProcedure(to_status(&bytes[3..])?),
+                VendorReturnParameters::GapStartObservationProcedure(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GAP_IS_DEVICE_BONDED => {
-                Ok(ReturnParameters::GapIsDeviceBonded(to_status(&bytes[3..])?))
-            }
+            crate::vendor::stm32wb::opcode::GAP_IS_DEVICE_BONDED => Ok(
+                VendorReturnParameters::GapIsDeviceBonded(to_status(&bytes[3..])?),
+            ),
             crate::vendor::stm32wb::opcode::GATT_INIT => {
-                Ok(ReturnParameters::GattInit(to_status(&bytes[3..])?))
+                Ok(VendorReturnParameters::GattInit(to_status(&bytes[3..])?))
             }
             crate::vendor::stm32wb::opcode::GATT_ADD_SERVICE => Ok(
-                ReturnParameters::GattAddService(to_gatt_service(&bytes[3..])?),
+                VendorReturnParameters::GattAddService(to_gatt_service(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::GATT_INCLUDE_SERVICE => Ok(
-                ReturnParameters::GattIncludeService(to_gatt_service(&bytes[3..])?),
+                VendorReturnParameters::GattIncludeService(to_gatt_service(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::GATT_ADD_CHARACTERISTIC => Ok(
-                ReturnParameters::GattAddCharacteristic(to_gatt_characteristic(&bytes[3..])?),
+                VendorReturnParameters::GattAddCharacteristic(to_gatt_characteristic(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::GATT_ADD_CHARACTERISTIC_DESCRIPTOR => {
-                Ok(ReturnParameters::GattAddCharacteristicDescriptor(
+                Ok(VendorReturnParameters::GattAddCharacteristicDescriptor(
                     to_gatt_characteristic_descriptor(&bytes[3..])?,
                 ))
             }
             crate::vendor::stm32wb::opcode::GATT_UPDATE_CHARACTERISTIC_VALUE => Ok(
-                ReturnParameters::GattUpdateCharacteristicValue(to_status(&bytes[3..])?),
+                VendorReturnParameters::GattUpdateCharacteristicValue(to_status(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::GATT_DELETE_CHARACTERISTIC => Ok(
-                ReturnParameters::GattDeleteCharacteristic(to_status(&bytes[3..])?),
+                VendorReturnParameters::GattDeleteCharacteristic(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GATT_DELETE_SERVICE => {
-                Ok(ReturnParameters::GattDeleteService(to_status(&bytes[3..])?))
-            }
+            crate::vendor::stm32wb::opcode::GATT_DELETE_SERVICE => Ok(
+                VendorReturnParameters::GattDeleteService(to_status(&bytes[3..])?),
+            ),
             crate::vendor::stm32wb::opcode::GATT_DELETE_INCLUDED_SERVICE => Ok(
-                ReturnParameters::GattDeleteIncludedService(to_status(&bytes[3..])?),
+                VendorReturnParameters::GattDeleteIncludedService(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GATT_SET_EVENT_MASK => {
-                Ok(ReturnParameters::GattSetEventMask(to_status(&bytes[3..])?))
-            }
+            crate::vendor::stm32wb::opcode::GATT_SET_EVENT_MASK => Ok(
+                VendorReturnParameters::GattSetEventMask(to_status(&bytes[3..])?),
+            ),
             crate::vendor::stm32wb::opcode::GATT_WRITE_WITHOUT_RESPONSE => Ok(
-                ReturnParameters::GattWriteWithoutResponse(to_status(&bytes[3..])?),
+                VendorReturnParameters::GattWriteWithoutResponse(to_status(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::GATT_SIGNED_WRITE_WITHOUT_RESPONSE => Ok(
-                ReturnParameters::GattSignedWriteWithoutResponse(to_status(&bytes[3..])?),
+                VendorReturnParameters::GattSignedWriteWithoutResponse(to_status(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::GATT_CONFIRM_INDICATION => Ok(
-                ReturnParameters::GattConfirmIndication(to_status(&bytes[3..])?),
+                VendorReturnParameters::GattConfirmIndication(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GATT_WRITE_RESPONSE => {
-                Ok(ReturnParameters::GattWriteResponse(to_status(&bytes[3..])?))
-            }
-            crate::vendor::stm32wb::opcode::GATT_ALLOW_READ => {
-                Ok(ReturnParameters::GattAllowRead(to_status(&bytes[3..])?))
-            }
+            crate::vendor::stm32wb::opcode::GATT_WRITE_RESPONSE => Ok(
+                VendorReturnParameters::GattWriteResponse(to_status(&bytes[3..])?),
+            ),
+            crate::vendor::stm32wb::opcode::GATT_ALLOW_READ => Ok(
+                VendorReturnParameters::GattAllowRead(to_status(&bytes[3..])?),
+            ),
             crate::vendor::stm32wb::opcode::GATT_SET_SECURITY_PERMISSION => Ok(
-                ReturnParameters::GattSetSecurityPermission(to_status(&bytes[3..])?),
+                VendorReturnParameters::GattSetSecurityPermission(to_status(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::GATT_SET_DESCRIPTOR_VALUE => Ok(
-                ReturnParameters::GattSetDescriptorValue(to_status(&bytes[3..])?),
+                VendorReturnParameters::GattSetDescriptorValue(to_status(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::GATT_READ_HANDLE_VALUE => Ok(
-                ReturnParameters::GattReadHandleValue(to_gatt_handle_value(&bytes[3..])?),
+                VendorReturnParameters::GattReadHandleValue(to_gatt_handle_value(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GATT_READ_HANDLE_VALUE_OFFSET => Ok(
-                ReturnParameters::GattReadHandleValueOffset(to_gatt_handle_value(&bytes[3..])?),
-            ),
+            crate::vendor::stm32wb::opcode::GATT_READ_HANDLE_VALUE_OFFSET => {
+                Ok(VendorReturnParameters::GattReadHandleValueOffset(
+                    to_gatt_handle_value(&bytes[3..])?,
+                ))
+            }
             crate::vendor::stm32wb::opcode::GATT_UPDATE_LONG_CHARACTERISTIC_VALUE => Ok(
-                ReturnParameters::GattUpdateLongCharacteristicValue(to_status(&bytes[3..])?),
+                VendorReturnParameters::GattUpdateLongCharacteristicValue(to_status(&bytes[3..])?),
             ),
             crate::vendor::stm32wb::opcode::L2CAP_CONN_PARAM_UPDATE_RESP => Ok(
-                ReturnParameters::L2CapConnectionParameterUpdateResponse(to_status(&bytes[3..])?),
+                VendorReturnParameters::L2CapConnectionParameterUpdateResponse(to_status(
+                    &bytes[3..],
+                )?),
             ),
             other => Err(crate::event::Error::UnknownOpcode(other)),
         }
     }
 }
 
-fn check_len_at_least(
-    buffer: &[u8],
-    len: usize,
-) -> Result<(), crate::event::Error<super::Stm32Wb5xError>> {
+fn check_len_at_least(buffer: &[u8], len: usize) -> Result<(), crate::event::Error> {
     if buffer.len() < len {
         Err(crate::event::Error::BadLength(buffer.len(), len))
     } else {
@@ -425,7 +426,7 @@ fn check_len_at_least(
     }
 }
 
-fn to_status(bytes: &[u8]) -> Result<crate::Status, crate::event::Error<super::Stm32Wb5xError>> {
+fn to_status(bytes: &[u8]) -> Result<crate::Status, crate::event::Error> {
     require_len_at_least!(bytes, 1);
     bytes[0].try_into().map_err(crate::event::rewrap_bad_status)
 }
@@ -442,9 +443,7 @@ pub struct HalFirmwareRevision {
     pub revision: u16,
 }
 
-fn to_hal_firmware_revision(
-    bytes: &[u8],
-) -> Result<HalFirmwareRevision, crate::event::Error<super::Stm32Wb5xError>> {
+fn to_hal_firmware_revision(bytes: &[u8]) -> Result<HalFirmwareRevision, crate::event::Error> {
     require_len!(bytes, 3);
 
     Ok(HalFirmwareRevision {
@@ -500,9 +499,7 @@ pub enum HalConfigParameter {
     Byte(u8),
 }
 
-fn to_hal_config_data(
-    bytes: &[u8],
-) -> Result<HalConfigData, crate::event::Error<super::Stm32Wb5xError>> {
+fn to_hal_config_data(bytes: &[u8]) -> Result<HalConfigData, crate::event::Error> {
     require_len_at_least!(bytes, 2);
     Ok(HalConfigData {
         status: to_status(bytes)?,
@@ -510,9 +507,7 @@ fn to_hal_config_data(
     })
 }
 
-fn to_hal_config_parameter(
-    bytes: &[u8],
-) -> Result<HalConfigParameter, crate::event::Error<super::Stm32Wb5xError>> {
+fn to_hal_config_parameter(bytes: &[u8]) -> Result<HalConfigParameter, crate::event::Error> {
     match bytes.len() {
         6 => {
             let mut buf = [0; 6];
@@ -533,7 +528,7 @@ fn to_hal_config_parameter(
         }
         1 => Ok(HalConfigParameter::Byte(bytes[0])),
         other => Err(crate::event::Error::Vendor(
-            super::Stm32Wb5xError::BadConfigParameterLength(other),
+            super::VendorError::BadConfigParameterLength(other),
         )),
     }
 }
@@ -550,9 +545,7 @@ pub struct HalTxTestPacketCount {
     pub packet_count: u32,
 }
 
-fn to_hal_tx_test_packet_count(
-    bytes: &[u8],
-) -> Result<HalTxTestPacketCount, crate::event::Error<super::Stm32Wb5xError>> {
+fn to_hal_tx_test_packet_count(bytes: &[u8]) -> Result<HalTxTestPacketCount, crate::event::Error> {
     require_len!(bytes, 5);
     Ok(HalTxTestPacketCount {
         status: to_status(bytes)?,
@@ -605,7 +598,7 @@ pub enum LinkState {
 }
 
 impl TryFrom<u8> for LinkState {
-    type Error = super::Stm32Wb5xError;
+    type Error = super::VendorError;
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
@@ -617,14 +610,12 @@ impl TryFrom<u8> for LinkState {
             5 => Ok(LinkState::ConnectedAsPrimary),
             6 => Ok(LinkState::TxTest),
             7 => Ok(LinkState::RxTest),
-            _ => Err(super::Stm32Wb5xError::UnknownLinkState(value)),
+            _ => Err(super::VendorError::UnknownLinkState(value)),
         }
     }
 }
 
-fn to_hal_link_status(
-    bytes: &[u8],
-) -> Result<HalLinkStatus, crate::event::Error<super::Stm32Wb5xError>> {
+fn to_hal_link_status(bytes: &[u8]) -> Result<HalLinkStatus, crate::event::Error> {
     require_len!(bytes, 25);
 
     let mut status = HalLinkStatus {
@@ -662,9 +653,7 @@ pub struct HalAnchorPeriod {
     pub max_slot: Duration,
 }
 
-fn to_hal_anchor_period(
-    bytes: &[u8],
-) -> Result<HalAnchorPeriod, crate::event::Error<super::Stm32Wb5xError>> {
+fn to_hal_anchor_period(bytes: &[u8]) -> Result<HalAnchorPeriod, crate::event::Error> {
     require_len!(bytes, 9);
 
     Ok(HalAnchorPeriod {
@@ -697,7 +686,7 @@ pub struct GapInit {
     pub appearance_handle: AttributeHandle,
 }
 
-fn to_gap_init(bytes: &[u8]) -> Result<GapInit, crate::event::Error<super::Stm32Wb5xError>> {
+fn to_gap_init(bytes: &[u8]) -> Result<GapInit, crate::event::Error> {
     require_len!(bytes, 7);
 
     Ok(GapInit {
@@ -742,29 +731,27 @@ pub enum PassKeyRequirement {
 }
 
 impl TryFrom<u8> for PassKeyRequirement {
-    type Error = super::Stm32Wb5xError;
+    type Error = super::VendorError;
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
             0x00 => Ok(PassKeyRequirement::NotRequired),
             0x01 => Ok(PassKeyRequirement::FixedPin),
             0x02 => Ok(PassKeyRequirement::Generated),
-            _ => Err(super::Stm32Wb5xError::BadPassKeyRequirement(value)),
+            _ => Err(super::VendorError::BadPassKeyRequirement(value)),
         }
     }
 }
 
-fn to_boolean(value: u8) -> Result<bool, super::Stm32Wb5xError> {
+fn to_boolean(value: u8) -> Result<bool, super::VendorError> {
     match value {
         0 => Ok(false),
         1 => Ok(true),
-        _ => Err(super::Stm32Wb5xError::BadBooleanValue(value)),
+        _ => Err(super::VendorError::BadBooleanValue(value)),
     }
 }
 
-fn to_gap_security_level(
-    bytes: &[u8],
-) -> Result<GapSecurityLevel, crate::event::Error<super::Stm32Wb5xError>> {
+fn to_gap_security_level(bytes: &[u8]) -> Result<GapSecurityLevel, crate::event::Error> {
     require_len!(bytes, 5);
 
     Ok(GapSecurityLevel {
@@ -791,7 +778,7 @@ pub struct GapResolvePrivateAddress {
 
 fn to_gap_resolve_private_address(
     bytes: &[u8],
-) -> Result<GapResolvePrivateAddress, crate::event::Error<super::Stm32Wb5xError>> {
+) -> Result<GapResolvePrivateAddress, crate::event::Error> {
     let status = to_status(bytes)?;
     if status == crate::Status::Success {
         require_len!(bytes, 7);
@@ -844,9 +831,7 @@ impl Debug for GapBondedDevices {
     }
 }
 
-fn to_gap_bonded_devices(
-    bytes: &[u8],
-) -> Result<GapBondedDevices, crate::event::Error<super::Stm32Wb5xError>> {
+fn to_gap_bonded_devices(bytes: &[u8]) -> Result<GapBondedDevices, crate::event::Error> {
     let status = to_status(bytes)?;
     match status {
         crate::Status::Success => {
@@ -857,7 +842,7 @@ fn to_gap_bonded_devices(
             let address_count = bytes[1] as usize;
             if bytes.len() != HEADER_LEN + ADDR_LEN * address_count {
                 return Err(crate::event::Error::Vendor(
-                    super::Stm32Wb5xError::PartialBondedDeviceAddress,
+                    super::VendorError::PartialBondedDeviceAddress,
                 ));
             }
 
@@ -868,7 +853,7 @@ fn to_gap_bonded_devices(
                 let mut addr = [0; 6];
                 addr.copy_from_slice(&bytes[(1 + index)..(7 + index)]);
                 *byte = crate::to_bd_addr_type(bytes[index], crate::BdAddr(addr)).map_err(|e| {
-                    crate::event::Error::Vendor(super::Stm32Wb5xError::BadBdAddrType(e.0))
+                    crate::event::Error::Vendor(super::VendorError::BadBdAddrType(e.0))
                 })?;
             }
 
@@ -903,9 +888,7 @@ pub struct GattService {
     pub service_handle: AttributeHandle,
 }
 
-fn to_gatt_service(
-    bytes: &[u8],
-) -> Result<GattService, crate::event::Error<super::Stm32Wb5xError>> {
+fn to_gatt_service(bytes: &[u8]) -> Result<GattService, crate::event::Error> {
     require_len!(bytes, 3);
 
     Ok(GattService {
@@ -926,9 +909,7 @@ pub struct GattCharacteristic {
     pub characteristic_handle: AttributeHandle,
 }
 
-fn to_gatt_characteristic(
-    bytes: &[u8],
-) -> Result<GattCharacteristic, crate::event::Error<super::Stm32Wb5xError>> {
+fn to_gatt_characteristic(bytes: &[u8]) -> Result<GattCharacteristic, crate::event::Error> {
     require_len!(bytes, 3);
 
     Ok(GattCharacteristic {
@@ -951,7 +932,7 @@ pub struct GattCharacteristicDescriptor {
 
 fn to_gatt_characteristic_descriptor(
     bytes: &[u8],
-) -> Result<GattCharacteristicDescriptor, crate::event::Error<super::Stm32Wb5xError>> {
+) -> Result<GattCharacteristicDescriptor, crate::event::Error> {
     require_len!(bytes, 3);
 
     Ok(GattCharacteristicDescriptor {
@@ -995,9 +976,7 @@ impl GattHandleValue {
     }
 }
 
-fn to_gatt_handle_value(
-    bytes: &[u8],
-) -> Result<GattHandleValue, crate::event::Error<super::Stm32Wb5xError>> {
+fn to_gatt_handle_value(bytes: &[u8]) -> Result<GattHandleValue, crate::event::Error> {
     require_len_at_least!(bytes, 3);
 
     let status = to_status(bytes)?;

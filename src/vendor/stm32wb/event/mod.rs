@@ -20,7 +20,7 @@ pub use crate::{BdAddr, BdAddrType, ConnectionHandle};
 #[allow(clippy::large_enum_variant)]
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub enum Stm32Wb5xEvent {
+pub enum VendorEvent {
     /// When the radio coprocessor firmware is started normally, it gives this event to the user to
     /// indicate the system has started.
     CoprocessorReady(FirmwareKind),
@@ -366,7 +366,7 @@ impl From<VendorStatus> for u8 {
 /// Enumeration of potential errors when sending commands or deserializing events.
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub enum Stm32Wb5xError {
+pub enum VendorError {
     /// The event is not recognized. Includes the unknown opcode.
     UnknownEvent(u16),
 
@@ -550,55 +550,47 @@ fn first_16<T>(buffer: &[T]) -> &[T] {
     }
 }
 
-impl crate::event::VendorEvent for Stm32Wb5xEvent {
-    type Error = Stm32Wb5xError;
-    type Status = VendorStatus;
-    type ReturnParameters = command::ReturnParameters;
-
-    fn new(buffer: &[u8]) -> Result<Self, crate::event::Error<Stm32Wb5xError>> {
+impl VendorEvent {
+    pub fn new(buffer: &[u8]) -> Result<Self, crate::event::Error> {
         require_len_at_least!(buffer, 2);
 
         let event_code = LittleEndian::read_u16(&buffer[0..=1]);
 
         match event_code {
             // SHCI "C2 Ready" event
-            0x9200 => Ok(Stm32Wb5xEvent::CoprocessorReady(to_coprocessor_ready(
-                buffer,
-            )?)),
+            0x9200 => Ok(VendorEvent::CoprocessorReady(to_coprocessor_ready(buffer)?)),
 
-            0x0400 => Ok(Stm32Wb5xEvent::GapLimitedDiscoverableTimeout),
-            0x0401 => Ok(Stm32Wb5xEvent::GapPairingComplete(to_gap_pairing_complete(
+            0x0400 => Ok(VendorEvent::GapLimitedDiscoverableTimeout),
+            0x0401 => Ok(VendorEvent::GapPairingComplete(to_gap_pairing_complete(
                 buffer,
             )?)),
-            0x0402 => Ok(Stm32Wb5xEvent::GapPassKeyRequest(to_conn_handle(buffer)?)),
-            0x0403 => Ok(Stm32Wb5xEvent::GapAuthorizationRequest(to_conn_handle(
+            0x0402 => Ok(VendorEvent::GapPassKeyRequest(to_conn_handle(buffer)?)),
+            0x0403 => Ok(VendorEvent::GapAuthorizationRequest(to_conn_handle(
                 buffer,
             )?)),
-            0x0404 => Ok(Stm32Wb5xEvent::GapPeripheralSecurityInitiated),
-            0x0405 => Ok(Stm32Wb5xEvent::GapBondLost),
-            0x0406 => Ok(Stm32Wb5xEvent::GapDeviceFound(to_gap_device_found(buffer)?)),
-            0x0407 => Ok(Stm32Wb5xEvent::GapProcedureComplete(
+            0x0404 => Ok(VendorEvent::GapPeripheralSecurityInitiated),
+            0x0405 => Ok(VendorEvent::GapBondLost),
+            0x0406 => Ok(VendorEvent::GapDeviceFound(to_gap_device_found(buffer)?)),
+            0x0407 => Ok(VendorEvent::GapProcedureComplete(
                 to_gap_procedure_complete(buffer)?,
             )),
-            0x0408 => Ok(Stm32Wb5xEvent::GapAddressNotResolved(to_conn_handle(
-                buffer,
-            )?)),
-            0x0409 => Ok(Stm32Wb5xEvent::NumericComparisonValue(
+            0x0408 => Ok(VendorEvent::GapAddressNotResolved(to_conn_handle(buffer)?)),
+            0x0409 => Ok(VendorEvent::NumericComparisonValue(
                 to_numeric_comparison_value(buffer)?,
             )),
-            0x040A => Ok(Stm32Wb5xEvent::KeypressNotification(
-                to_keypress_notification(buffer)?,
-            )),
-            0x0800 => Ok(Stm32Wb5xEvent::L2CapConnectionUpdateResponse(
+            0x040A => Ok(VendorEvent::KeypressNotification(to_keypress_notification(
+                buffer,
+            )?)),
+            0x0800 => Ok(VendorEvent::L2CapConnectionUpdateResponse(
                 to_l2cap_connection_update_response(buffer)?,
             )),
-            0x0801 => Ok(Stm32Wb5xEvent::L2CapProcedureTimeout(
+            0x0801 => Ok(VendorEvent::L2CapProcedureTimeout(
                 to_l2cap_procedure_timeout(buffer)?,
             )),
-            0x0802 => Ok(Stm32Wb5xEvent::L2CapConnectionUpdateRequest(
+            0x0802 => Ok(VendorEvent::L2CapConnectionUpdateRequest(
                 to_l2cap_connection_update_request(buffer)?,
             )),
-            0x080A => Ok(Stm32Wb5xEvent::L2CapCommandReject(to_l2cap_command_reject(
+            0x080A => Ok(VendorEvent::L2CapCommandReject(to_l2cap_command_reject(
                 buffer,
             )?)),
             0x0810 => todo!(),
@@ -609,73 +601,63 @@ impl crate::event::VendorEvent for Stm32Wb5xEvent {
             0x0815 => todo!(),
             0x0816 => todo!(),
             0x0817 => todo!(),
-            0x0C01 => Ok(Stm32Wb5xEvent::GattAttributeModified(
+            0x0C01 => Ok(VendorEvent::GattAttributeModified(
                 to_gatt_attribute_modified(buffer)?,
             )),
-            0x0C02 => Ok(Stm32Wb5xEvent::GattProcedureTimeout(to_conn_handle(
-                buffer,
-            )?)),
-            0x0C03 => Ok(Stm32Wb5xEvent::AttExchangeMtuResponse(
+            0x0C02 => Ok(VendorEvent::GattProcedureTimeout(to_conn_handle(buffer)?)),
+            0x0C03 => Ok(VendorEvent::AttExchangeMtuResponse(
                 to_att_exchange_mtu_resp(buffer)?,
             )),
-            0x0C04 => Ok(Stm32Wb5xEvent::AttFindInformationResponse(
+            0x0C04 => Ok(VendorEvent::AttFindInformationResponse(
                 to_att_find_information_response(buffer)?,
             )),
-            0x0C05 => Ok(Stm32Wb5xEvent::AttFindByTypeValueResponse(
+            0x0C05 => Ok(VendorEvent::AttFindByTypeValueResponse(
                 to_att_find_by_value_type_response(buffer)?,
             )),
-            0x0C06 => Ok(Stm32Wb5xEvent::AttReadByTypeResponse(
+            0x0C06 => Ok(VendorEvent::AttReadByTypeResponse(
                 to_att_read_by_type_response(buffer)?,
             )),
-            0x0C07 => Ok(Stm32Wb5xEvent::AttReadResponse(to_att_read_response(
+            0x0C07 => Ok(VendorEvent::AttReadResponse(to_att_read_response(buffer)?)),
+            0x0C08 => Ok(VendorEvent::AttReadBlobResponse(to_att_read_response(
                 buffer,
             )?)),
-            0x0C08 => Ok(Stm32Wb5xEvent::AttReadBlobResponse(to_att_read_response(
+            0x0C09 => Ok(VendorEvent::AttReadMultipleResponse(to_att_read_response(
                 buffer,
             )?)),
-            0x0C09 => Ok(Stm32Wb5xEvent::AttReadMultipleResponse(
-                to_att_read_response(buffer)?,
-            )),
-            0x0C0A => Ok(Stm32Wb5xEvent::AttReadByGroupTypeResponse(
+            0x0C0A => Ok(VendorEvent::AttReadByGroupTypeResponse(
                 to_att_read_by_group_type_response(buffer)?,
             )),
-            0x0C0C => Ok(Stm32Wb5xEvent::AttPrepareWriteResponse(
+            0x0C0C => Ok(VendorEvent::AttPrepareWriteResponse(
                 to_att_prepare_write_response(buffer)?,
             )),
-            0x0C0D => Ok(Stm32Wb5xEvent::AttExecuteWriteResponse(to_conn_handle(
+            0x0C0D => Ok(VendorEvent::AttExecuteWriteResponse(to_conn_handle(
                 buffer,
             )?)),
-            0x0C0E => Ok(Stm32Wb5xEvent::GattIndication(to_attribute_value(buffer)?)),
-            0x0C0F => Ok(Stm32Wb5xEvent::GattNotification(to_attribute_value(
-                buffer,
-            )?)),
-            0x0C10 => Ok(Stm32Wb5xEvent::GattProcedureComplete(
+            0x0C0E => Ok(VendorEvent::GattIndication(to_attribute_value(buffer)?)),
+            0x0C0F => Ok(VendorEvent::GattNotification(to_attribute_value(buffer)?)),
+            0x0C10 => Ok(VendorEvent::GattProcedureComplete(
                 to_gatt_procedure_complete(buffer)?,
             )),
-            0x0C11 => Ok(Stm32Wb5xEvent::AttErrorResponse(to_att_error_response(
+            0x0C11 => Ok(VendorEvent::AttErrorResponse(to_att_error_response(
                 buffer,
             )?)),
-            0x0C12 => Ok(
-                Stm32Wb5xEvent::GattDiscoverOrReadCharacteristicByUuidResponse(to_attribute_value(
-                    buffer,
-                )?),
-            ),
-            0x0C13 => Ok(Stm32Wb5xEvent::AttWritePermitRequest(
-                to_write_permit_request(buffer)?,
+            0x0C12 => Ok(VendorEvent::GattDiscoverOrReadCharacteristicByUuidResponse(
+                to_attribute_value(buffer)?,
             )),
-            0x0C14 => Ok(Stm32Wb5xEvent::AttReadPermitRequest(
+            0x0C13 => Ok(VendorEvent::AttWritePermitRequest(to_write_permit_request(
+                buffer,
+            )?)),
+            0x0C14 => Ok(VendorEvent::AttReadPermitRequest(
                 to_att_read_permit_request(buffer)?,
             )),
-            0x0C15 => Ok(Stm32Wb5xEvent::AttReadMultiplePermitRequest(
+            0x0C15 => Ok(VendorEvent::AttReadMultiplePermitRequest(
                 to_att_read_multiple_permit_request(buffer)?,
             )),
-            0x0C16 => Ok(Stm32Wb5xEvent::GattTxPoolAvailable(
-                to_gatt_tx_pool_available(buffer)?,
-            )),
-            0x0C17 => Ok(Stm32Wb5xEvent::GattServerConfirmation(to_conn_handle(
+            0x0C16 => Ok(VendorEvent::GattTxPoolAvailable(to_gatt_tx_pool_available(
                 buffer,
             )?)),
-            0x0C18 => Ok(Stm32Wb5xEvent::AttPrepareWritePermitRequest(
+            0x0C17 => Ok(VendorEvent::GattServerConfirmation(to_conn_handle(buffer)?)),
+            0x0C18 => Ok(VendorEvent::AttPrepareWritePermitRequest(
                 to_att_prepare_write_permit_request(buffer)?,
             )),
             0x0C19 => todo!(),
@@ -683,7 +665,7 @@ impl crate::event::VendorEvent for Stm32Wb5xEvent {
             0x0C1D => todo!(),
             0x0C1E => todo!(),
             0x0C1F => todo!(),
-            _ => Err(crate::event::Error::Vendor(Stm32Wb5xError::UnknownEvent(
+            _ => Err(crate::event::Error::Vendor(VendorError::UnknownEvent(
                 event_code,
             ))),
         }
@@ -703,13 +685,13 @@ pub enum FirmwareKind {
 }
 
 impl TryFrom<u8> for FirmwareKind {
-    type Error = Stm32Wb5xError;
+    type Error = VendorError;
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
             0 => Ok(FirmwareKind::Wireless),
             1 => Ok(FirmwareKind::Rcc),
-            _ => Err(Stm32Wb5xError::UnknownFirmwareKind(value)),
+            _ => Err(VendorError::UnknownFirmwareKind(value)),
         }
     }
 }
@@ -720,9 +702,7 @@ impl TryFrom<u8> for FirmwareKind {
 ///
 /// - Returns a `BadLength` HCI error if the buffer is not exactly 3 bytes long
 /// - Returns a `UnknownFirmwareKind` CPU2 error if the firmware kind is not recognized.
-fn to_coprocessor_ready(
-    buffer: &[u8],
-) -> Result<FirmwareKind, crate::event::Error<Stm32Wb5xError>> {
+fn to_coprocessor_ready(buffer: &[u8]) -> Result<FirmwareKind, crate::event::Error> {
     require_len!(buffer, 3);
 
     buffer[0].try_into().map_err(crate::event::Error::Vendor)
@@ -733,7 +713,7 @@ macro_rules! require_l2cap_event_data_len {
         let actual = $left[4];
         if actual != $right {
             return Err(crate::event::Error::Vendor(
-                Stm32Wb5xError::BadL2CapDataLength(actual, $right),
+                VendorError::BadL2CapDataLength(actual, $right),
             ));
         }
     };
@@ -742,7 +722,7 @@ macro_rules! require_l2cap_event_data_len {
 macro_rules! require_l2cap_len {
     ($actual:expr, $expected:expr) => {
         if $actual != $expected {
-            return Err(crate::event::Error::Vendor(Stm32Wb5xError::BadL2CapLength(
+            return Err(crate::event::Error::Vendor(VendorError::BadL2CapLength(
                 $actual, $expected,
             )));
         }
@@ -779,14 +759,14 @@ pub enum L2CapRejectionReason {
 }
 
 impl TryFrom<u16> for L2CapRejectionReason {
-    type Error = Stm32Wb5xError;
+    type Error = VendorError;
 
     fn try_from(value: u16) -> Result<Self, Self::Error> {
         match value {
             0 => Ok(L2CapRejectionReason::CommandNotUnderstood),
             1 => Ok(L2CapRejectionReason::SignalingMtuExceeded),
             2 => Ok(L2CapRejectionReason::InvalidCid),
-            _ => Err(Stm32Wb5xError::BadL2CapRejectionReason(value)),
+            _ => Err(VendorError::BadL2CapRejectionReason(value)),
         }
     }
 }
@@ -809,29 +789,29 @@ pub enum L2CapConnectionUpdateResult {
 
 fn to_l2cap_connection_update_accepted_result(
     value: u16,
-) -> Result<L2CapConnectionUpdateResult, Stm32Wb5xError> {
+) -> Result<L2CapConnectionUpdateResult, VendorError> {
     match value {
         0x0000 => Ok(L2CapConnectionUpdateResult::ParametersUpdated),
         0x0001 => Ok(L2CapConnectionUpdateResult::ParametersRejected),
-        _ => Err(Stm32Wb5xError::BadL2CapConnectionResponseResult(value)),
+        _ => Err(VendorError::BadL2CapConnectionResponseResult(value)),
     }
 }
 
 fn extract_l2cap_connection_update_response_result(
     buffer: &[u8],
-) -> Result<L2CapConnectionUpdateResult, Stm32Wb5xError> {
+) -> Result<L2CapConnectionUpdateResult, VendorError> {
     match buffer[5] {
         0x01 => Ok(L2CapConnectionUpdateResult::CommandRejected(
             LittleEndian::read_u16(&buffer[9..]).try_into()?,
         )),
         0x13 => to_l2cap_connection_update_accepted_result(LittleEndian::read_u16(&buffer[9..])),
-        _ => Err(Stm32Wb5xError::BadL2CapConnectionResponseCode(buffer[5])),
+        _ => Err(VendorError::BadL2CapConnectionResponseCode(buffer[5])),
     }
 }
 
 fn to_l2cap_connection_update_response(
     buffer: &[u8],
-) -> Result<L2CapConnectionUpdateResponse, crate::event::Error<Stm32Wb5xError>> {
+) -> Result<L2CapConnectionUpdateResponse, crate::event::Error> {
     require_len!(buffer, 11);
     require_l2cap_event_data_len!(buffer, 6);
     require_l2cap_len!(LittleEndian::read_u16(&buffer[7..]), 2);
@@ -852,9 +832,7 @@ pub struct L2CapProcedureTimeout {
     pub conn_handle: ConnectionHandle,
 }
 
-fn to_l2cap_procedure_timeout(
-    buffer: &[u8],
-) -> Result<ConnectionHandle, crate::event::Error<Stm32Wb5xError>> {
+fn to_l2cap_procedure_timeout(buffer: &[u8]) -> Result<ConnectionHandle, crate::event::Error> {
     require_len!(buffer, 5);
     require_l2cap_event_data_len!(buffer, 0);
 
@@ -889,13 +867,13 @@ pub struct L2CapConnectionUpdateRequest {
 
 fn to_l2cap_connection_update_request(
     buffer: &[u8],
-) -> Result<L2CapConnectionUpdateRequest, crate::event::Error<Stm32Wb5xError>> {
+) -> Result<L2CapConnectionUpdateRequest, crate::event::Error> {
     require_len!(buffer, 16);
     require_l2cap_event_data_len!(buffer, 11);
     require_l2cap_len!(LittleEndian::read_u16(&buffer[6..]), 8);
 
     let interval = ConnectionInterval::from_bytes(&buffer[8..16])
-        .map_err(Stm32Wb5xError::BadConnectionInterval)
+        .map_err(VendorError::BadConnectionInterval)
         .map_err(crate::event::Error::Vendor)?;
 
     Ok(L2CapConnectionUpdateRequest {
@@ -933,21 +911,19 @@ pub enum GapPairingStatus {
 }
 
 impl TryFrom<u8> for GapPairingStatus {
-    type Error = Stm32Wb5xError;
+    type Error = VendorError;
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
             0 => Ok(GapPairingStatus::Success),
             1 => Ok(GapPairingStatus::Timeout),
             2 => Ok(GapPairingStatus::Failed),
-            _ => Err(Stm32Wb5xError::BadGapPairingStatus(value)),
+            _ => Err(VendorError::BadGapPairingStatus(value)),
         }
     }
 }
 
-fn to_gap_pairing_complete(
-    buffer: &[u8],
-) -> Result<GapPairingComplete, crate::event::Error<Stm32Wb5xError>> {
+fn to_gap_pairing_complete(buffer: &[u8]) -> Result<GapPairingComplete, crate::event::Error> {
     require_len!(buffer, 6);
     Ok(GapPairingComplete {
         conn_handle: ConnectionHandle(LittleEndian::read_u16(&buffer[2..])),
@@ -955,7 +931,7 @@ fn to_gap_pairing_complete(
     })
 }
 
-fn to_conn_handle(buffer: &[u8]) -> Result<ConnectionHandle, crate::event::Error<Stm32Wb5xError>> {
+fn to_conn_handle(buffer: &[u8]) -> Result<ConnectionHandle, crate::event::Error> {
     require_len_at_least!(buffer, 4);
     Ok(ConnectionHandle(LittleEndian::read_u16(&buffer[2..])))
 }
@@ -992,9 +968,7 @@ pub use crate::event::AdvertisementEvent as GapDeviceFoundEvent;
 
 use super::command::gap::EventFlags;
 
-fn to_gap_device_found(
-    buffer: &[u8],
-) -> Result<GapDeviceFound, crate::event::Error<Stm32Wb5xError>> {
+fn to_gap_device_found(buffer: &[u8]) -> Result<GapDeviceFound, crate::event::Error> {
     const RSSI_UNAVAILABLE: i8 = 127;
 
     require_len_at_least!(buffer, 12);
@@ -1009,13 +983,13 @@ fn to_gap_device_found(
     let mut event = GapDeviceFound {
         event: buffer[2].try_into().map_err(|e| {
             if let crate::event::Error::BadLeAdvertisementType(code) = e {
-                crate::event::Error::Vendor(Stm32Wb5xError::BadGapDeviceFoundEvent(code))
+                crate::event::Error::Vendor(VendorError::BadGapDeviceFoundEvent(code))
             } else {
                 unreachable!()
             }
         })?,
         bdaddr: crate::to_bd_addr_type(buffer[3], addr)
-            .map_err(|e| crate::event::Error::Vendor(Stm32Wb5xError::BadGapBdAddrType(e.0)))?,
+            .map_err(|e| crate::event::Error::Vendor(VendorError::BadGapBdAddrType(e.0)))?,
         data_len,
         data_buf: [0; 31],
         rssi: if rssi == RSSI_UNAVAILABLE {
@@ -1109,21 +1083,19 @@ pub enum GapProcedureStatus {
 }
 
 impl TryFrom<u8> for GapProcedureStatus {
-    type Error = Stm32Wb5xError;
+    type Error = VendorError;
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
             0x00 => Ok(GapProcedureStatus::Success),
             0x41 => Ok(GapProcedureStatus::Failed),
             0x05 => Ok(GapProcedureStatus::AuthFailure),
-            _ => Err(Stm32Wb5xError::BadGapProcedureStatus(value)),
+            _ => Err(VendorError::BadGapProcedureStatus(value)),
         }
     }
 }
 
-fn to_gap_procedure_complete(
-    buffer: &[u8],
-) -> Result<GapProcedureComplete, crate::event::Error<Stm32Wb5xError>> {
+fn to_gap_procedure_complete(buffer: &[u8]) -> Result<GapProcedureComplete, crate::event::Error> {
     require_len_at_least!(buffer, 4);
 
     let procedure = match buffer[2] {
@@ -1143,9 +1115,9 @@ fn to_gap_procedure_complete(
         0x40 => GapProcedure::DirectConnectionEstablishment,
         0x80 => GapProcedure::Observation,
         _ => {
-            return Err(crate::event::Error::Vendor(
-                Stm32Wb5xError::BadGapProcedure(buffer[2]),
-            ));
+            return Err(crate::event::Error::Vendor(VendorError::BadGapProcedure(
+                buffer[2],
+            )));
         }
     };
 
@@ -1208,9 +1180,7 @@ impl Debug for GattAttributeModified {
     }
 }
 
-fn to_gatt_attribute_modified(
-    buffer: &[u8],
-) -> Result<GattAttributeModified, crate::event::Error<Stm32Wb5xError>> {
+fn to_gatt_attribute_modified(buffer: &[u8]) -> Result<GattAttributeModified, crate::event::Error> {
     require_len_at_least!(buffer, 10);
 
     let data_len = LittleEndian::read_u16(&buffer[8..]) as usize;
@@ -1240,9 +1210,7 @@ pub struct AttExchangeMtuResponse {
     pub server_rx_mtu: usize,
 }
 
-fn to_att_exchange_mtu_resp(
-    buffer: &[u8],
-) -> Result<AttExchangeMtuResponse, crate::event::Error<Stm32Wb5xError>> {
+fn to_att_exchange_mtu_resp(buffer: &[u8]) -> Result<AttExchangeMtuResponse, crate::event::Error> {
     require_len!(buffer, 6);
     Ok(AttExchangeMtuResponse {
         conn_handle: ConnectionHandle(LittleEndian::read_u16(&buffer[2..])),
@@ -1418,7 +1386,7 @@ impl<'a> Iterator for HandleUuid128PairIterator<'a> {
 
 fn to_att_find_information_response(
     buffer: &[u8],
-) -> Result<AttFindInformationResponse, crate::event::Error<Stm32Wb5xError>> {
+) -> Result<AttFindInformationResponse, crate::event::Error> {
     require_len_at_least!(buffer, 4);
 
     let data_len = buffer[5] as usize;
@@ -1431,7 +1399,7 @@ fn to_att_find_information_response(
             2 => to_handle_uuid128_pairs(&buffer[6..]).map_err(crate::event::Error::Vendor)?,
             _ => {
                 return Err(crate::event::Error::Vendor(
-                    Stm32Wb5xError::BadAttFindInformationResponseFormat(buffer[4]),
+                    VendorError::BadAttFindInformationResponseFormat(buffer[4]),
                 ));
             }
         },
@@ -1440,10 +1408,10 @@ fn to_att_find_information_response(
 
 // [0x4, 0xc, 0x1, 0x8, 0x1, 0x8, 0x12, 0x0, 0x3, 0x5, 0x13, 0x0, 0x2, 0x29]
 
-fn to_handle_uuid16_pairs(buffer: &[u8]) -> Result<HandleUuidPairs, Stm32Wb5xError> {
+fn to_handle_uuid16_pairs(buffer: &[u8]) -> Result<HandleUuidPairs, VendorError> {
     const PAIR_LEN: usize = 4;
     if buffer.len() % PAIR_LEN != 0 {
-        return Err(Stm32Wb5xError::AttFindInformationResponsePartialPair16);
+        return Err(VendorError::AttFindInformationResponsePartialPair16);
     }
 
     let count = buffer.len() / PAIR_LEN;
@@ -1460,10 +1428,10 @@ fn to_handle_uuid16_pairs(buffer: &[u8]) -> Result<HandleUuidPairs, Stm32Wb5xErr
     Ok(HandleUuidPairs::Format16(count, pairs))
 }
 
-fn to_handle_uuid128_pairs(buffer: &[u8]) -> Result<HandleUuidPairs, Stm32Wb5xError> {
+fn to_handle_uuid128_pairs(buffer: &[u8]) -> Result<HandleUuidPairs, VendorError> {
     const PAIR_LEN: usize = 18;
     if buffer.len() % PAIR_LEN != 0 {
-        return Err(Stm32Wb5xError::AttFindInformationResponsePartialPair128);
+        return Err(VendorError::AttFindInformationResponsePartialPair128);
     }
 
     let count = buffer.len() / PAIR_LEN;
@@ -1563,7 +1531,7 @@ impl<'a> Iterator for HandleInfoPairIterator<'a> {
 
 fn to_att_find_by_value_type_response(
     buffer: &[u8],
-) -> Result<AttFindByTypeValueResponse, crate::event::Error<Stm32Wb5xError>> {
+) -> Result<AttFindByTypeValueResponse, crate::event::Error> {
     const PAIR_LEN: usize = 4;
 
     require_len_at_least!(buffer, 5);
@@ -1574,7 +1542,7 @@ fn to_att_find_by_value_type_response(
     let pair_buffer = &buffer[5..];
     if pair_buffer.len() % PAIR_LEN != 0 {
         return Err(crate::event::Error::Vendor(
-            Stm32Wb5xError::AttFindByTypeValuePartial,
+            VendorError::AttFindByTypeValuePartial,
         ));
     }
 
@@ -1686,7 +1654,7 @@ impl<'a> HandleValuePair<'a> {
 
 fn to_att_read_by_type_response(
     buffer: &[u8],
-) -> Result<AttReadByTypeResponse, crate::event::Error<Stm32Wb5xError>> {
+) -> Result<AttReadByTypeResponse, crate::event::Error> {
     require_len_at_least!(buffer, 6);
 
     let data_len = buffer[5] as usize;
@@ -1696,7 +1664,7 @@ fn to_att_read_by_type_response(
     let handle_value_pair_buf = &buffer[6..];
     if handle_value_pair_buf.len() % handle_value_pair_len != 0 {
         return Err(crate::event::Error::Vendor(
-            Stm32Wb5xError::AttReadByTypeResponsePartial,
+            VendorError::AttReadByTypeResponsePartial,
         ));
     }
 
@@ -1748,9 +1716,7 @@ impl AttReadResponse {
     }
 }
 
-fn to_att_read_response(
-    buffer: &[u8],
-) -> Result<AttReadResponse, crate::event::Error<Stm32Wb5xError>> {
+fn to_att_read_response(buffer: &[u8]) -> Result<AttReadResponse, crate::event::Error> {
     require_len_at_least!(buffer, 5);
 
     let data_len = buffer[4] as usize;
@@ -1867,7 +1833,7 @@ impl<'a> AttributeData<'a> {
 
 fn to_att_read_by_group_type_response(
     buffer: &[u8],
-) -> Result<AttReadByGroupTypeResponse, crate::event::Error<Stm32Wb5xError>> {
+) -> Result<AttReadByGroupTypeResponse, crate::event::Error> {
     require_len_at_least!(buffer, 6);
 
     let data_len = buffer[5] as usize;
@@ -1877,7 +1843,7 @@ fn to_att_read_by_group_type_response(
 
     if buffer[6..].len() % attribute_group_len != 0 {
         return Err(crate::event::Error::Vendor(
-            Stm32Wb5xError::AttReadByGroupTypeResponsePartial,
+            VendorError::AttReadByGroupTypeResponsePartial,
         ));
     }
 
@@ -1934,7 +1900,7 @@ impl AttPrepareWriteResponse {
 
 fn to_att_prepare_write_response(
     buffer: &[u8],
-) -> Result<AttPrepareWriteResponse, crate::event::Error<Stm32Wb5xError>> {
+) -> Result<AttPrepareWriteResponse, crate::event::Error> {
     require_len_at_least!(buffer, 9);
 
     let data_len = buffer[4] as usize;
@@ -1991,9 +1957,7 @@ impl AttributeValue {
     }
 }
 
-fn to_attribute_value(
-    buffer: &[u8],
-) -> Result<AttributeValue, crate::event::Error<Stm32Wb5xError>> {
+fn to_attribute_value(buffer: &[u8]) -> Result<AttributeValue, crate::event::Error> {
     require_len_at_least!(buffer, 7);
 
     let data_len = buffer[4] as usize;
@@ -2010,9 +1974,7 @@ fn to_attribute_value(
     })
 }
 
-fn to_write_permit_request(
-    buffer: &[u8],
-) -> Result<AttributeValue, crate::event::Error<Stm32Wb5xError>> {
+fn to_write_permit_request(buffer: &[u8]) -> Result<AttributeValue, crate::event::Error> {
     require_len_at_least!(buffer, 7);
 
     let data_len = buffer[6] as usize;
@@ -2054,20 +2016,18 @@ pub enum GattProcedureStatus {
 }
 
 impl TryFrom<u8> for GattProcedureStatus {
-    type Error = Stm32Wb5xError;
+    type Error = VendorError;
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
             0x00 => Ok(GattProcedureStatus::Success),
             0x41 => Ok(GattProcedureStatus::Failed),
-            _ => Err(Stm32Wb5xError::BadGattProcedureStatus(value)),
+            _ => Err(VendorError::BadGattProcedureStatus(value)),
         }
     }
 }
 
-fn to_gatt_procedure_complete(
-    buffer: &[u8],
-) -> Result<GattProcedureComplete, crate::event::Error<Stm32Wb5xError>> {
+fn to_gatt_procedure_complete(buffer: &[u8]) -> Result<GattProcedureComplete, crate::event::Error> {
     require_len!(buffer, 5);
 
     Ok(GattProcedureComplete {
@@ -2338,7 +2298,7 @@ pub enum AttRequest {
 }
 
 impl TryFrom<u8> for AttRequest {
-    type Error = Stm32Wb5xError;
+    type Error = VendorError;
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
@@ -2370,14 +2330,12 @@ impl TryFrom<u8> for AttRequest {
             0x1B => Ok(AttRequest::HandleValueNotification),
             0x1D => Ok(AttRequest::HandleValueIndication),
             0x1E => Ok(AttRequest::HandleValueConfirmation),
-            _ => Err(Stm32Wb5xError::BadAttRequestOpcode(value)),
+            _ => Err(VendorError::BadAttRequestOpcode(value)),
         }
     }
 }
 
-fn to_att_error_response(
-    buffer: &[u8],
-) -> Result<AttErrorResponse, crate::event::Error<Stm32Wb5xError>> {
+fn to_att_error_response(buffer: &[u8]) -> Result<AttErrorResponse, crate::event::Error> {
     require_len!(buffer, 8);
     Ok(AttErrorResponse {
         conn_handle: ConnectionHandle(LittleEndian::read_u16(&buffer[2..])),
@@ -2385,7 +2343,7 @@ fn to_att_error_response(
         attribute_handle: AttributeHandle(LittleEndian::read_u16(&buffer[5..])),
         error: buffer[7]
             .try_into()
-            .map_err(Stm32Wb5xError::BadAttError)
+            .map_err(VendorError::BadAttError)
             .map_err(crate::event::Error::Vendor)?,
     })
 }
@@ -2412,9 +2370,7 @@ pub struct AttReadPermitRequest {
     pub offset: usize,
 }
 
-fn to_att_read_permit_request(
-    buffer: &[u8],
-) -> Result<AttReadPermitRequest, crate::event::Error<Stm32Wb5xError>> {
+fn to_att_read_permit_request(buffer: &[u8]) -> Result<AttReadPermitRequest, crate::event::Error> {
     require_len!(buffer, 8);
     Ok(AttReadPermitRequest {
         conn_handle: ConnectionHandle(LittleEndian::read_u16(&buffer[2..])),
@@ -2468,13 +2424,13 @@ impl AttReadMultiplePermitRequest {
 
 fn to_att_read_multiple_permit_request(
     buffer: &[u8],
-) -> Result<AttReadMultiplePermitRequest, crate::event::Error<Stm32Wb5xError>> {
+) -> Result<AttReadMultiplePermitRequest, crate::event::Error> {
     require_len_at_least!(buffer, 5);
 
     let data_len = buffer[4] as usize;
     if data_len % 2 != 0 {
         return Err(crate::event::Error::Vendor(
-            Stm32Wb5xError::AttReadMultiplePermitRequestPartial,
+            VendorError::AttReadMultiplePermitRequestPartial,
         ));
     }
 
@@ -2504,9 +2460,7 @@ pub struct GattTxPoolAvailable {
     pub available_buffers: usize,
 }
 
-fn to_gatt_tx_pool_available(
-    buffer: &[u8],
-) -> Result<GattTxPoolAvailable, crate::event::Error<Stm32Wb5xError>> {
+fn to_gatt_tx_pool_available(buffer: &[u8]) -> Result<GattTxPoolAvailable, crate::event::Error> {
     require_len!(buffer, 6);
     Ok(GattTxPoolAvailable {
         conn_handle: ConnectionHandle(LittleEndian::read_u16(&buffer[2..])),
@@ -2566,7 +2520,7 @@ impl AttPrepareWritePermitRequest {
 
 fn to_att_prepare_write_permit_request(
     buffer: &[u8],
-) -> Result<AttPrepareWritePermitRequest, crate::event::Error<Stm32Wb5xError>> {
+) -> Result<AttPrepareWritePermitRequest, crate::event::Error> {
     require_len_at_least!(buffer, 9);
 
     let data_len = buffer[8] as usize;
@@ -2592,7 +2546,7 @@ pub struct NumericComparisonValue {
 
 fn to_numeric_comparison_value(
     buffer: &[u8],
-) -> Result<NumericComparisonValue, crate::event::Error<Stm32Wb5xError>> {
+) -> Result<NumericComparisonValue, crate::event::Error> {
     require_len!(buffer, 8);
 
     Ok(NumericComparisonValue {
@@ -2601,7 +2555,7 @@ fn to_numeric_comparison_value(
     })
 }
 
-fn to_keypress_notification(buffer: &[u8]) -> Result<u8, crate::event::Error<Stm32Wb5xError>> {
+fn to_keypress_notification(buffer: &[u8]) -> Result<u8, crate::event::Error> {
     require_len!(buffer, 1);
 
     Ok(buffer[0])
@@ -2616,9 +2570,7 @@ pub struct L2CapCommandReject {
     pub data: [u8; 247],
 }
 
-fn to_l2cap_command_reject(
-    buffer: &[u8],
-) -> Result<L2CapCommandReject, crate::event::Error<Stm32Wb5xError>> {
+fn to_l2cap_command_reject(buffer: &[u8]) -> Result<L2CapCommandReject, crate::event::Error> {
     require_len_at_least!(buffer, 6);
 
     let mut data = [0; 247];

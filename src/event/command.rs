@@ -9,7 +9,7 @@
 //! For the return parameters of the commands, see the description of each command in sections 7.1 -
 //! 7.6 of the same part of the spec.
 
-use super::VendorReturnParameters;
+use crate::vendor::stm32wb::opcode::VENDOR_OGF;
 use crate::{BadStatusError, ConnectionHandle, Status};
 use byteorder::{ByteOrder, LittleEndian};
 use core::convert::{TryFrom, TryInto};
@@ -25,10 +25,7 @@ use core::mem;
 /// Defined in the Bluetooth spec, Vol 2, Part E, Section 7.7.14.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct CommandComplete<V>
-where
-    V: super::VendorEvent,
-{
+pub struct CommandComplete {
     /// Indicates the number of HCI command packets the Host can send to the Controller. If the
     /// Controller requires the Host to stop sending commands, `num_hci_command_packets` will be set
     /// to zero.  To indicate to the Host that the Controller is ready to receive HCI command
@@ -41,13 +38,10 @@ where
     pub num_hci_command_packets: u8,
 
     /// The type of command that has completed, and any parameters that it returns.
-    pub return_params: ReturnParameters<V>,
+    pub return_params: ReturnParameters,
 }
 
-impl<V> CommandComplete<V>
-where
-    V: super::VendorEvent,
-{
+impl CommandComplete {
     /// Deserializes a buffer into a CommandComplete event.
     ///
     /// # Errors
@@ -60,7 +54,7 @@ where
     ///   errors that indicate parameter values are invalid. The error type must be specialized on
     ///   potential vendor-specific errors, though vendor-specific errors are never returned by this
     ///   function.
-    pub fn new(bytes: &[u8]) -> Result<CommandComplete<V>, crate::event::Error<V::Error>> {
+    pub fn new(bytes: &[u8]) -> Result<CommandComplete, crate::event::Error> {
         require_len_at_least!(bytes, 3);
 
         let params = match crate::opcode::Opcode(LittleEndian::read_u16(&bytes[1..])) {
@@ -164,15 +158,16 @@ where
             }
             crate::opcode::LE_TEST_END => ReturnParameters::LeTestEnd(to_le_test_end(&bytes[3..])?),
             other => {
-                const VENDOR_OGF: u16 = 0x3F;
                 if other.ogf() != VENDOR_OGF {
                     return Err(crate::event::Error::UnknownOpcode(other));
                 }
 
-                ReturnParameters::Vendor(V::ReturnParameters::new(bytes)?)
+                ReturnParameters::Vendor(
+                    crate::vendor::stm32wb::event::command::VendorReturnParameters::new(bytes)?,
+                )
             }
         };
-        Ok(CommandComplete::<V> {
+        Ok(CommandComplete {
             num_hci_command_packets: bytes[0],
             return_params: params,
         })
@@ -181,12 +176,10 @@ where
 
 /// Commands that may generate the [Command Complete](crate::event::Event::CommandComplete) event.
 /// If the commands have defined return parameters, they are included in this enum.
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub enum ReturnParameters<V>
-where
-    V: super::VendorEvent,
-{
+#[allow(clippy::large_enum_variant)]
+pub enum ReturnParameters {
     /// The controller sent an unsolicited command complete event in order to change the number of
     /// HCI command packets the Host is allowed to send.
     Spontaneous,
@@ -315,10 +308,10 @@ where
     LeTestEnd(LeTestEnd),
 
     /// Parameters returned by vendor-specific commands.
-    Vendor(V::ReturnParameters),
+    Vendor(crate::vendor::stm32wb::event::command::VendorReturnParameters),
 }
 
-fn to_status<VE>(bytes: &[u8]) -> Result<Status, crate::event::Error<VE>>
+fn to_status(bytes: &[u8]) -> Result<Status, crate::event::Error>
 where
     Status: TryFrom<u8, Error = BadStatusError>,
 {
@@ -342,7 +335,7 @@ pub struct TxPowerLevel {
     pub tx_power_level_dbm: i8,
 }
 
-fn to_tx_power_level<VE>(bytes: &[u8]) -> Result<TxPowerLevel, crate::event::Error<VE>>
+fn to_tx_power_level(bytes: &[u8]) -> Result<TxPowerLevel, crate::event::Error>
 where
     Status: TryFrom<u8, Error = BadStatusError>,
 {
@@ -390,7 +383,7 @@ pub struct LocalVersionInfo {
     pub lmp_subversion: u16,
 }
 
-fn to_local_version_info<VE>(bytes: &[u8]) -> Result<LocalVersionInfo, crate::event::Error<VE>>
+fn to_local_version_info(bytes: &[u8]) -> Result<LocalVersionInfo, crate::event::Error>
 where
     Status: TryFrom<u8, Error = BadStatusError>,
 {
@@ -999,7 +992,7 @@ impl Debug for CommandFlags {
 }
 
 impl<'a> TryFrom<&'a [u8]> for CommandFlags {
-    type Error = crate::event::Error<crate::event::NeverError>;
+    type Error = crate::event::Error;
     fn try_from(value: &[u8]) -> Result<CommandFlags, Self::Error> {
         require_len!(value, COMMAND_FLAGS_SIZE);
 
@@ -1007,9 +1000,7 @@ impl<'a> TryFrom<&'a [u8]> for CommandFlags {
     }
 }
 
-fn to_supported_commands<VE>(
-    bytes: &[u8],
-) -> Result<LocalSupportedCommands, crate::event::Error<VE>>
+fn to_supported_commands(bytes: &[u8]) -> Result<LocalSupportedCommands, crate::event::Error>
 where
     Status: TryFrom<u8, Error = BadStatusError>,
 {
@@ -1276,9 +1267,7 @@ defmt::bitflags! {
     }
 }
 
-fn to_supported_features<VE>(
-    bytes: &[u8],
-) -> Result<LocalSupportedFeatures, crate::event::Error<VE>>
+fn to_supported_features(bytes: &[u8]) -> Result<LocalSupportedFeatures, crate::event::Error>
 where
     Status: TryFrom<u8, Error = BadStatusError>,
 {
@@ -1300,7 +1289,7 @@ pub struct ReadBdAddr {
     pub bd_addr: crate::BdAddr,
 }
 
-fn to_bd_addr<VE>(bytes: &[u8]) -> Result<ReadBdAddr, crate::event::Error<VE>>
+fn to_bd_addr(bytes: &[u8]) -> Result<ReadBdAddr, crate::event::Error>
 where
     Status: TryFrom<u8, Error = BadStatusError>,
 {
@@ -1339,7 +1328,7 @@ pub struct ReadRssi {
     pub rssi: i8,
 }
 
-fn to_read_rssi<VE>(bytes: &[u8]) -> Result<ReadRssi, crate::event::Error<VE>>
+fn to_read_rssi(bytes: &[u8]) -> Result<ReadRssi, crate::event::Error>
 where
     Status: TryFrom<u8, Error = BadStatusError>,
 {
@@ -1378,7 +1367,7 @@ pub struct LeReadBufferSize {
     pub data_packet_count: u8,
 }
 
-fn to_le_read_buffer_status<VE>(bytes: &[u8]) -> Result<LeReadBufferSize, crate::event::Error<VE>>
+fn to_le_read_buffer_status(bytes: &[u8]) -> Result<LeReadBufferSize, crate::event::Error>
 where
     Status: TryFrom<u8, Error = BadStatusError>,
 {
@@ -1492,9 +1481,7 @@ defmt::bitflags! {
     }
 }
 
-fn to_le_local_supported_features<VE>(
-    bytes: &[u8],
-) -> Result<LeSupportedFeatures, crate::event::Error<VE>>
+fn to_le_local_supported_features(bytes: &[u8]) -> Result<LeSupportedFeatures, crate::event::Error>
 where
     Status: TryFrom<u8, Error = BadStatusError>,
 {
@@ -1519,9 +1506,9 @@ pub struct LeAdvertisingChannelTxPower {
     pub power: i8,
 }
 
-fn to_le_advertising_channel_tx_power<VE>(
+fn to_le_advertising_channel_tx_power(
     bytes: &[u8],
-) -> Result<LeAdvertisingChannelTxPower, crate::event::Error<VE>>
+) -> Result<LeAdvertisingChannelTxPower, crate::event::Error>
 where
     Status: TryFrom<u8, Error = BadStatusError>,
 {
@@ -1532,10 +1519,7 @@ where
     })
 }
 
-fn to_le_set_advertise_enable<V>(status: Status) -> ReturnParameters<V>
-where
-    V: super::VendorEvent,
-{
+fn to_le_set_advertise_enable(status: Status) -> ReturnParameters {
     ReturnParameters::LeSetAdvertisingEnable(status)
 }
 
@@ -1553,9 +1537,7 @@ pub struct ChannelMapParameters {
     pub channel_map: crate::ChannelClassification,
 }
 
-fn to_le_channel_map_parameters<VE>(
-    bytes: &[u8],
-) -> Result<ChannelMapParameters, crate::event::Error<VE>>
+fn to_le_channel_map_parameters(bytes: &[u8]) -> Result<ChannelMapParameters, crate::event::Error>
 where
     Status: TryFrom<u8, Error = BadStatusError>,
 {
@@ -1568,7 +1550,7 @@ where
         status: to_status(&bytes[0..])?,
         conn_handle: ConnectionHandle(LittleEndian::read_u16(&bytes[1..])),
         channel_map: crate::ChannelClassification::from_bits(&bytes[3..])
-            .ok_or_else(|| crate::event::Error::InvalidChannelMap(channel_bits))?,
+            .ok_or(crate::event::Error::InvalidChannelMap(channel_bits))?,
     })
 }
 
@@ -1599,9 +1581,7 @@ impl Debug for EncryptedBlock {
     }
 }
 
-fn to_le_encrypted_data<VE>(
-    bytes: &[u8],
-) -> Result<EncryptedReturnParameters, crate::event::Error<VE>>
+fn to_le_encrypted_data(bytes: &[u8]) -> Result<EncryptedReturnParameters, crate::event::Error>
 where
     Status: TryFrom<u8, Error = BadStatusError>,
 {
@@ -1626,7 +1606,7 @@ pub struct LeRandom {
     pub random_number: u64,
 }
 
-fn to_random_number<VE>(bytes: &[u8]) -> Result<LeRandom, crate::event::Error<VE>>
+fn to_random_number(bytes: &[u8]) -> Result<LeRandom, crate::event::Error>
 where
     Status: TryFrom<u8, Error = BadStatusError>,
 {
@@ -1650,9 +1630,7 @@ pub struct LeLongTermRequestReply {
     pub conn_handle: ConnectionHandle,
 }
 
-fn to_le_ltk_request_reply<VE>(
-    bytes: &[u8],
-) -> Result<LeLongTermRequestReply, crate::event::Error<VE>>
+fn to_le_ltk_request_reply(bytes: &[u8]) -> Result<LeLongTermRequestReply, crate::event::Error>
 where
     Status: TryFrom<u8, Error = BadStatusError>,
 {
@@ -1863,7 +1841,7 @@ defmt::bitflags! {
     }
 }
 
-fn to_le_read_states<VE>(bytes: &[u8]) -> Result<LeReadSupportedStates, crate::event::Error<VE>>
+fn to_le_read_states(bytes: &[u8]) -> Result<LeReadSupportedStates, crate::event::Error>
 where
     Status: TryFrom<u8, Error = BadStatusError>,
 {
@@ -1873,7 +1851,7 @@ where
     Ok(LeReadSupportedStates {
         status: to_status(bytes)?,
         supported_states: LeStates::from_bits(bitfield)
-            .ok_or_else(|| crate::event::Error::InvalidLeStates(bitfield))?,
+            .ok_or(crate::event::Error::InvalidLeStates(bitfield))?,
     })
 }
 
@@ -1889,7 +1867,7 @@ pub struct LeTestEnd {
     pub number_of_packets: usize,
 }
 
-fn to_le_test_end<VE>(bytes: &[u8]) -> Result<LeTestEnd, crate::event::Error<VE>>
+fn to_le_test_end(bytes: &[u8]) -> Result<LeTestEnd, crate::event::Error>
 where
     Status: TryFrom<u8, Error = BadStatusError>,
 {

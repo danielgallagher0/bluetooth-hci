@@ -5,7 +5,7 @@ mod vendor;
 use hci::{event::*, vendor::stm32wb::event::VendorStatus};
 use std::time::Duration;
 
-type TestEvent = Event<vendor::VendorEvent>;
+type TestEvent = Event;
 
 #[test]
 fn connection_complete() {

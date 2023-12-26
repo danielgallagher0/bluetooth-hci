@@ -6,13 +6,10 @@ pub mod opcode;
 
 /// specify vendor specifi extensions for STM32WB family
 pub struct Stm32wbTypes;
-impl crate::Vendor for Stm32wbTypes {
-    type Status = event::VendorStatus;
-    type Event = event::Stm32Wb5xEvent;
-}
+impl crate::Vendor for Stm32wbTypes {}
 
 pub use crate::host::uart::CommandHeader;
-pub use event::Stm32Wb5xError;
+pub use event::VendorError;
 
 /// master trait that encompasses all commands, and communicats over UART
 pub trait UartController:

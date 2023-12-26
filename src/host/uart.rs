@@ -2,8 +2,6 @@
 
 use byteorder::{ByteOrder, LittleEndian};
 
-use crate::vendor::stm32wb::{event::Stm32Wb5xEvent, Stm32Wb5xError};
-
 const PACKET_TYPE_HCI_COMMAND: u8 = 0x01;
 // const PACKET_TYPE_ACL_DATA: u8 = 0x02;
 // const PACKET_TYPE_SYNC_DATA: u8 = 0x03;
@@ -14,26 +12,23 @@ const PACKET_TYPE_HCI_EVENT: u8 = 0x04;
 /// Must be specialized both for communication errors (`E`) and vendor-specific errors (`VE`).
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub enum Error<VE> {
+pub enum Error {
     /// The host expected the controller to begin a packet, but the next byte is not a valid packet
     /// type byte. Contains the value of the byte.
     BadPacketType(u8),
     /// There was an error deserializing an event. Contains the underlying error.
-    BLE(crate::event::Error<VE>),
+    BLE(crate::event::Error),
 }
 
 /// Packet types that may be read from the controller.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub enum Packet<Vendor>
-where
-    Vendor: crate::event::VendorEvent,
-{
+pub enum Packet {
     // AclData(AclData),
     // SyncData(SyncData),
     /// The HCI Event Packet is used by the Controller to notify the Host when events
     /// occur. The event is specialized to support vendor-specific events.
-    Event(crate::Event<Vendor>),
+    Event(crate::Event),
 }
 
 /// Header for HCI Commands.
@@ -63,7 +58,7 @@ pub trait UartHci: super::HostHci {
     ///   event). See [`crate::event::Error`] for possible values of `e`.
     /// - Returns [`Error::Comm`] if there is an error reading from the
     ///   controller.
-    async fn read(&mut self) -> Result<Packet<Stm32Wb5xEvent>, Error<Stm32Wb5xError>>;
+    async fn read(&mut self) -> Result<Packet, Error>;
 }
 
 impl super::HciHeader for CommandHeader {
@@ -87,7 +82,7 @@ impl<T> UartHci for T
 where
     T: crate::Controller,
 {
-    async fn read(&mut self) -> Result<Packet<Stm32Wb5xEvent>, Error<Stm32Wb5xError>> {
+    async fn read(&mut self) -> Result<Packet, Error> {
         const MAX_EVENT_LENGTH: usize = 256;
         const PACKET_HEADER_LENGTH: usize = 1;
         const EVENT_PACKET_HEADER_LENGTH: usize = 3;

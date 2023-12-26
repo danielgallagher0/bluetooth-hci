@@ -94,7 +94,6 @@ pub mod vendor;
 pub use event::Event;
 pub use opcode::Opcode;
 
-use core::convert::TryFrom;
 use core::fmt::Debug;
 
 /// Interface to the Bluetooth controller from the host's perspective.
@@ -133,8 +132,6 @@ pub trait Controller {
     /// # struct Header;
     /// # struct Vendor;
     /// # impl hci::Vendor for Vendor {
-    /// #     type Status = VendorStatus;
-    /// #     type Event = VendorEvent;
     /// # }
     /// # #[derive(Clone, Debug)]
     /// # #[cfg_attr(feature = "defmt", derive(defmt::Format))]
@@ -149,28 +146,6 @@ pub trait Controller {
     /// #    fn into(self) -> u8 {
     /// #        0
     /// #    }
-    /// # }
-    /// # #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-    /// # struct VendorEvent;
-    /// # impl hci::event::VendorEvent for VendorEvent {
-    /// #     type Error = Error;
-    /// #     type Status = VendorStatus;
-    /// #     type ReturnParameters = ReturnParameters;
-    /// #     fn new(_buffer: &[u8]) -> Result<Self, hci::event::Error<Self::Error>>
-    /// #     where
-    /// #         Self: Sized
-    /// #     {
-    /// #         Ok(VendorEvent{})
-    /// #     }
-    /// # }
-    /// # #[derive(Clone, Debug)]
-    /// # #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-    /// # struct ReturnParameters;
-    /// # impl hci::event::VendorReturnParameters for ReturnParameters {
-    /// #     type Error = Error;
-    /// #     fn new(_buffer: &[u8]) -> Result<Self, hci::event::Error<Self::Error>> {
-    /// #         Ok(ReturnParameters{})
-    /// #     }
     /// # }
     /// # impl HciController for Controller {
     /// #     async fn controller_write(&mut self, opcode: Opcode, _payload: &[u8]) {}
@@ -199,13 +174,7 @@ pub trait Controller {
 }
 
 /// Trait defining vendor-specific extensions for the Bluetooth Controller.
-pub trait Vendor {
-    /// Enumeration of vendor-specific status codes.
-    type Status: TryFrom<u8, Error = BadStatusError> + Into<u8> + Clone + Debug;
-
-    /// Enumeration of vendor-specific events.
-    type Event: event::VendorEvent;
-}
+pub trait Vendor {}
 
 /// List of possible error codes, Bluetooth Spec, Vol 2, Part D, Section 2.
 ///

@@ -1,11 +1,7 @@
 #![allow(dead_code)]
 
 extern crate stm32wb_hci as hci;
-use hci::{
-    host::HciHeader,
-    vendor::stm32wb::{event::VendorStatus, CommandHeader},
-    Opcode,
-};
+use hci::{host::HciHeader, vendor::stm32wb::CommandHeader, Opcode};
 
 pub struct RecordingSink {
     pub written_data: Vec<u8>,
@@ -16,37 +12,10 @@ pub struct RecordingSinkError;
 
 #[derive(Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct VendorEvent;
-#[derive(Debug)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct VendorError;
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct VendorReturnParameters;
 
 pub struct MockVendor;
-impl hci::Vendor for MockVendor {
-    type Status = VendorStatus;
-    type Event = VendorEvent;
-}
-
-impl hci::event::VendorEvent for VendorEvent {
-    type Error = VendorError;
-    type ReturnParameters = VendorReturnParameters;
-    type Status = VendorStatus;
-
-    fn new(_buffer: &[u8]) -> Result<Self, hci::event::Error<Self::Error>> {
-        Err(hci::event::Error::Vendor(VendorError))
-    }
-}
-
-impl hci::event::VendorReturnParameters for VendorReturnParameters {
-    type Error = VendorError;
-
-    fn new(_buffer: &[u8]) -> Result<Self, hci::event::Error<Self::Error>> {
-        Err(hci::event::Error::Vendor(VendorError))
-    }
-}
+impl hci::Vendor for MockVendor {}
 
 impl hci::Controller for RecordingSink {
     async fn controller_write(&mut self, opcode: Opcode, payload: &[u8]) {
