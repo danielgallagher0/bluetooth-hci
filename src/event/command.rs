@@ -10,7 +10,7 @@
 //! 7.6 of the same part of the spec.
 
 use crate::vendor::opcode::VENDOR_OGF;
-use crate::{BadStatusError, ConnectionHandle, Status};
+use crate::{ConnectionHandle, Status};
 use byteorder::{ByteOrder, LittleEndian};
 use core::convert::{TryFrom, TryInto};
 use core::fmt::{Debug, Formatter, Result as FmtResult};
@@ -311,10 +311,7 @@ pub enum ReturnParameters {
     Vendor(crate::vendor::event::command::VendorReturnParameters),
 }
 
-fn to_status(bytes: &[u8]) -> Result<Status, crate::event::Error>
-where
-    Status: TryFrom<u8, Error = BadStatusError>,
-{
+fn to_status(bytes: &[u8]) -> Result<Status, crate::event::Error> {
     bytes[0].try_into().map_err(super::rewrap_bad_status)
 }
 
@@ -335,10 +332,7 @@ pub struct TxPowerLevel {
     pub tx_power_level_dbm: i8,
 }
 
-fn to_tx_power_level(bytes: &[u8]) -> Result<TxPowerLevel, crate::event::Error>
-where
-    Status: TryFrom<u8, Error = BadStatusError>,
-{
+fn to_tx_power_level(bytes: &[u8]) -> Result<TxPowerLevel, crate::event::Error> {
     require_len!(bytes, 4);
     Ok(TxPowerLevel {
         status: to_status(bytes)?,
@@ -383,10 +377,7 @@ pub struct LocalVersionInfo {
     pub lmp_subversion: u16,
 }
 
-fn to_local_version_info(bytes: &[u8]) -> Result<LocalVersionInfo, crate::event::Error>
-where
-    Status: TryFrom<u8, Error = BadStatusError>,
-{
+fn to_local_version_info(bytes: &[u8]) -> Result<LocalVersionInfo, crate::event::Error> {
     require_len!(bytes, 9);
 
     Ok(LocalVersionInfo {
@@ -1000,10 +991,7 @@ impl<'a> TryFrom<&'a [u8]> for CommandFlags {
     }
 }
 
-fn to_supported_commands(bytes: &[u8]) -> Result<LocalSupportedCommands, crate::event::Error>
-where
-    Status: TryFrom<u8, Error = BadStatusError>,
-{
+fn to_supported_commands(bytes: &[u8]) -> Result<LocalSupportedCommands, crate::event::Error> {
     require_len!(bytes, 1 + COMMAND_FLAGS_SIZE);
     Ok(LocalSupportedCommands {
         status: bytes[0].try_into().map_err(super::rewrap_bad_status)?,
@@ -1267,10 +1255,7 @@ defmt::bitflags! {
     }
 }
 
-fn to_supported_features(bytes: &[u8]) -> Result<LocalSupportedFeatures, crate::event::Error>
-where
-    Status: TryFrom<u8, Error = BadStatusError>,
-{
+fn to_supported_features(bytes: &[u8]) -> Result<LocalSupportedFeatures, crate::event::Error> {
     require_len!(bytes, 9);
     Ok(LocalSupportedFeatures {
         status: to_status(bytes)?,
@@ -1289,10 +1274,7 @@ pub struct ReadBdAddr {
     pub bd_addr: crate::BdAddr,
 }
 
-fn to_bd_addr(bytes: &[u8]) -> Result<ReadBdAddr, crate::event::Error>
-where
-    Status: TryFrom<u8, Error = BadStatusError>,
-{
+fn to_bd_addr(bytes: &[u8]) -> Result<ReadBdAddr, crate::event::Error> {
     require_len!(bytes, 7);
     let mut bd_addr = crate::BdAddr([0; 6]);
     bd_addr.0.copy_from_slice(&bytes[1..]);
@@ -1328,10 +1310,7 @@ pub struct ReadRssi {
     pub rssi: i8,
 }
 
-fn to_read_rssi(bytes: &[u8]) -> Result<ReadRssi, crate::event::Error>
-where
-    Status: TryFrom<u8, Error = BadStatusError>,
-{
+fn to_read_rssi(bytes: &[u8]) -> Result<ReadRssi, crate::event::Error> {
     require_len!(bytes, 4);
     Ok(ReadRssi {
         status: to_status(bytes)?,
@@ -1367,10 +1346,7 @@ pub struct LeReadBufferSize {
     pub data_packet_count: u8,
 }
 
-fn to_le_read_buffer_status(bytes: &[u8]) -> Result<LeReadBufferSize, crate::event::Error>
-where
-    Status: TryFrom<u8, Error = BadStatusError>,
-{
+fn to_le_read_buffer_status(bytes: &[u8]) -> Result<LeReadBufferSize, crate::event::Error> {
     require_len!(bytes, 4);
     Ok(LeReadBufferSize {
         status: to_status(bytes)?,
@@ -1481,10 +1457,9 @@ defmt::bitflags! {
     }
 }
 
-fn to_le_local_supported_features(bytes: &[u8]) -> Result<LeSupportedFeatures, crate::event::Error>
-where
-    Status: TryFrom<u8, Error = BadStatusError>,
-{
+fn to_le_local_supported_features(
+    bytes: &[u8],
+) -> Result<LeSupportedFeatures, crate::event::Error> {
     require_len!(bytes, 9);
     Ok(LeSupportedFeatures {
         status: to_status(bytes)?,
@@ -1508,10 +1483,7 @@ pub struct LeAdvertisingChannelTxPower {
 
 fn to_le_advertising_channel_tx_power(
     bytes: &[u8],
-) -> Result<LeAdvertisingChannelTxPower, crate::event::Error>
-where
-    Status: TryFrom<u8, Error = BadStatusError>,
-{
+) -> Result<LeAdvertisingChannelTxPower, crate::event::Error> {
     require_len!(bytes, 2);
     Ok(LeAdvertisingChannelTxPower {
         status: to_status(bytes)?,
@@ -1537,10 +1509,7 @@ pub struct ChannelMapParameters {
     pub channel_map: crate::ChannelClassification,
 }
 
-fn to_le_channel_map_parameters(bytes: &[u8]) -> Result<ChannelMapParameters, crate::event::Error>
-where
-    Status: TryFrom<u8, Error = BadStatusError>,
-{
+fn to_le_channel_map_parameters(bytes: &[u8]) -> Result<ChannelMapParameters, crate::event::Error> {
     require_len!(bytes, 8);
 
     let mut channel_bits = [0; 5];
@@ -1581,10 +1550,7 @@ impl Debug for EncryptedBlock {
     }
 }
 
-fn to_le_encrypted_data(bytes: &[u8]) -> Result<EncryptedReturnParameters, crate::event::Error>
-where
-    Status: TryFrom<u8, Error = BadStatusError>,
-{
+fn to_le_encrypted_data(bytes: &[u8]) -> Result<EncryptedReturnParameters, crate::event::Error> {
     require_len!(bytes, 17);
 
     let mut block = [0; 16];
@@ -1606,10 +1572,7 @@ pub struct LeRandom {
     pub random_number: u64,
 }
 
-fn to_random_number(bytes: &[u8]) -> Result<LeRandom, crate::event::Error>
-where
-    Status: TryFrom<u8, Error = BadStatusError>,
-{
+fn to_random_number(bytes: &[u8]) -> Result<LeRandom, crate::event::Error> {
     require_len!(bytes, 9);
 
     Ok(LeRandom {
@@ -1630,10 +1593,7 @@ pub struct LeLongTermRequestReply {
     pub conn_handle: ConnectionHandle,
 }
 
-fn to_le_ltk_request_reply(bytes: &[u8]) -> Result<LeLongTermRequestReply, crate::event::Error>
-where
-    Status: TryFrom<u8, Error = BadStatusError>,
-{
+fn to_le_ltk_request_reply(bytes: &[u8]) -> Result<LeLongTermRequestReply, crate::event::Error> {
     require_len!(bytes, 3);
 
     Ok(LeLongTermRequestReply {
@@ -1841,10 +1801,7 @@ defmt::bitflags! {
     }
 }
 
-fn to_le_read_states(bytes: &[u8]) -> Result<LeReadSupportedStates, crate::event::Error>
-where
-    Status: TryFrom<u8, Error = BadStatusError>,
-{
+fn to_le_read_states(bytes: &[u8]) -> Result<LeReadSupportedStates, crate::event::Error> {
     require_len!(bytes, 9);
 
     let bitfield = LittleEndian::read_u64(&bytes[1..]);
@@ -1867,10 +1824,7 @@ pub struct LeTestEnd {
     pub number_of_packets: usize,
 }
 
-fn to_le_test_end(bytes: &[u8]) -> Result<LeTestEnd, crate::event::Error>
-where
-    Status: TryFrom<u8, Error = BadStatusError>,
-{
+fn to_le_test_end(bytes: &[u8]) -> Result<LeTestEnd, crate::event::Error> {
     require_len!(bytes, 3);
 
     Ok(LeTestEnd {

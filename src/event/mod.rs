@@ -28,20 +28,6 @@ macro_rules! require_len_at_least {
     };
 }
 
-/// Converts a specific generic enum value between specializations.  This is used below to convert
-/// from [`Error`] to [`Error<VendorError>`] in various places where only one error
-/// value is possible (such as from `try_into`).
-macro_rules! self_convert {
-    ($val:path) => {
-        |e| {
-            if let $val(value) = e {
-                return $val(value);
-            }
-            unreachable!();
-        }
-    };
-}
-
 pub mod command;
 
 use crate::types::{ConnectionIntervalError, FixedConnectionInterval};
@@ -364,10 +350,7 @@ impl TryFrom<u8> for LinkType {
     }
 }
 
-fn to_connection_complete(payload: &[u8]) -> Result<ConnectionComplete, Error>
-where
-    Status: TryFrom<u8, Error = BadStatusError>,
-{
+fn to_connection_complete(payload: &[u8]) -> Result<ConnectionComplete, Error> {
     require_len!(payload, 11);
 
     let mut bd_addr = crate::BdAddr([0; 6]);
@@ -376,11 +359,8 @@ where
         status: payload[0].try_into().map_err(rewrap_bad_status)?,
         conn_handle: ConnectionHandle(LittleEndian::read_u16(&payload[1..])),
         bd_addr,
-        link_type: payload[9]
-            .try_into()
-            .map_err(self_convert!(Error::BadLinkType))?,
-        encryption_enabled: try_into_encryption_enabled(payload[10])
-            .map_err(self_convert!(Error::BadEncryptionEnabledValue))?,
+        link_type: payload[9].try_into()?,
+        encryption_enabled: try_into_encryption_enabled(payload[10])?,
     })
 }
 
@@ -418,10 +398,7 @@ pub struct DisconnectionComplete {
     pub reason: Status,
 }
 
-fn to_disconnection_complete(payload: &[u8]) -> Result<DisconnectionComplete, Error>
-where
-    Status: TryFrom<u8, Error = BadStatusError>,
-{
+fn to_disconnection_complete(payload: &[u8]) -> Result<DisconnectionComplete, Error> {
     require_len!(payload, 4);
 
     Ok(DisconnectionComplete {
@@ -491,17 +468,12 @@ impl TryFrom<u8> for Encryption {
     }
 }
 
-fn to_encryption_change(payload: &[u8]) -> Result<EncryptionChange, Error>
-where
-    Status: TryFrom<u8, Error = BadStatusError>,
-{
+fn to_encryption_change(payload: &[u8]) -> Result<EncryptionChange, Error> {
     require_len!(payload, 4);
     Ok(EncryptionChange {
         status: payload[0].try_into().map_err(rewrap_bad_status)?,
         conn_handle: ConnectionHandle(LittleEndian::read_u16(&payload[1..])),
-        encryption: payload[3]
-            .try_into()
-            .map_err(self_convert!(Error::BadEncryptionType))?,
+        encryption: payload[3].try_into()?,
     })
 }
 
@@ -549,10 +521,7 @@ pub struct RemoteVersionInformation {
     pub subversion: u16,
 }
 
-fn to_remote_version_info(payload: &[u8]) -> Result<RemoteVersionInformation, Error>
-where
-    Status: TryFrom<u8, Error = BadStatusError>,
-{
+fn to_remote_version_info(payload: &[u8]) -> Result<RemoteVersionInformation, Error> {
     require_len!(payload, 8);
     Ok(RemoteVersionInformation {
         status: payload[0].try_into().map_err(rewrap_bad_status)?,
@@ -583,10 +552,7 @@ pub struct CommandStatus {
     pub opcode: crate::opcode::Opcode,
 }
 
-fn to_command_status(buffer: &[u8]) -> Result<CommandStatus, Error>
-where
-    Status: TryFrom<u8, Error = BadStatusError>,
-{
+fn to_command_status(buffer: &[u8]) -> Result<CommandStatus, Error> {
     require_len!(buffer, 4);
 
     Ok(CommandStatus {
@@ -722,9 +688,7 @@ pub struct DataBufferOverflow {
 fn to_data_buffer_overflow(payload: &[u8]) -> Result<DataBufferOverflow, Error> {
     require_len!(payload, 1);
     Ok(DataBufferOverflow {
-        link_type: payload[0]
-            .try_into()
-            .map_err(self_convert!(Error::BadLinkType))?,
+        link_type: payload[0].try_into()?,
     })
 }
 
@@ -754,10 +718,9 @@ pub struct EncryptionKeyRefreshComplete {
     pub conn_handle: ConnectionHandle,
 }
 
-fn to_encryption_key_refresh_complete(payload: &[u8]) -> Result<EncryptionKeyRefreshComplete, Error>
-where
-    Status: TryFrom<u8, Error = BadStatusError>,
-{
+fn to_encryption_key_refresh_complete(
+    payload: &[u8],
+) -> Result<EncryptionKeyRefreshComplete, Error> {
     require_len!(payload, 3);
     Ok(EncryptionKeyRefreshComplete {
         status: payload[0].try_into().map_err(rewrap_bad_status)?,
@@ -866,26 +829,19 @@ impl TryFrom<u8> for CentralClockAccuracy {
     }
 }
 
-fn to_le_connection_complete(payload: &[u8]) -> Result<LeConnectionComplete, Error>
-where
-    Status: TryFrom<u8, Error = BadStatusError>,
-{
+fn to_le_connection_complete(payload: &[u8]) -> Result<LeConnectionComplete, Error> {
     require_len!(payload, 19);
     let mut bd_addr = crate::BdAddr([0; 6]);
     bd_addr.0.copy_from_slice(&payload[6..12]);
     Ok(LeConnectionComplete {
         status: payload[1].try_into().map_err(rewrap_bad_status)?,
         conn_handle: ConnectionHandle(LittleEndian::read_u16(&payload[2..])),
-        role: payload[4]
-            .try_into()
-            .map_err(self_convert!(Error::BadLeConnectionRole))?,
+        role: payload[4].try_into()?,
         peer_bd_addr: crate::to_bd_addr_type(payload[5], bd_addr)
             .map_err(rewrap_bd_addr_type_err)?,
         conn_interval: FixedConnectionInterval::from_bytes(&payload[12..18])
             .map_err(Error::BadConnectionInterval)?,
-        central_clock_accuracy: payload[18]
-            .try_into()
-            .map_err(self_convert!(Error::BadLeCentralClockAccuracy))?,
+        central_clock_accuracy: payload[18].try_into()?,
     })
 }
 
@@ -1018,9 +974,7 @@ impl<'a, VE> LeAdvertisingReportInnerIterator<'a, VE> {
             .0
             .copy_from_slice(&self.event_data[addr_index..data_len_index]);
         Ok(Some(LeAdvertisement {
-            event_type: self.event_data[event_type_index]
-                .try_into()
-                .map_err(self_convert!(Error::BadLeAdvertisementType))?,
+            event_type: self.event_data[event_type_index].try_into()?,
             address: crate::to_bd_addr_type(self.event_data[addr_type_index], bd_addr)
                 .map_err(rewrap_bd_addr_type_err)?,
             data: &self.event_data[data_start_index..rssi_index],
@@ -1130,10 +1084,7 @@ pub struct LeConnectionUpdateComplete {
     pub conn_interval: FixedConnectionInterval,
 }
 
-fn to_le_connection_update_complete(payload: &[u8]) -> Result<LeConnectionUpdateComplete, Error>
-where
-    Status: TryFrom<u8, Error = BadStatusError>,
-{
+fn to_le_connection_update_complete(payload: &[u8]) -> Result<LeConnectionUpdateComplete, Error> {
     require_len!(payload, 10);
     Ok(LeConnectionUpdateComplete {
         status: payload[1].try_into().map_err(rewrap_bad_status)?,
@@ -1165,10 +1116,7 @@ pub struct LeReadRemoteUsedFeaturesComplete {
 
 fn to_le_read_remote_used_features_complete(
     payload: &[u8],
-) -> Result<LeReadRemoteUsedFeaturesComplete, Error>
-where
-    Status: TryFrom<u8, Error = BadStatusError>,
-{
+) -> Result<LeReadRemoteUsedFeaturesComplete, Error> {
     require_len!(payload, 12);
 
     let feature_flags = LittleEndian::read_u64(&payload[4..]);
@@ -1293,16 +1241,13 @@ pub struct LePhyUpdateComplete {
     pub rx_phy: Phy,
 }
 
-fn to_le_phy_update_complete(payload: &[u8]) -> Result<LePhyUpdateComplete, Error>
-where
-    Status: TryFrom<u8, Error = BadStatusError>,
-{
+fn to_le_phy_update_complete(payload: &[u8]) -> Result<LePhyUpdateComplete, Error> {
     require_len!(payload, 6);
 
     Ok(LePhyUpdateComplete {
         status: payload[1].try_into().map_err(rewrap_bad_status)?,
         conn_handle: ConnectionHandle(LittleEndian::read_u16(&payload[2..])),
-        tx_phy: Phy::try_from(payload[4]).map_err(self_convert!(Error::BadPhy))?,
-        rx_phy: Phy::try_from(payload[5]).map_err(self_convert!(Error::BadPhy))?,
+        tx_phy: Phy::try_from(payload[4])?,
+        rx_phy: Phy::try_from(payload[5])?,
     })
 }
