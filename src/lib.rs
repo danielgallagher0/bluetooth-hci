@@ -477,6 +477,10 @@ impl core::convert::From<Status> for u8 {
 }
 
 /// Newtype for a connection handle.
+///
+/// Values:
+/// - 0x0000 .. 0xEFFF: Unenhanced ATT bearer
+/// - 0xEA00
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct ConnectionHandle(pub u16);
