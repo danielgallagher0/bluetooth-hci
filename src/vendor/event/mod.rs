@@ -78,9 +78,9 @@ pub enum VendorEvent {
     /// been terminated by the upper layer or has completed for any other reason
     GapProcedureComplete(GapProcedureComplete),
 
-    /// This event is sent only by a privacy enabled peripheral. The event is sent to the upper
-    /// layers when the peripheral is unsuccessful in resolving the resolvable address of the peer
-    /// device after connecting to it.
+    /// This event is sent only by a privacy enabled peripheral. with a non-empty bonded device list
+    ///  The event is sent to the application when the peripheral is unsuccessful in resolving
+    /// the resolvable address of the peer device after connecting to it.
     GapAddressNotResolved(ConnectionHandle),
 
     /// This event is sent only during SC Pairing, when Numeric Comparison
