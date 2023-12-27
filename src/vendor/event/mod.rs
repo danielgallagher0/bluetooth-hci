@@ -2107,6 +2107,10 @@ pub enum AttError {
     UnsupportedGroupType = 0x10,
     /// Insufficient Resources to complete the request.
     InsufficientResources = 0x11,
+    /// Database out of sync
+    DatabaseOutOfSync = 0x12,
+    /// Value not allowed
+    ValueNotAllowed = 0x13,
     /// Application error code defined by a higher layer specification.
     ApplicationError0x80 = 0x80,
     /// Application error code defined by a higher layer specification.
