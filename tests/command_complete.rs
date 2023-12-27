@@ -1,10 +1,9 @@
-#![feature(async_fn_in_trait)]
-
 extern crate stm32wb_hci as hci;
 
 use hci::event::command::*;
 use hci::event::*;
-use std::convert::{TryFrom, TryInto};
+use hci::vendor::event::command::VendorReturnParameters;
+use std::convert::TryFrom;
 
 #[derive(Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
@@ -12,45 +11,12 @@ struct VendorEvent;
 #[derive(Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 struct VendorError;
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
-enum VendorReturnParameters {
-    Opcode10 { status: hci::Status<VendorStatus> },
-}
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum VendorStatus {
     FourFive,
     FiveZero,
-}
-
-impl hci::event::VendorEvent for VendorEvent {
-    type Error = VendorError;
-    type ReturnParameters = VendorReturnParameters;
-    type Status = VendorStatus;
-
-    fn new(_buffer: &[u8]) -> Result<Self, hci::event::Error<Self::Error>> {
-        Err(hci::event::Error::Vendor(VendorError))
-    }
-}
-
-impl hci::event::VendorReturnParameters for VendorReturnParameters {
-    type Error = VendorError;
-
-    fn new(buffer: &[u8]) -> Result<Self, hci::event::Error<Self::Error>> {
-        if buffer.len() < 4 {
-            return Err(hci::event::Error::Vendor(VendorError));
-        }
-        if buffer[1] != 10 {
-            return Err(hci::event::Error::Vendor(VendorError));
-        }
-
-        Ok(VendorReturnParameters::Opcode10 {
-            status: buffer[3]
-                .try_into()
-                .map_err(|_e| hci::event::Error::Vendor(VendorError))?,
-        })
-    }
 }
 
 impl TryFrom<u8> for VendorStatus {
@@ -65,12 +31,10 @@ impl TryFrom<u8> for VendorStatus {
     }
 }
 
-type TestEvent = Event<VendorEvent>;
-
 #[test]
 fn command_complete_failed() {
     let buffer = [0x0E, 3, 1, 0x67, 0x43];
-    match TestEvent::new(Packet(&buffer)) {
+    match Event::new(Packet(&buffer)) {
         Err(Error::UnknownOpcode(opcode)) => assert_eq!(opcode.0, 0x4367),
         other => panic!("Did not get unknown opcode: {:?}", other),
     }
@@ -79,7 +43,7 @@ fn command_complete_failed() {
 #[test]
 fn unsolicited_command_complete() {
     let buffer = [0x0E, 3, 1, 0x00, 0x00];
-    match TestEvent::new(Packet(&buffer)) {
+    match Event::new(Packet(&buffer)) {
         Ok(Event::CommandComplete(event)) => {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
@@ -101,7 +65,7 @@ macro_rules! status_only {
             #[test]
             fn $fn() {
                 let buffer = [0x0E, 4, 8, $oc0, $oc1, 0];
-                match TestEvent::new(Packet(&buffer)) {
+                match Event::new(Packet(&buffer)) {
                     Ok(Event::CommandComplete(event)) => {
                         assert_eq!(event.num_hci_command_packets, 8);
                         match event.return_params {
@@ -142,7 +106,7 @@ status_only! {
 #[test]
 fn read_tx_power_level() {
     let buffer = [0x0E, 7, 6, 0x2D, 0x0C, 0x00, 0x01, 0x02, 0x03];
-    match TestEvent::new(Packet(&buffer)) {
+    match Event::new(Packet(&buffer)) {
         Ok(Event::CommandComplete(event)) => {
             assert_eq!(event.num_hci_command_packets, 6);
             match event.return_params {
@@ -163,7 +127,7 @@ fn read_local_version_information() {
     let buffer = [
         0x0E, 12, 0x01, 0x01, 0x10, 0x00, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
     ];
-    match TestEvent::new(Packet(&buffer)) {
+    match Event::new(Packet(&buffer)) {
         Ok(Event::CommandComplete(event)) => {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
@@ -194,7 +158,7 @@ fn read_local_supported_commands() {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     ];
-    match TestEvent::new(Packet(&buffer)) {
+    match Event::new(Packet(&buffer)) {
         Ok(Event::CommandComplete(event)) => {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
@@ -264,7 +228,7 @@ fn read_local_supported_commands_failed_bad_command_flag() {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     ];
-    match TestEvent::new(Packet(&buffer)) {
+    match Event::new(Packet(&buffer)) {
         Err(Error::BadCommandFlag) => (),
         other => panic!("Did not get Bad Command Flag: {:?}", other),
     }
@@ -275,7 +239,7 @@ fn read_local_supported_features() {
     let buffer = [
         0x0E, 12, 1, 0x03, 0x10, 0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
     ];
-    match TestEvent::new(Packet(&buffer)) {
+    match Event::new(Packet(&buffer)) {
         Ok(Event::CommandComplete(event)) => {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
@@ -308,7 +272,7 @@ fn read_bd_addr() {
     let buffer = [
         0x0E, 10, 1, 0x09, 0x10, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
     ];
-    match TestEvent::new(Packet(&buffer)) {
+    match Event::new(Packet(&buffer)) {
         Ok(Event::CommandComplete(event)) => {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
@@ -329,7 +293,7 @@ fn read_bd_addr() {
 #[test]
 fn read_rssi() {
     let buffer = [0x0E, 7, 1, 0x05, 0x14, 0x00, 0x01, 0x02, 0x03];
-    match TestEvent::new(Packet(&buffer)) {
+    match Event::new(Packet(&buffer)) {
         Ok(Event::CommandComplete(event)) => {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
@@ -348,7 +312,7 @@ fn read_rssi() {
 #[test]
 fn le_read_buffer_size() {
     let buffer = [0x0E, 7, 2, 0x02, 0x20, 0x00, 0x01, 0x02, 0x03];
-    match TestEvent::new(Packet(&buffer)) {
+    match Event::new(Packet(&buffer)) {
         Ok(Event::CommandComplete(event)) => {
             assert_eq!(event.num_hci_command_packets, 2);
             match event.return_params {
@@ -369,7 +333,7 @@ fn le_read_local_supported_features() {
     let buffer = [
         0x0E, 12, 1, 0x03, 0x20, 0x00, 0x04, 0x02, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
     ];
-    match TestEvent::new(Packet(&buffer)) {
+    match Event::new(Packet(&buffer)) {
         Ok(Event::CommandComplete(event)) => {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
@@ -392,7 +356,7 @@ fn le_read_local_supported_features() {
 #[test]
 fn le_read_advertising_channel_tx_power() {
     let buffer = [0x0E, 5, 1, 0x07, 0x20, 0x00, 0x01];
-    match TestEvent::new(Packet(&buffer)) {
+    match Event::new(Packet(&buffer)) {
         Ok(Event::CommandComplete(event)) => {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
@@ -413,7 +377,7 @@ fn le_read_advertising_channel_tx_power() {
 #[test]
 fn le_read_white_list_size() {
     let buffer = [0x0E, 5, 1, 0x0F, 0x20, 0x00, 0x16];
-    match TestEvent::new(Packet(&buffer)) {
+    match Event::new(Packet(&buffer)) {
         Ok(Event::CommandComplete(event)) => {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
@@ -436,7 +400,7 @@ fn le_read_channel_map() {
     let buffer = [
         0x0E, 11, 1, 0x15, 0x20, 0x00, 0x01, 0x02, 0x11, 0x11, 0x11, 0x11, 0x11,
     ];
-    match TestEvent::new(Packet(&buffer)) {
+    match Event::new(Packet(&buffer)) {
         Ok(Event::CommandComplete(event)) => {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
@@ -472,7 +436,7 @@ fn le_read_channel_map_failed_reserved() {
     let buffer = [
         0x0E, 11, 1, 0x15, 0x20, 0x00, 0x01, 0x02, 0x00, 0x00, 0x00, 0x00, 0x20,
     ];
-    match TestEvent::new(Packet(&buffer)) {
+    match Event::new(Packet(&buffer)) {
         Err(Error::InvalidChannelMap(bytes)) => {
             assert_eq!(bytes, [0x00, 0x00, 0x00, 0x00, 0x20]);
         }
@@ -485,7 +449,7 @@ fn le_encrypt() {
     let buffer = [
         0x0E, 20, 1, 0x17, 0x20, 0x00, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
     ];
-    match TestEvent::new(Packet(&buffer)) {
+    match Event::new(Packet(&buffer)) {
         Ok(Event::CommandComplete(event)) => {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
@@ -508,7 +472,7 @@ fn le_rand() {
     let buffer = [
         0x0E, 12, 1, 0x18, 0x20, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
     ];
-    match TestEvent::new(Packet(&buffer)) {
+    match Event::new(Packet(&buffer)) {
         Ok(Event::CommandComplete(event)) => {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
@@ -526,7 +490,7 @@ fn le_rand() {
 #[test]
 fn le_long_term_key_request_reply() {
     let buffer = [0x0E, 6, 1, 0x1A, 0x20, 0x00, 0x01, 0x02];
-    match TestEvent::new(Packet(&buffer)) {
+    match Event::new(Packet(&buffer)) {
         Ok(Event::CommandComplete(event)) => {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
@@ -547,7 +511,7 @@ fn le_long_term_key_request_reply() {
 #[test]
 fn le_long_term_key_request_negative_reply() {
     let buffer = [0x0E, 6, 1, 0x1B, 0x20, 0x00, 0x01, 0x02];
-    match TestEvent::new(Packet(&buffer)) {
+    match Event::new(Packet(&buffer)) {
         Ok(Event::CommandComplete(event)) => {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
@@ -570,7 +534,7 @@ fn le_read_supported_states() {
     let buffer = [
         0x0E, 12, 1, 0x1C, 0x20, 0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x02, 0x00, 0x00,
     ];
-    match TestEvent::new(Packet(&buffer)) {
+    match Event::new(Packet(&buffer)) {
         Ok(Event::CommandComplete(event)) => {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
@@ -601,7 +565,7 @@ fn le_read_supported_states_failed_reserved_flag() {
     let buffer = [
         0x0E, 12, 1, 0x1C, 0x20, 0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x04, 0x00, 0x00,
     ];
-    match TestEvent::new(Packet(&buffer)) {
+    match Event::new(Packet(&buffer)) {
         Err(Error::InvalidLeStates(bitfield)) => {
             assert_eq!(bitfield, 0x0000_0410_0804_0201);
         }
@@ -612,7 +576,7 @@ fn le_read_supported_states_failed_reserved_flag() {
 #[test]
 fn le_test_end() {
     let buffer = [0x0E, 6, 1, 0x1F, 0x20, 0x00, 0x01, 0x02];
-    match TestEvent::new(Packet(&buffer)) {
+    match Event::new(Packet(&buffer)) {
         Ok(Event::CommandComplete(event)) => {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
@@ -629,19 +593,23 @@ fn le_test_end() {
 
 #[test]
 fn vendor_command() {
-    let buffer = [0x0E, 4, 1, 0x0A, 0xFC, 0x00];
-    match TestEvent::new(Packet(&buffer)) {
+    let buffer = [0x0E, 6, 1, 0x00, 0xFC, 0x00, 0x00, 0x00];
+    match Event::new(Packet(&buffer)) {
         Ok(Event::CommandComplete(event)) => {
             assert_eq!(event.num_hci_command_packets, 1);
             match event.return_params {
                 ReturnParameters::Vendor(params) => match params {
-                    VendorReturnParameters::Opcode10 { status } => {
-                        assert_eq!(status, hci::Status::Success);
+                    VendorReturnParameters::HalGetFirmwareRevision(rev) => {
+                        assert_eq!(rev.status, hci::Status::Success);
                     }
+                    other => panic!(
+                        "Did not get a Get Firmware Revision return params: {:?}",
+                        other
+                    ),
                 },
                 other => panic!("Did not get Vendor command return params: {:?}", other),
             }
         }
-        other => panic!("Did not get command complete event: {:?}", other),
+        other => panic!("Did not get command complete event: {:04X?}", other),
     }
 }

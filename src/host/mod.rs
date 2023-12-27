@@ -58,9 +58,6 @@ pub trait HciHeader {
 ///
 /// An implementation is defined or all types that implement [`Controller`](super::Controller).
 pub trait HostHci {
-    /// Vendor-specific status codes.
-    type VS;
-
     /// Terminates an existing connection.  All synchronous connections on a physical link should be
     /// disconnected before the ACL connection on the same physical connection is disconnected.
     ///
@@ -98,8 +95,8 @@ pub trait HostHci {
     async fn disconnect(
         &mut self,
         conn_handle: ConnectionHandle,
-        reason: Status<Self::VS>,
-    ) -> Result<(), Error<Self::VS>>;
+        reason: Status,
+    ) -> Result<(), Error>;
 
     /// Obtains the values for the version information for the remote device identified by the
     /// `conn_handle` parameter, which must be a connection handle for an ACL or LE connection.
@@ -402,10 +399,7 @@ pub trait HostHci {
     ///
     /// (v5.0) If the Host issues this command when scanning or legacy advertising is enabled, the
     /// Controller shall return the error code [Command Disallowed](Status::CommandDisallowed).
-    async fn le_set_random_address(
-        &mut self,
-        bd_addr: crate::BdAddr,
-    ) -> Result<(), Error<Self::VS>>;
+    async fn le_set_random_address(&mut self, bd_addr: crate::BdAddr) -> Result<(), Error>;
 
     /// Sets the advertising parameters on the Controller.
     ///
@@ -426,7 +420,7 @@ pub trait HostHci {
     async fn le_set_advertising_parameters(
         &mut self,
         params: &AdvertisingParameters,
-    ) -> Result<(), Error<Self::VS>>;
+    ) -> Result<(), Error>;
 
     /// Reads the transmit power level used for LE advertising channel packets.
     ///
@@ -464,7 +458,7 @@ pub trait HostHci {
     /// # Generated events
     ///
     /// A [Command Complete](crate::event::Event::CommandComplete) event is generated.
-    async fn le_set_advertising_data(&mut self, data: &[u8]) -> Result<(), Error<Self::VS>>;
+    async fn le_set_advertising_data(&mut self, data: &[u8]) -> Result<(), Error>;
 
     /// Provides data used in scanning packets that have a data field.
     ///
@@ -488,7 +482,7 @@ pub trait HostHci {
     ///
     /// A [Command Complete](crate::event::command::ReturnParameters::LeSetScanResponseData) event
     /// is generated.
-    async fn le_set_scan_response_data(&mut self, data: &[u8]) -> Result<(), Error<Self::VS>>;
+    async fn le_set_scan_response_data(&mut self, data: &[u8]) -> Result<(), Error>;
 
     /// Requests the Controller to start or stop advertising. The Controller manages the timing of
     /// advertisements as per the advertising parameters given in the
@@ -824,7 +818,7 @@ pub trait HostHci {
     async fn le_set_host_channel_classification(
         &mut self,
         channels: crate::ChannelClassification,
-    ) -> Result<(), Error<Self::VS>>;
+    ) -> Result<(), Error>;
 
     /// Returns the current channel map for the specified connection handle. The returned value
     /// indicates the state of the channel map specified by the last transmitted or received channel
@@ -1001,7 +995,7 @@ pub trait HostHci {
     ///
     /// A [Command Complete](crate::event::command::ReturnParameters::LeReceiverTest) event is
     /// generated.
-    async fn le_receiver_test(&mut self, channel: u8) -> Result<(), Error<Self::VS>>;
+    async fn le_receiver_test(&mut self, channel: u8) -> Result<(), Error>;
 
     /// Starts a test where the DUT generates test reference packets at a fixed interval. The
     /// Controller shall transmit at maximum power.
@@ -1030,7 +1024,7 @@ pub trait HostHci {
         channel: u8,
         payload_length: usize,
         payload: TestPacketPayload,
-    ) -> Result<(), Error<Self::VS>>;
+    ) -> Result<(), Error>;
 
     /// Stops any test which is in progress.
     ///
@@ -1050,10 +1044,10 @@ pub trait HostHci {
 /// of communication errors.
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub enum Error<VS> {
+pub enum Error {
     /// For the [`disconnect`](Hci::disconnect) command: The provided reason is not a valid
     /// disconnection reason. Includes the reported reason.
-    BadDisconnectionReason(Status<VS>),
+    BadDisconnectionReason(Status),
 
     /// For the [`le_set_random_address`](Hci::le_set_random_address) command: The provided address
     /// does not meet the rules for random addresses in the Bluetooth Spec, Vol 6, Part B, Section
@@ -1089,11 +1083,11 @@ pub enum Error<VS> {
     InvalidTestPayloadLength(usize),
 }
 
-async fn set_outbound_data<T, VS>(
+async fn set_outbound_data<T>(
     controller: &mut T,
     opcode: crate::opcode::Opcode,
     data: &[u8],
-) -> Result<(), Error<VS>>
+) -> Result<(), Error>
 where
     T: crate::Controller,
 {
@@ -1113,13 +1107,11 @@ impl<T> HostHci for T
 where
     T: crate::Controller,
 {
-    type VS = crate::vendor::stm32wb::event::Status;
-
     async fn disconnect(
         &mut self,
         conn_handle: ConnectionHandle,
-        reason: Status<Self::VS>,
-    ) -> Result<(), Error<Self::VS>> {
+        reason: Status,
+    ) -> Result<(), Error> {
         match reason {
             Status::AuthFailure
             | Status::RemoteTerminationByUser
@@ -1216,10 +1208,7 @@ where
             .await;
     }
 
-    async fn le_set_random_address(
-        &mut self,
-        bd_addr: crate::BdAddr,
-    ) -> Result<(), Error<Self::VS>> {
+    async fn le_set_random_address(&mut self, bd_addr: crate::BdAddr) -> Result<(), Error> {
         validate_random_address(bd_addr)?;
         self.controller_write(crate::opcode::LE_SET_RANDOM_ADDRESS, &bd_addr.0)
             .await;
@@ -1230,7 +1219,7 @@ where
     async fn le_set_advertising_parameters(
         &mut self,
         params: &AdvertisingParameters,
-    ) -> Result<(), Error<Self::VS>> {
+    ) -> Result<(), Error> {
         let mut bytes = [0; 15];
         params.copy_into_slice(&mut bytes)?;
         self.controller_write(crate::opcode::LE_SET_ADVERTISING_PARAMETERS, &bytes)
@@ -1244,12 +1233,12 @@ where
             .await;
     }
 
-    async fn le_set_advertising_data(&mut self, data: &[u8]) -> Result<(), Error<Self::VS>> {
-        set_outbound_data::<T, Self::VS>(self, crate::opcode::LE_SET_ADVERTISING_DATA, data).await
+    async fn le_set_advertising_data(&mut self, data: &[u8]) -> Result<(), Error> {
+        set_outbound_data::<T>(self, crate::opcode::LE_SET_ADVERTISING_DATA, data).await
     }
 
-    async fn le_set_scan_response_data(&mut self, data: &[u8]) -> Result<(), Error<Self::VS>> {
-        set_outbound_data::<T, Self::VS>(self, crate::opcode::LE_SET_SCAN_RESPONSE_DATA, data).await
+    async fn le_set_scan_response_data(&mut self, data: &[u8]) -> Result<(), Error> {
+        set_outbound_data::<T>(self, crate::opcode::LE_SET_SCAN_RESPONSE_DATA, data).await
     }
 
     async fn le_set_advertising_enable(&mut self, enable: bool) {
@@ -1334,7 +1323,7 @@ where
     async fn le_set_host_channel_classification(
         &mut self,
         channels: crate::ChannelClassification,
-    ) -> Result<(), Error<Self::VS>> {
+    ) -> Result<(), Error> {
         if channels.is_empty() {
             return Err(Error::NoValidChannel);
         }
@@ -1407,7 +1396,7 @@ where
             .await;
     }
 
-    async fn le_receiver_test(&mut self, channel: u8) -> Result<(), Error<Self::VS>> {
+    async fn le_receiver_test(&mut self, channel: u8) -> Result<(), Error> {
         if channel > MAX_TEST_CHANNEL {
             return Err(Error::InvalidTestChannel(channel));
         }
@@ -1423,7 +1412,7 @@ where
         channel: u8,
         payload_length: usize,
         payload: TestPacketPayload,
-    ) -> Result<(), Error<Self::VS>> {
+    ) -> Result<(), Error> {
         if channel > MAX_TEST_CHANNEL {
             return Err(Error::InvalidTestChannel(channel));
         }
@@ -1773,7 +1762,7 @@ defmt::bitflags! {
     }
 }
 
-fn validate_random_address<VS>(bd_addr: crate::BdAddr) -> Result<(), Error<VS>> {
+fn validate_random_address(bd_addr: crate::BdAddr) -> Result<(), Error> {
     let (pop_count, bit_count) = match (bd_addr.0[5] & 0b1100_0000) >> 6 {
         0b00 | 0b11 => (pop_count_except_top_2_bits(&bd_addr.0[0..]), 46),
         0b10 => (pop_count_except_top_2_bits(&bd_addr.0[3..]), 22),
@@ -1837,7 +1826,7 @@ pub struct AdvertisingParameters {
 }
 
 impl AdvertisingParameters {
-    fn copy_into_slice<VS>(&self, bytes: &mut [u8]) -> Result<(), Error<VS>> {
+    fn copy_into_slice(&self, bytes: &mut [u8]) -> Result<(), Error> {
         assert_eq!(bytes.len(), 15);
 
         if self.advertising_channel_map.is_empty() {

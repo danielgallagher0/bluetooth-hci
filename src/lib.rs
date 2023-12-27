@@ -94,7 +94,6 @@ pub mod vendor;
 pub use event::Event;
 pub use opcode::Opcode;
 
-use core::convert::TryFrom;
 use core::fmt::Debug;
 
 /// Interface to the Bluetooth controller from the host's perspective.
@@ -124,57 +123,11 @@ pub trait Controller {
     ///
     /// // host calls:
     ///
-    /// # #![feature(async_fn_in_trait)]
     /// # extern crate stm32wb_hci as hci;
     /// # use hci::Controller as HciController;
-    /// # use hci::Opcode;
     /// # struct Controller;
-    /// #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-    /// # struct Error;
-    /// # struct Header;
-    /// # struct Vendor;
-    /// # impl hci::Vendor for Vendor {
-    /// #     type Status = VendorStatus;
-    /// #     type Event = VendorEvent;
-    /// # }
-    /// # #[derive(Clone, Debug)]
-    /// #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-    /// # struct VendorStatus;
-    /// # impl std::convert::TryFrom<u8> for VendorStatus {
-    /// #     type Error = hci::BadStatusError;
-    /// #     fn try_from(value: u8) -> Result<VendorStatus, Self::Error> {
-    /// #         Err(hci::BadStatusError::BadValue(value))
-    /// #     }
-    /// # }
-    /// # impl std::convert::Into<u8> for VendorStatus {
-    /// #    fn into(self) -> u8 {
-    /// #        0
-    /// #    }
-    /// # }
-    /// #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-    /// # struct VendorEvent;
-    /// # impl hci::event::VendorEvent for VendorEvent {
-    /// #     type Error = Error;
-    /// #     type Status = VendorStatus;
-    /// #     type ReturnParameters = ReturnParameters;
-    /// #     fn new(_buffer: &[u8]) -> Result<Self, hci::event::Error<Self::Error>>
-    /// #     where
-    /// #         Self: Sized
-    /// #     {
-    /// #         Ok(VendorEvent{})
-    /// #     }
-    /// # }
-    /// # #[derive(Clone, Debug)]
-    /// #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-    /// # struct ReturnParameters;
-    /// # impl hci::event::VendorReturnParameters for ReturnParameters {
-    /// #     type Error = Error;
-    /// #     fn new(_buffer: &[u8]) -> Result<Self, hci::event::Error<Self::Error>> {
-    /// #         Ok(ReturnParameters{})
-    /// #     }
-    /// # }
     /// # impl HciController for Controller {
-    /// #     async fn controller_write(&mut self, opcode: Opcode, _payload: &[u8]) {}
+    /// #     async fn controller_write(&mut self, opcode: hci::Opcode, _payload: &[u8]) {}
     /// #     async fn controller_read_into(&self, _buf: &mut [u8]) {}
     /// # }
     /// # fn main() {
@@ -199,21 +152,12 @@ pub trait Controller {
     async fn controller_read_into(&self, buf: &mut [u8]);
 }
 
-/// Trait defining vendor-specific extensions for the Bluetooth Controller.
-pub trait Vendor {
-    /// Enumeration of vendor-specific status codes.
-    type Status: TryFrom<u8, Error = BadStatusError> + Into<u8> + Clone + Debug;
-
-    /// Enumeration of vendor-specific events.
-    type Event: event::VendorEvent;
-}
-
 /// List of possible error codes, Bluetooth Spec, Vol 2, Part D, Section 2.
 ///
 /// Includes an extension point for vendor-specific status codes.
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub enum Status<V> {
+pub enum Status {
     /// Success
     Success,
     /// Unknown HCI Command
@@ -361,7 +305,7 @@ pub enum Status<V> {
     /// First introduced in version 5.0
     OperationCancelledByHost,
     /// Vendor-specific status code
-    Vendor(V),
+    Vendor(crate::vendor::event::VendorStatus),
 }
 
 /// Wrapper enum for errors converting a u8 into a [`Status`].
@@ -371,13 +315,10 @@ pub enum BadStatusError {
     BadValue(u8),
 }
 
-impl<V> core::convert::TryFrom<u8> for Status<V>
-where
-    V: core::convert::TryFrom<u8>,
-{
-    type Error = V::Error;
+impl core::convert::TryFrom<u8> for Status {
+    type Error = crate::BadStatusError;
 
-    fn try_from(value: u8) -> Result<Status<V>, Self::Error> {
+    fn try_from(value: u8) -> Result<Status, Self::Error> {
         match value {
             0x00 => Ok(Status::Success),
             0x01 => Ok(Status::UnknownCommand),
@@ -448,16 +389,15 @@ where
             0x42 => Ok(Status::UnknownAdvertisingId),
             0x43 => Ok(Status::LimitReached),
             0x44 => Ok(Status::OperationCancelledByHost),
-            _ => Ok(Status::Vendor(V::try_from(value)?)),
+            _ => Ok(Status::Vendor(
+                crate::vendor::event::VendorStatus::try_from(value)?,
+            )),
         }
     }
 }
 
-impl<V> core::convert::From<Status<V>> for u8
-where
-    V: core::convert::Into<u8>,
-{
-    fn from(val: Status<V>) -> Self {
+impl core::convert::From<Status> for u8 {
+    fn from(val: Status) -> Self {
         match val {
             Status::Success => 0x00,
             Status::UnknownCommand => 0x01,

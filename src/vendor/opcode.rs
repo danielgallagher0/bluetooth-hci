@@ -4,7 +4,7 @@ const fn ocf(cgid: u16, cid: u16) -> u16 {
     ((cgid & 0b111) << 7) | (cid & 0b111_1111)
 }
 
-const VENDOR_OGF: u16 = 0x3F;
+pub const VENDOR_OGF: u16 = 0x3F;
 
 macro_rules! vendor_opcodes {
     (

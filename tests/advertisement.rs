@@ -1,5 +1,3 @@
-#![feature(async_fn_in_trait)]
-
 use hci::types::Advertisement;
 
 extern crate stm32wb_hci as hci;

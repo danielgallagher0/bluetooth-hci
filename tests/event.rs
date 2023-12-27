@@ -1,14 +1,11 @@
-#![feature(async_fn_in_trait)]
-
 extern crate stm32wb_hci as hci;
 
 mod vendor;
 
-use hci::event::*;
+use hci::{event::*, vendor::event::VendorStatus};
 use std::time::Duration;
-use vendor::VendorStatus;
 
-type TestEvent = Event<vendor::VendorEvent>;
+type TestEvent = Event;
 
 #[test]
 fn connection_complete() {
@@ -166,11 +163,14 @@ fn command_status() {
 
 #[test]
 fn command_status_vendor_status() {
-    let buffer = [0x0F, 4, 0x45, 8, 0x01, 0x02];
+    let buffer = [0x0F, 4, 0x48, 8, 0x01, 0x02];
     match TestEvent::new(Packet(&buffer)) {
         Ok(Event::CommandStatus(event)) => {
             assert_eq!(event.num_hci_command_packets, 8);
-            assert_eq!(event.status, hci::Status::Vendor(VendorStatus::FourFive));
+            assert_eq!(
+                event.status,
+                hci::Status::Vendor(VendorStatus::AddressNotResolved)
+            );
             assert_eq!(event.opcode, hci::Opcode(0x0201));
         }
         other => panic!("Did not get command status: {:?}", other),

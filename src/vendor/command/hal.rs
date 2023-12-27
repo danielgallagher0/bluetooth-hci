@@ -150,25 +150,19 @@ pub trait HalCommands {
 
 impl<T: Controller> HalCommands for T {
     async fn get_firmware_revision(&mut self) {
-        self.controller_write(
-            crate::vendor::stm32wb::opcode::HAL_GET_FIRMWARE_REVISION,
-            &[],
-        )
-        .await
+        self.controller_write(crate::vendor::opcode::HAL_GET_FIRMWARE_REVISION, &[])
+            .await
     }
 
     impl_variable_length_params!(
         write_config_data,
         ConfigData,
-        crate::vendor::stm32wb::opcode::HAL_WRITE_CONFIG_DATA
+        crate::vendor::opcode::HAL_WRITE_CONFIG_DATA
     );
 
     async fn read_config_data(&mut self, param: ConfigParameter) {
-        self.controller_write(
-            crate::vendor::stm32wb::opcode::HAL_READ_CONFIG_DATA,
-            &[param as u8],
-        )
-        .await
+        self.controller_write(crate::vendor::opcode::HAL_READ_CONFIG_DATA, &[param as u8])
+            .await
     }
 
     async fn set_tx_power_level(&mut self, level: PowerLevel) {
@@ -177,19 +171,13 @@ impl<T: Controller> HalCommands for T {
         let mut bytes = [0; 2];
         bytes[1] = level as u8;
 
-        self.controller_write(
-            crate::vendor::stm32wb::opcode::HAL_SET_TX_POWER_LEVEL,
-            &bytes,
-        )
-        .await
+        self.controller_write(crate::vendor::opcode::HAL_SET_TX_POWER_LEVEL, &bytes)
+            .await
     }
 
     async fn get_tx_test_packet_count(&mut self) {
-        self.controller_write(
-            crate::vendor::stm32wb::opcode::HAL_TX_TEST_PACKET_COUNT,
-            &[],
-        )
-        .await
+        self.controller_write(crate::vendor::opcode::HAL_TX_TEST_PACKET_COUNT, &[])
+            .await
     }
 
     async fn start_tone(&mut self, channel: u8, freq_offset: u8) -> Result<(), Error> {
@@ -199,7 +187,7 @@ impl<T: Controller> HalCommands for T {
         }
 
         self.controller_write(
-            crate::vendor::stm32wb::opcode::HAL_START_TONE,
+            crate::vendor::opcode::HAL_START_TONE,
             &[channel, freq_offset],
         )
         .await;
@@ -208,17 +196,17 @@ impl<T: Controller> HalCommands for T {
     }
 
     async fn stop_tone(&mut self) {
-        self.controller_write(crate::vendor::stm32wb::opcode::HAL_STOP_TONE, &[])
+        self.controller_write(crate::vendor::opcode::HAL_STOP_TONE, &[])
             .await
     }
 
     async fn get_link_status(&mut self) {
-        self.controller_write(crate::vendor::stm32wb::opcode::HAL_GET_LINK_STATUS, &[])
+        self.controller_write(crate::vendor::opcode::HAL_GET_LINK_STATUS, &[])
             .await
     }
 
     async fn get_anchor_period(&mut self) {
-        self.controller_write(crate::vendor::stm32wb::opcode::HAL_GET_ANCHOR_PERIOD, &[])
+        self.controller_write(crate::vendor::opcode::HAL_GET_ANCHOR_PERIOD, &[])
             .await
     }
 }

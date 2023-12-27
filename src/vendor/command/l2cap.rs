@@ -52,13 +52,13 @@ impl<T: Controller> L2capCommands for T {
     impl_params!(
         connection_parameter_update_request,
         ConnectionParameterUpdateRequest,
-        crate::vendor::stm32wb::opcode::L2CAP_CONN_PARAM_UPDATE_REQ
+        crate::vendor::opcode::L2CAP_CONN_PARAM_UPDATE_REQ
     );
 
     impl_params!(
         connection_parameter_update_response,
         ConnectionParameterUpdateResponse,
-        crate::vendor::stm32wb::opcode::L2CAP_CONN_PARAM_UPDATE_RESP
+        crate::vendor::opcode::L2CAP_CONN_PARAM_UPDATE_RESP
     );
 }
 
