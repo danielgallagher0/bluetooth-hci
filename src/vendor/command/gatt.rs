@@ -2,6 +2,8 @@
 
 extern crate byteorder;
 
+use core::ops::Range;
+
 use byteorder::{ByteOrder, LittleEndian};
 
 use crate::{vendor::event::AttributeHandle, Controller};
@@ -893,8 +895,8 @@ impl<T: Controller> GattCommands for T {
     ) {
         let mut bytes = [0; 6];
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
-        LittleEndian::write_u16(&mut bytes[2..4], attribute_range.from.0);
-        LittleEndian::write_u16(&mut bytes[4..6], attribute_range.to.0);
+        LittleEndian::write_u16(&mut bytes[2..4], attribute_range.start.0);
+        LittleEndian::write_u16(&mut bytes[4..6], attribute_range.end.0);
 
         self.controller_write(crate::vendor::opcode::GATT_FIND_INFORMATION_REQUEST, &bytes)
             .await
@@ -976,8 +978,8 @@ impl<T: Controller> GattCommands for T {
     ) {
         let mut bytes = [0; 6];
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
-        LittleEndian::write_u16(&mut bytes[2..4], service_handle_range.from.0);
-        LittleEndian::write_u16(&mut bytes[4..6], service_handle_range.to.0);
+        LittleEndian::write_u16(&mut bytes[2..4], service_handle_range.start.0);
+        LittleEndian::write_u16(&mut bytes[4..6], service_handle_range.end.0);
 
         self.controller_write(crate::vendor::opcode::GATT_FIND_INCLUDED_SERVICES, &bytes)
             .await
@@ -990,8 +992,8 @@ impl<T: Controller> GattCommands for T {
     ) {
         let mut bytes = [0; 6];
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
-        LittleEndian::write_u16(&mut bytes[2..4], attribute_handle_range.from.0);
-        LittleEndian::write_u16(&mut bytes[4..6], attribute_handle_range.to.0);
+        LittleEndian::write_u16(&mut bytes[2..4], attribute_handle_range.start.0);
+        LittleEndian::write_u16(&mut bytes[4..6], attribute_handle_range.end.0);
 
         self.controller_write(
             crate::vendor::opcode::GATT_DISCOVER_ALL_CHARACTERISTICS_OF_SERVICE,
@@ -1008,8 +1010,8 @@ impl<T: Controller> GattCommands for T {
     ) {
         let mut bytes = [0; 23];
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
-        LittleEndian::write_u16(&mut bytes[2..4], attribute_handle_range.from.0);
-        LittleEndian::write_u16(&mut bytes[4..6], attribute_handle_range.to.0);
+        LittleEndian::write_u16(&mut bytes[2..4], attribute_handle_range.start.0);
+        LittleEndian::write_u16(&mut bytes[4..6], attribute_handle_range.end.0);
         let uuid_len = uuid.copy_into_slice(&mut bytes[6..]);
 
         self.controller_write(
@@ -1026,8 +1028,8 @@ impl<T: Controller> GattCommands for T {
     ) {
         let mut bytes = [0; 6];
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
-        LittleEndian::write_u16(&mut bytes[2..4], characteristic_handle_range.from.0);
-        LittleEndian::write_u16(&mut bytes[4..6], characteristic_handle_range.to.0);
+        LittleEndian::write_u16(&mut bytes[2..4], characteristic_handle_range.start.0);
+        LittleEndian::write_u16(&mut bytes[4..6], characteristic_handle_range.end.0);
 
         self.controller_write(
             crate::vendor::opcode::GATT_DISCOVER_ALL_CHARACTERISTIC_DESCRIPTORS,
@@ -1060,8 +1062,8 @@ impl<T: Controller> GattCommands for T {
     ) {
         let mut bytes = [0; 23];
         LittleEndian::write_u16(&mut bytes[0..2], conn_handle.0);
-        LittleEndian::write_u16(&mut bytes[2..4], characteristic_handle_range.from.0);
-        LittleEndian::write_u16(&mut bytes[4..6], characteristic_handle_range.to.0);
+        LittleEndian::write_u16(&mut bytes[2..4], characteristic_handle_range.start.0);
+        LittleEndian::write_u16(&mut bytes[4..6], characteristic_handle_range.end.0);
         let uuid_len = uuid.copy_into_slice(&mut bytes[6..]);
 
         self.controller_write(
@@ -1318,42 +1320,12 @@ impl IncludeServiceParameters {
         assert!(bytes.len() >= Self::MAX_LENGTH);
 
         LittleEndian::write_u16(&mut bytes[0..2], self.service_handle.0);
-        LittleEndian::write_u16(&mut bytes[2..4], self.include_handle_range.from.0);
-        LittleEndian::write_u16(&mut bytes[4..6], self.include_handle_range.to.0);
+        LittleEndian::write_u16(&mut bytes[2..4], self.include_handle_range.start.0);
+        LittleEndian::write_u16(&mut bytes[4..6], self.include_handle_range.end.0);
         let uuid_len = self.include_uuid.copy_into_slice(&mut bytes[6..]);
 
         6 + uuid_len
     }
-}
-
-/// Two ordered points that represent a range. The points may be identical to represent a range with
-/// only one value.
-pub struct Range<T> {
-    from: T,
-    to: T,
-}
-
-impl<T: PartialOrd> Range<T> {
-    /// Create and return a new [Range].
-    ///
-    /// # Errors
-    ///
-    /// - [Inverted](RangeError::Inverted) if the beginning value is greater than the ending value.
-    pub fn new(from: T, to: T) -> Result<Self, RangeError> {
-        if to < from {
-            return Err(RangeError::Inverted);
-        }
-
-        Ok(Self { from, to })
-    }
-}
-
-/// Potential errors that can occer when creating a [Range].
-#[derive(Copy, Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub enum RangeError {
-    /// The beginning of the range came after the end.
-    Inverted,
 }
 
 /// Parameters for the [GATT Add Characteristic](Commands::add_characteristic) command.
@@ -1988,8 +1960,8 @@ impl<'a> FindByTypeValueParameters<'a> {
         assert!(bytes.len() >= 9 + self.value.len());
 
         LittleEndian::write_u16(&mut bytes[0..2], self.conn_handle.0);
-        LittleEndian::write_u16(&mut bytes[2..4], self.attribute_handle_range.from.0);
-        LittleEndian::write_u16(&mut bytes[4..6], self.attribute_handle_range.to.0);
+        LittleEndian::write_u16(&mut bytes[2..4], self.attribute_handle_range.start.0);
+        LittleEndian::write_u16(&mut bytes[4..6], self.attribute_handle_range.end.0);
         LittleEndian::write_u16(&mut bytes[6..8], self.uuid.0);
         bytes[8] = self.value.len() as u8;
         bytes[9..9 + self.value.len()].copy_from_slice(self.value);
@@ -2020,8 +1992,8 @@ impl ReadByTypeParameters {
         assert!(bytes.len() >= Self::MAX_LENGTH);
 
         LittleEndian::write_u16(&mut bytes[0..2], self.conn_handle.0);
-        LittleEndian::write_u16(&mut bytes[2..4], self.attribute_handle_range.from.0);
-        LittleEndian::write_u16(&mut bytes[4..6], self.attribute_handle_range.to.0);
+        LittleEndian::write_u16(&mut bytes[2..4], self.attribute_handle_range.start.0);
+        LittleEndian::write_u16(&mut bytes[4..6], self.attribute_handle_range.end.0);
         6 + self.uuid.copy_into_slice(&mut bytes[6..])
     }
 }
