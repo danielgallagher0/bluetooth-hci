@@ -5,9 +5,6 @@ pub mod event;
 pub mod opcode;
 
 /// specify vendor specifi extensions for STM32WB family
-pub struct Stm32wbTypes;
-impl crate::Vendor for Stm32wbTypes {}
-
 pub use crate::host::uart::CommandHeader;
 pub use event::VendorError;
 

@@ -9,7 +9,7 @@
 //! For the return parameters of the commands, see the description of each command in sections 7.1 -
 //! 7.6 of the same part of the spec.
 
-use crate::vendor::stm32wb::opcode::VENDOR_OGF;
+use crate::vendor::opcode::VENDOR_OGF;
 use crate::{BadStatusError, ConnectionHandle, Status};
 use byteorder::{ByteOrder, LittleEndian};
 use core::convert::{TryFrom, TryInto};
@@ -163,7 +163,7 @@ impl CommandComplete {
                 }
 
                 ReturnParameters::Vendor(
-                    crate::vendor::stm32wb::event::command::VendorReturnParameters::new(bytes)?,
+                    crate::vendor::event::command::VendorReturnParameters::new(bytes)?,
                 )
             }
         };
@@ -308,7 +308,7 @@ pub enum ReturnParameters {
     LeTestEnd(LeTestEnd),
 
     /// Parameters returned by vendor-specific commands.
-    Vendor(crate::vendor::stm32wb::event::command::VendorReturnParameters),
+    Vendor(crate::vendor::event::command::VendorReturnParameters),
 }
 
 fn to_status(bytes: &[u8]) -> Result<Status, crate::event::Error>

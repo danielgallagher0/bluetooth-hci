@@ -1,21 +1,11 @@
 #![allow(dead_code)]
 
 extern crate stm32wb_hci as hci;
-use hci::{host::HciHeader, vendor::stm32wb::CommandHeader, Opcode};
+use hci::{host::HciHeader, vendor::CommandHeader, Opcode};
 
 pub struct RecordingSink {
     pub written_data: Vec<u8>,
 }
-
-#[derive(Debug, PartialEq)]
-pub struct RecordingSinkError;
-
-#[derive(Debug)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct VendorError;
-
-pub struct MockVendor;
-impl hci::Vendor for MockVendor {}
 
 impl hci::Controller for RecordingSink {
     async fn controller_write(&mut self, opcode: Opcode, payload: &[u8]) {

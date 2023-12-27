@@ -4,7 +4,7 @@ extern crate byteorder;
 
 use byteorder::{ByteOrder, LittleEndian};
 
-use crate::{vendor::stm32wb::event::AttributeHandle, Controller};
+use crate::{vendor::event::AttributeHandle, Controller};
 
 /// GATT-specific commands for the [`ActiveBlueNRG`](crate::ActiveBlueNRG).
 pub trait GattCommands {
@@ -811,38 +811,38 @@ pub trait GattCommands {
 
 impl<T: Controller> GattCommands for T {
     async fn init(&mut self) {
-        self.controller_write(crate::vendor::stm32wb::opcode::GATT_INIT, &[])
+        self.controller_write(crate::vendor::opcode::GATT_INIT, &[])
             .await
     }
 
     impl_variable_length_params!(
         add_service,
         AddServiceParameters,
-        crate::vendor::stm32wb::opcode::GATT_ADD_SERVICE
+        crate::vendor::opcode::GATT_ADD_SERVICE
     );
 
     impl_variable_length_params!(
         include_service,
         IncludeServiceParameters,
-        crate::vendor::stm32wb::opcode::GATT_INCLUDE_SERVICE
+        crate::vendor::opcode::GATT_INCLUDE_SERVICE
     );
 
     impl_variable_length_params!(
         add_characteristic,
         AddCharacteristicParameters,
-        crate::vendor::stm32wb::opcode::GATT_ADD_CHARACTERISTIC
+        crate::vendor::opcode::GATT_ADD_CHARACTERISTIC
     );
 
     impl_validate_variable_length_params!(
         add_characteristic_descriptor<'a>,
         AddDescriptorParameters<'a>,
-        crate::vendor::stm32wb::opcode::GATT_ADD_CHARACTERISTIC_DESCRIPTOR
+        crate::vendor::opcode::GATT_ADD_CHARACTERISTIC_DESCRIPTOR
     );
 
     impl_validate_variable_length_params!(
         update_characteristic_value<'a>,
         UpdateCharacteristicValueParameters<'a>,
-        crate::vendor::stm32wb::opcode::GATT_UPDATE_CHARACTERISTIC_VALUE
+        crate::vendor::opcode::GATT_UPDATE_CHARACTERISTIC_VALUE
     );
 
     async fn delete_characteristic(
@@ -854,42 +854,36 @@ impl<T: Controller> GattCommands for T {
         LittleEndian::write_u16(&mut bytes[0..2], service.0);
         LittleEndian::write_u16(&mut bytes[2..4], characteristic.0);
 
-        self.controller_write(
-            crate::vendor::stm32wb::opcode::GATT_DELETE_CHARACTERISTIC,
-            &bytes,
-        )
-        .await
+        self.controller_write(crate::vendor::opcode::GATT_DELETE_CHARACTERISTIC, &bytes)
+            .await
     }
 
     async fn delete_service(&mut self, service: AttributeHandle) {
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes[0..2], service.0);
 
-        self.controller_write(crate::vendor::stm32wb::opcode::GATT_DELETE_SERVICE, &bytes)
+        self.controller_write(crate::vendor::opcode::GATT_DELETE_SERVICE, &bytes)
             .await
     }
 
     impl_params!(
         delete_included_service,
         DeleteIncludedServiceParameters,
-        crate::vendor::stm32wb::opcode::GATT_DELETE_INCLUDED_SERVICE
+        crate::vendor::opcode::GATT_DELETE_INCLUDED_SERVICE
     );
 
     impl_value_params!(
         set_event_mask,
         Event,
-        crate::vendor::stm32wb::opcode::GATT_SET_EVENT_MASK
+        crate::vendor::opcode::GATT_SET_EVENT_MASK
     );
 
     async fn exchange_configuration(&mut self, conn_handle: crate::ConnectionHandle) {
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes, conn_handle.0);
 
-        self.controller_write(
-            crate::vendor::stm32wb::opcode::GATT_EXCHANGE_CONFIGURATION,
-            &bytes,
-        )
-        .await
+        self.controller_write(crate::vendor::opcode::GATT_EXCHANGE_CONFIGURATION, &bytes)
+            .await
     }
 
     async fn find_information_request(
@@ -902,35 +896,32 @@ impl<T: Controller> GattCommands for T {
         LittleEndian::write_u16(&mut bytes[2..4], attribute_range.from.0);
         LittleEndian::write_u16(&mut bytes[4..6], attribute_range.to.0);
 
-        self.controller_write(
-            crate::vendor::stm32wb::opcode::GATT_FIND_INFORMATION_REQUEST,
-            &bytes,
-        )
-        .await
+        self.controller_write(crate::vendor::opcode::GATT_FIND_INFORMATION_REQUEST, &bytes)
+            .await
     }
 
     impl_validate_variable_length_params!(
         find_by_type_value_request<'a>,
         FindByTypeValueParameters<'a>,
-        crate::vendor::stm32wb::opcode::GATT_FIND_BY_TYPE_VALUE_REQUEST
+        crate::vendor::opcode::GATT_FIND_BY_TYPE_VALUE_REQUEST
     );
 
     impl_variable_length_params!(
         read_by_type_request,
         ReadByTypeParameters,
-        crate::vendor::stm32wb::opcode::GATT_READ_BY_TYPE_REQUEST
+        crate::vendor::opcode::GATT_READ_BY_TYPE_REQUEST
     );
 
     impl_variable_length_params!(
         read_by_group_type_request,
         ReadByTypeParameters,
-        crate::vendor::stm32wb::opcode::GATT_READ_BY_GROUP_TYPE_REQUEST
+        crate::vendor::opcode::GATT_READ_BY_GROUP_TYPE_REQUEST
     );
 
     impl_validate_variable_length_params!(
         prepare_write_request<'a>,
         WriteRequest<'a>,
-        crate::vendor::stm32wb::opcode::GATT_PREPARE_WRITE_REQUEST
+        crate::vendor::opcode::GATT_PREPARE_WRITE_REQUEST
     );
 
     async fn execute_write_request(&mut self, conn_handle: crate::ConnectionHandle) {
@@ -938,11 +929,8 @@ impl<T: Controller> GattCommands for T {
         LittleEndian::write_u16(&mut bytes, conn_handle.0);
         bytes[2] = true as u8;
 
-        self.controller_write(
-            crate::vendor::stm32wb::opcode::GATT_EXECUTE_WRITE_REQUEST,
-            &bytes,
-        )
-        .await
+        self.controller_write(crate::vendor::opcode::GATT_EXECUTE_WRITE_REQUEST, &bytes)
+            .await
     }
 
     async fn cancel_write_request(&mut self, conn_handle: crate::ConnectionHandle) {
@@ -950,11 +938,8 @@ impl<T: Controller> GattCommands for T {
         LittleEndian::write_u16(&mut bytes, conn_handle.0);
         bytes[2] = false as u8;
 
-        self.controller_write(
-            crate::vendor::stm32wb::opcode::GATT_EXECUTE_WRITE_REQUEST,
-            &bytes,
-        )
-        .await
+        self.controller_write(crate::vendor::opcode::GATT_EXECUTE_WRITE_REQUEST, &bytes)
+            .await
     }
 
     async fn discover_all_primary_services(&mut self, conn_handle: crate::ConnectionHandle) {
@@ -962,7 +947,7 @@ impl<T: Controller> GattCommands for T {
         LittleEndian::write_u16(&mut bytes, conn_handle.0);
 
         self.controller_write(
-            crate::vendor::stm32wb::opcode::GATT_DISCOVER_ALL_PRIMARY_SERVICES,
+            crate::vendor::opcode::GATT_DISCOVER_ALL_PRIMARY_SERVICES,
             &bytes,
         )
         .await
@@ -978,7 +963,7 @@ impl<T: Controller> GattCommands for T {
         let end = 2 + uuid.copy_into_slice(&mut bytes[2..]);
 
         self.controller_write(
-            crate::vendor::stm32wb::opcode::GATT_DISCOVER_PRIMARY_SERVICES_BY_UUID,
+            crate::vendor::opcode::GATT_DISCOVER_PRIMARY_SERVICES_BY_UUID,
             &bytes[..end],
         )
         .await
@@ -994,11 +979,8 @@ impl<T: Controller> GattCommands for T {
         LittleEndian::write_u16(&mut bytes[2..4], service_handle_range.from.0);
         LittleEndian::write_u16(&mut bytes[4..6], service_handle_range.to.0);
 
-        self.controller_write(
-            crate::vendor::stm32wb::opcode::GATT_FIND_INCLUDED_SERVICES,
-            &bytes,
-        )
-        .await
+        self.controller_write(crate::vendor::opcode::GATT_FIND_INCLUDED_SERVICES, &bytes)
+            .await
     }
 
     async fn discover_all_characteristics_of_service(
@@ -1012,7 +994,7 @@ impl<T: Controller> GattCommands for T {
         LittleEndian::write_u16(&mut bytes[4..6], attribute_handle_range.to.0);
 
         self.controller_write(
-            crate::vendor::stm32wb::opcode::GATT_DISCOVER_ALL_CHARACTERISTICS_OF_SERVICE,
+            crate::vendor::opcode::GATT_DISCOVER_ALL_CHARACTERISTICS_OF_SERVICE,
             &bytes,
         )
         .await
@@ -1031,7 +1013,7 @@ impl<T: Controller> GattCommands for T {
         let uuid_len = uuid.copy_into_slice(&mut bytes[6..]);
 
         self.controller_write(
-            crate::vendor::stm32wb::opcode::GATT_DISCOVER_CHARACTERISTICS_BY_UUID,
+            crate::vendor::opcode::GATT_DISCOVER_CHARACTERISTICS_BY_UUID,
             &bytes[..6 + uuid_len],
         )
         .await
@@ -1048,7 +1030,7 @@ impl<T: Controller> GattCommands for T {
         LittleEndian::write_u16(&mut bytes[4..6], characteristic_handle_range.to.0);
 
         self.controller_write(
-            crate::vendor::stm32wb::opcode::GATT_DISCOVER_ALL_CHARACTERISTIC_DESCRIPTORS,
+            crate::vendor::opcode::GATT_DISCOVER_ALL_CHARACTERISTIC_DESCRIPTORS,
             &bytes,
         )
         .await
@@ -1064,7 +1046,7 @@ impl<T: Controller> GattCommands for T {
         LittleEndian::write_u16(&mut bytes[2..4], characteristic_handle.0);
 
         self.controller_write(
-            crate::vendor::stm32wb::opcode::GATT_READ_CHARACTERISTIC_VALUE,
+            crate::vendor::opcode::GATT_READ_CHARACTERISTIC_VALUE,
             &bytes,
         )
         .await
@@ -1083,7 +1065,7 @@ impl<T: Controller> GattCommands for T {
         let uuid_len = uuid.copy_into_slice(&mut bytes[6..]);
 
         self.controller_write(
-            crate::vendor::stm32wb::opcode::GATT_READ_CHARACTERISTIC_BY_UUID,
+            crate::vendor::opcode::GATT_READ_CHARACTERISTIC_BY_UUID,
             &bytes[..6 + uuid_len],
         )
         .await
@@ -1092,49 +1074,49 @@ impl<T: Controller> GattCommands for T {
     impl_params!(
         read_long_characteristic_value,
         LongCharacteristicReadParameters,
-        crate::vendor::stm32wb::opcode::GATT_READ_LONG_CHARACTERISTIC_VALUE
+        crate::vendor::opcode::GATT_READ_LONG_CHARACTERISTIC_VALUE
     );
 
     impl_validate_variable_length_params!(
         read_multiple_characteristic_values<'a>,
         MultipleCharacteristicReadParameters<'a>,
-        crate::vendor::stm32wb::opcode::GATT_READ_MULTIPLE_CHARACTERISTIC_VALUES
+        crate::vendor::opcode::GATT_READ_MULTIPLE_CHARACTERISTIC_VALUES
     );
 
     impl_validate_variable_length_params!(
         write_characteristic_value<'a>,
         CharacteristicValue<'a>,
-        crate::vendor::stm32wb::opcode::GATT_WRITE_CHARACTERISTIC_VALUE
+        crate::vendor::opcode::GATT_WRITE_CHARACTERISTIC_VALUE
     );
 
     impl_validate_variable_length_params!(
         write_long_characteristic_value<'a>,
         LongCharacteristicValue<'a>,
-        crate::vendor::stm32wb::opcode::GATT_WRITE_LONG_CHARACTERISTIC_VALUE
+        crate::vendor::opcode::GATT_WRITE_LONG_CHARACTERISTIC_VALUE
     );
 
     impl_validate_variable_length_params!(
         write_characteristic_value_reliably<'a>,
         LongCharacteristicValue<'a>,
-        crate::vendor::stm32wb::opcode::GATT_WRITE_CHARACTERISTIC_VALUE_RELIABLY
+        crate::vendor::opcode::GATT_WRITE_CHARACTERISTIC_VALUE_RELIABLY
     );
 
     impl_validate_variable_length_params!(
         write_long_characteristic_descriptor<'a>,
         LongCharacteristicValue<'a>,
-        crate::vendor::stm32wb::opcode::GATT_WRITE_LONG_CHARACTERISTIC_DESCRIPTOR
+        crate::vendor::opcode::GATT_WRITE_LONG_CHARACTERISTIC_DESCRIPTOR
     );
 
     impl_params!(
         read_long_characteristic_descriptor,
         LongCharacteristicReadParameters,
-        crate::vendor::stm32wb::opcode::GATT_READ_LONG_CHARACTERISTIC_DESCRIPTOR
+        crate::vendor::opcode::GATT_READ_LONG_CHARACTERISTIC_DESCRIPTOR
     );
 
     impl_validate_variable_length_params!(
         write_characteristic_descriptor<'a>,
         CharacteristicValue<'a>,
-        crate::vendor::stm32wb::opcode::GATT_WRITE_CHARACTERISTIC_DESCRIPTOR
+        crate::vendor::opcode::GATT_WRITE_CHARACTERISTIC_DESCRIPTOR
     );
 
     async fn read_characteristic_descriptor(
@@ -1147,7 +1129,7 @@ impl<T: Controller> GattCommands for T {
         LittleEndian::write_u16(&mut bytes[2..4], characteristic_handle.0);
 
         self.controller_write(
-            crate::vendor::stm32wb::opcode::GATT_READ_CHARACTERISTIC_DESCRIPTOR,
+            crate::vendor::opcode::GATT_READ_CHARACTERISTIC_DESCRIPTOR,
             &bytes,
         )
         .await
@@ -1156,50 +1138,47 @@ impl<T: Controller> GattCommands for T {
     impl_validate_variable_length_params!(
         write_without_response<'a>,
         CharacteristicValue<'a>,
-        crate::vendor::stm32wb::opcode::GATT_WRITE_WITHOUT_RESPONSE
+        crate::vendor::opcode::GATT_WRITE_WITHOUT_RESPONSE
     );
 
     impl_validate_variable_length_params!(
         signed_write_without_response<'a>,
         CharacteristicValue<'a>,
-        crate::vendor::stm32wb::opcode::GATT_SIGNED_WRITE_WITHOUT_RESPONSE
+        crate::vendor::opcode::GATT_SIGNED_WRITE_WITHOUT_RESPONSE
     );
 
     async fn confirm_indication(&mut self, conn_handle: crate::ConnectionHandle) {
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes, conn_handle.0);
 
-        self.controller_write(
-            crate::vendor::stm32wb::opcode::GATT_CONFIRM_INDICATION,
-            &bytes,
-        )
-        .await
+        self.controller_write(crate::vendor::opcode::GATT_CONFIRM_INDICATION, &bytes)
+            .await
     }
 
     impl_validate_variable_length_params!(
         write_response<'a>,
         WriteResponseParameters<'a>,
-        crate::vendor::stm32wb::opcode::GATT_WRITE_RESPONSE
+        crate::vendor::opcode::GATT_WRITE_RESPONSE
     );
 
     async fn allow_read(&mut self, conn_handle: crate::ConnectionHandle) {
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes, conn_handle.0);
 
-        self.controller_write(crate::vendor::stm32wb::opcode::GATT_ALLOW_READ, &bytes)
+        self.controller_write(crate::vendor::opcode::GATT_ALLOW_READ, &bytes)
             .await
     }
 
     impl_params!(
         set_security_permission,
         SecurityPermissionParameters,
-        crate::vendor::stm32wb::opcode::GATT_SET_SECURITY_PERMISSION
+        crate::vendor::opcode::GATT_SET_SECURITY_PERMISSION
     );
 
     impl_validate_variable_length_params!(
         set_descriptor_value<'a>,
         DescriptorValueParameters<'a>,
-        crate::vendor::stm32wb::opcode::GATT_SET_DESCRIPTOR_VALUE
+        crate::vendor::opcode::GATT_SET_DESCRIPTOR_VALUE
     );
 
     async fn read_handle_value_offset(&mut self, handle: AttributeHandle, offset: usize) {
@@ -1207,17 +1186,14 @@ impl<T: Controller> GattCommands for T {
         LittleEndian::write_u16(&mut bytes, handle.0);
         bytes[2] = offset as u8;
 
-        self.controller_write(
-            crate::vendor::stm32wb::opcode::GATT_READ_HANDLE_VALUE_OFFSET,
-            &bytes,
-        )
-        .await
+        self.controller_write(crate::vendor::opcode::GATT_READ_HANDLE_VALUE_OFFSET, &bytes)
+            .await
     }
 
     impl_validate_variable_length_params!(
         update_characteristic_value_ext<'a>,
         UpdateCharacteristicValueExt<'a>,
-        crate::vendor::stm32wb::opcode::GATT_UPDATE_LONG_CHARACTERISTIC_VALUE
+        crate::vendor::opcode::GATT_UPDATE_LONG_CHARACTERISTIC_VALUE
     );
 }
 

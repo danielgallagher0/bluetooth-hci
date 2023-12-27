@@ -45,8 +45,8 @@ macro_rules! self_convert {
 pub mod command;
 
 use crate::types::{ConnectionIntervalError, FixedConnectionInterval};
-use crate::vendor::stm32wb::event::VendorEvent;
-use crate::vendor::stm32wb::VendorError;
+use crate::vendor::event::VendorEvent;
+use crate::vendor::VendorError;
 use crate::{BadStatusError, ConnectionHandle, Status};
 use byteorder::{ByteOrder, LittleEndian};
 use core::convert::{TryFrom, TryInto};

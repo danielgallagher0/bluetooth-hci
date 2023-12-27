@@ -2,7 +2,7 @@ extern crate stm32wb_hci as hci;
 
 use hci::event::command::*;
 use hci::event::*;
-use hci::vendor::stm32wb::event::command::VendorReturnParameters;
+use hci::vendor::event::command::VendorReturnParameters;
 use std::convert::TryFrom;
 
 #[derive(Debug)]

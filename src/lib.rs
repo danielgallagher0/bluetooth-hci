@@ -125,30 +125,9 @@ pub trait Controller {
     ///
     /// # extern crate stm32wb_hci as hci;
     /// # use hci::Controller as HciController;
-    /// # use hci::Opcode;
     /// # struct Controller;
-    /// # #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-    /// # struct Error;
-    /// # struct Header;
-    /// # struct Vendor;
-    /// # impl hci::Vendor for Vendor {
-    /// # }
-    /// # #[derive(Clone, Debug)]
-    /// # #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-    /// # struct VendorStatus;
-    /// # impl std::convert::TryFrom<u8> for VendorStatus {
-    /// #     type Error = hci::BadStatusError;
-    /// #     fn try_from(value: u8) -> Result<VendorStatus, Self::Error> {
-    /// #         Err(hci::BadStatusError::BadValue(value))
-    /// #     }
-    /// # }
-    /// # impl std::convert::Into<u8> for VendorStatus {
-    /// #    fn into(self) -> u8 {
-    /// #        0
-    /// #    }
-    /// # }
     /// # impl HciController for Controller {
-    /// #     async fn controller_write(&mut self, opcode: Opcode, _payload: &[u8]) {}
+    /// #     async fn controller_write(&mut self, opcode: hci::Opcode, _payload: &[u8]) {}
     /// #     async fn controller_read_into(&self, _buf: &mut [u8]) {}
     /// # }
     /// # fn main() {
@@ -172,9 +151,6 @@ pub trait Controller {
     /// ```
     async fn controller_read_into(&self, buf: &mut [u8]);
 }
-
-/// Trait defining vendor-specific extensions for the Bluetooth Controller.
-pub trait Vendor {}
 
 /// List of possible error codes, Bluetooth Spec, Vol 2, Part D, Section 2.
 ///
@@ -329,7 +305,7 @@ pub enum Status {
     /// First introduced in version 5.0
     OperationCancelledByHost,
     /// Vendor-specific status code
-    Vendor(crate::vendor::stm32wb::event::VendorStatus),
+    Vendor(crate::vendor::event::VendorStatus),
 }
 
 /// Wrapper enum for errors converting a u8 into a [`Status`].
@@ -414,7 +390,7 @@ impl core::convert::TryFrom<u8> for Status {
             0x43 => Ok(Status::LimitReached),
             0x44 => Ok(Status::OperationCancelledByHost),
             _ => Ok(Status::Vendor(
-                crate::vendor::stm32wb::event::VendorStatus::try_from(value)?,
+                crate::vendor::event::VendorStatus::try_from(value)?,
             )),
         }
     }

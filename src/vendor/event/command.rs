@@ -149,81 +149,81 @@ pub enum VendorReturnParameters {
     /// command.
     GapIsDeviceBonded(crate::Status),
 
-    /// Parameters returned by the [GATT Init](crate::vendor::stm32wb::command::gatt::Commands::init) command.
+    /// Parameters returned by the [GATT Init](crate::vendor::command::gatt::Commands::init) command.
     GattInit(crate::Status),
 
-    /// Parameters returned by the [GATT Add Service](crate::vendor::stm32wb::command::gatt::Commands::add_service) command.
+    /// Parameters returned by the [GATT Add Service](crate::vendor::command::gatt::Commands::add_service) command.
     GattAddService(GattService),
 
-    /// Parameters returned by the [GATT Include Service](crate::vendor::stm32wb::command::gatt::Commands::include_service)
+    /// Parameters returned by the [GATT Include Service](crate::vendor::command::gatt::Commands::include_service)
     /// command.
     GattIncludeService(GattService),
 
     /// Parameters returned by the [GATT Add
-    /// Characteristic](crate::vendor::stm32wb::command::gatt::Commands::add_characteristic) command.
+    /// Characteristic](crate::vendor::command::gatt::Commands::add_characteristic) command.
     GattAddCharacteristic(GattCharacteristic),
 
     /// Parameters returned by the [GATT Add Characteristic
-    /// Descriptor](crate::vendor::stm32wb::command::gatt::Commands::add_characteristic_descriptor) command.
+    /// Descriptor](crate::vendor::command::gatt::Commands::add_characteristic_descriptor) command.
     GattAddCharacteristicDescriptor(GattCharacteristicDescriptor),
 
     /// Parameters returned by the [GATT Update Characteristic
-    /// Value](crate::vendor::stm32wb::command::gatt::Commands::update_characteristic_value) command.
+    /// Value](crate::vendor::command::gatt::Commands::update_characteristic_value) command.
     GattUpdateCharacteristicValue(crate::Status),
 
     /// Parameters returned by the [GATT Delete
-    /// Characteristic](crate::vendor::stm32wb::command::gatt::Commands::delete_characteristic) command.
+    /// Characteristic](crate::vendor::command::gatt::Commands::delete_characteristic) command.
     GattDeleteCharacteristic(crate::Status),
 
-    /// Parameters returned by the [GATT Delete Service](crate::vendor::stm32wb::command::gatt::Commands::delete_service)
+    /// Parameters returned by the [GATT Delete Service](crate::vendor::command::gatt::Commands::delete_service)
     /// command.
     GattDeleteService(crate::Status),
 
     /// Parameters returned by the [GATT Delete Included
-    /// Service](crate::vendor::stm32wb::command::gatt::Commands::delete_included_service) command.
+    /// Service](crate::vendor::command::gatt::Commands::delete_included_service) command.
     GattDeleteIncludedService(crate::Status),
 
-    /// Parameters returned by the [GATT Set Event Mask](crate::vendor::stm32wb::command::gatt::Commands::set_event_mask)
+    /// Parameters returned by the [GATT Set Event Mask](crate::vendor::command::gatt::Commands::set_event_mask)
     /// command.
     GattSetEventMask(crate::Status),
 
     /// Parameters returned by the [GATT Write Without
-    /// Response](crate::vendor::stm32wb::command::gatt::Commands::write_without_response) command.
+    /// Response](crate::vendor::command::gatt::Commands::write_without_response) command.
     GattWriteWithoutResponse(crate::Status),
 
     /// Parameters returned by the [GATT Signed Write Without
-    /// Response](crate::vendor::stm32wb::command::gatt::Commands::signed_write_without_response) command.
+    /// Response](crate::vendor::command::gatt::Commands::signed_write_without_response) command.
     GattSignedWriteWithoutResponse(crate::Status),
 
     /// Parameters returned by the [GATT Confirm
-    /// Indication](crate::vendor::stm32wb::command::gatt::Commands::confirm_indication) command.
+    /// Indication](crate::vendor::command::gatt::Commands::confirm_indication) command.
     GattConfirmIndication(crate::Status),
 
-    /// Parameters returned by the [GATT Write Response](crate::vendor::stm32wb::command::gatt::Commands::write_response)
+    /// Parameters returned by the [GATT Write Response](crate::vendor::command::gatt::Commands::write_response)
     /// command.
     GattWriteResponse(crate::Status),
 
-    /// Parameters returned by the [GATT Allow Read](crate::vendor::stm32wb::command::gatt::Commands::allow_read) command.
+    /// Parameters returned by the [GATT Allow Read](crate::vendor::command::gatt::Commands::allow_read) command.
     GattAllowRead(crate::Status),
 
     /// Parameters returned by the [GATT Set Security
-    /// Permission](crate::vendor::stm32wb::command::gatt::Commands::set_security_permission) command.
+    /// Permission](crate::vendor::command::gatt::Commands::set_security_permission) command.
     GattSetSecurityPermission(crate::Status),
 
     /// Parameters returned by the [GATT Set Descriptor
-    /// Value](crate::vendor::stm32wb::command::gatt::Commands::set_descriptor_value) command.
+    /// Value](crate::vendor::command::gatt::Commands::set_descriptor_value) command.
     GattSetDescriptorValue(crate::Status),
 
     /// Parameters returned by the [GATT Read Handle
-    /// Value](crate::vendor::stm32wb::command::gatt::Commands::read_handle_value) command.
+    /// Value](crate::vendor::command::gatt::Commands::read_handle_value) command.
     GattReadHandleValue(GattHandleValue),
 
     /// Parameters returned by the [GATT Read Handle
-    /// Value](crate::vendor::stm32wb::command::gatt::Commands::read_handle_value_offset) command.
+    /// Value](crate::vendor::command::gatt::Commands::read_handle_value_offset) command.
     GattReadHandleValueOffset(GattHandleValue),
 
     /// Parameters returned by the [GATT Update Long Characteristic
-    /// Value](crate::vendor::stm32wb::command::gatt::Commands::update_long_characteristic_value) command.
+    /// Value](crate::vendor::command::gatt::Commands::update_long_characteristic_value) command.
     GattUpdateLongCharacteristicValue(crate::Status),
 
     /// Status returned by the [L2CAP Connection Parameter Update
@@ -236,179 +236,179 @@ impl VendorReturnParameters {
         check_len_at_least(bytes, 3)?;
 
         match crate::Opcode(LittleEndian::read_u16(&bytes[1..])) {
-            crate::vendor::stm32wb::opcode::HAL_GET_FIRMWARE_REVISION => {
+            crate::vendor::opcode::HAL_GET_FIRMWARE_REVISION => {
                 Ok(VendorReturnParameters::HalGetFirmwareRevision(
                     to_hal_firmware_revision(&bytes[3..])?,
                 ))
             }
-            crate::vendor::stm32wb::opcode::HAL_WRITE_CONFIG_DATA => Ok(
+            crate::vendor::opcode::HAL_WRITE_CONFIG_DATA => Ok(
                 VendorReturnParameters::HalWriteConfigData(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::HAL_READ_CONFIG_DATA => Ok(
+            crate::vendor::opcode::HAL_READ_CONFIG_DATA => Ok(
                 VendorReturnParameters::HalReadConfigData(to_hal_config_data(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::HAL_SET_TX_POWER_LEVEL => Ok(
+            crate::vendor::opcode::HAL_SET_TX_POWER_LEVEL => Ok(
                 VendorReturnParameters::HalSetTxPowerLevel(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::HAL_DEVICE_STANDBY => Ok(
+            crate::vendor::opcode::HAL_DEVICE_STANDBY => Ok(
                 VendorReturnParameters::HalDeviceStandby(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::HAL_TX_TEST_PACKET_COUNT => {
+            crate::vendor::opcode::HAL_TX_TEST_PACKET_COUNT => {
                 Ok(VendorReturnParameters::HalGetTxTestPacketCount(
                     to_hal_tx_test_packet_count(&bytes[3..])?,
                 ))
             }
-            crate::vendor::stm32wb::opcode::HAL_START_TONE => Ok(
-                VendorReturnParameters::HalStartTone(to_status(&bytes[3..])?),
-            ),
-            crate::vendor::stm32wb::opcode::HAL_STOP_TONE => {
+            crate::vendor::opcode::HAL_START_TONE => Ok(VendorReturnParameters::HalStartTone(
+                to_status(&bytes[3..])?,
+            )),
+            crate::vendor::opcode::HAL_STOP_TONE => {
                 Ok(VendorReturnParameters::HalStopTone(to_status(&bytes[3..])?))
             }
-            crate::vendor::stm32wb::opcode::HAL_GET_LINK_STATUS => Ok(
+            crate::vendor::opcode::HAL_GET_LINK_STATUS => Ok(
                 VendorReturnParameters::HalGetLinkStatus(to_hal_link_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::HAL_GET_ANCHOR_PERIOD => Ok(
+            crate::vendor::opcode::HAL_GET_ANCHOR_PERIOD => Ok(
                 VendorReturnParameters::HalGetAnchorPeriod(to_hal_anchor_period(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GAP_SET_NONDISCOVERABLE => Ok(
+            crate::vendor::opcode::GAP_SET_NONDISCOVERABLE => Ok(
                 VendorReturnParameters::GapSetNonDiscoverable(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GAP_SET_DISCOVERABLE => Ok(
+            crate::vendor::opcode::GAP_SET_DISCOVERABLE => Ok(
                 VendorReturnParameters::GapSetDiscoverable(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GAP_SET_DIRECT_CONNECTABLE => Ok(
+            crate::vendor::opcode::GAP_SET_DIRECT_CONNECTABLE => Ok(
                 VendorReturnParameters::GapSetDirectConnectable(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GAP_SET_IO_CAPABILITY => Ok(
+            crate::vendor::opcode::GAP_SET_IO_CAPABILITY => Ok(
                 VendorReturnParameters::GapSetIoCapability(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GAP_SET_AUTHENTICATION_REQUIREMENT => Ok(
+            crate::vendor::opcode::GAP_SET_AUTHENTICATION_REQUIREMENT => Ok(
                 VendorReturnParameters::GapSetAuthenticationRequirement(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GAP_SET_AUTHORIZATION_REQUIREMENT => Ok(
+            crate::vendor::opcode::GAP_SET_AUTHORIZATION_REQUIREMENT => Ok(
                 VendorReturnParameters::GapSetAuthorizationRequirement(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GAP_PASS_KEY_RESPONSE => Ok(
+            crate::vendor::opcode::GAP_PASS_KEY_RESPONSE => Ok(
                 VendorReturnParameters::GapPassKeyResponse(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GAP_AUTHORIZATION_RESPONSE => Ok(
+            crate::vendor::opcode::GAP_AUTHORIZATION_RESPONSE => Ok(
                 VendorReturnParameters::GapAuthorizationResponse(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GAP_INIT => {
+            crate::vendor::opcode::GAP_INIT => {
                 Ok(VendorReturnParameters::GapInit(to_gap_init(&bytes[3..])?))
             }
-            crate::vendor::stm32wb::opcode::GAP_SET_NONCONNECTABLE => Ok(
+            crate::vendor::opcode::GAP_SET_NONCONNECTABLE => Ok(
                 VendorReturnParameters::GapSetNonConnectable(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GAP_SET_UNDIRECTED_CONNECTABLE => Ok(
+            crate::vendor::opcode::GAP_SET_UNDIRECTED_CONNECTABLE => Ok(
                 VendorReturnParameters::GapSetUndirectedConnectable(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GAP_UPDATE_ADVERTISING_DATA => Ok(
+            crate::vendor::opcode::GAP_UPDATE_ADVERTISING_DATA => Ok(
                 VendorReturnParameters::GapUpdateAdvertisingData(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GAP_DELETE_AD_TYPE => Ok(
+            crate::vendor::opcode::GAP_DELETE_AD_TYPE => Ok(
                 VendorReturnParameters::GapDeleteAdType(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GAP_GET_SECURITY_LEVEL => Ok(
+            crate::vendor::opcode::GAP_GET_SECURITY_LEVEL => Ok(
                 VendorReturnParameters::GapGetSecurityLevel(to_gap_security_level(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GAP_SET_EVENT_MASK => Ok(
+            crate::vendor::opcode::GAP_SET_EVENT_MASK => Ok(
                 VendorReturnParameters::GapSetEventMask(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GAP_CONFIGURE_WHITE_LIST => Ok(
+            crate::vendor::opcode::GAP_CONFIGURE_WHITE_LIST => Ok(
                 VendorReturnParameters::GapConfigureWhiteList(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GAP_CLEAR_SECURITY_DATABASE => Ok(
+            crate::vendor::opcode::GAP_CLEAR_SECURITY_DATABASE => Ok(
                 VendorReturnParameters::GapClearSecurityDatabase(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GAP_ALLOW_REBOND => Ok(
-                VendorReturnParameters::GapAllowRebond(to_status(&bytes[3..])?),
-            ),
-            crate::vendor::stm32wb::opcode::GAP_TERMINATE_PROCEDURE => Ok(
+            crate::vendor::opcode::GAP_ALLOW_REBOND => Ok(VendorReturnParameters::GapAllowRebond(
+                to_status(&bytes[3..])?,
+            )),
+            crate::vendor::opcode::GAP_TERMINATE_PROCEDURE => Ok(
                 VendorReturnParameters::GapTerminateProcedure(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GAP_RESOLVE_PRIVATE_ADDRESS => {
+            crate::vendor::opcode::GAP_RESOLVE_PRIVATE_ADDRESS => {
                 Ok(VendorReturnParameters::GapResolvePrivateAddress(
                     to_gap_resolve_private_address(&bytes[3..])?,
                 ))
             }
-            crate::vendor::stm32wb::opcode::GAP_GET_BONDED_DEVICES => Ok(
+            crate::vendor::opcode::GAP_GET_BONDED_DEVICES => Ok(
                 VendorReturnParameters::GapGetBondedDevices(to_gap_bonded_devices(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GAP_SET_BROADCAST_MODE => Ok(
+            crate::vendor::opcode::GAP_SET_BROADCAST_MODE => Ok(
                 VendorReturnParameters::GapSetBroadcastMode(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GAP_START_OBSERVATION_PROCEDURE => Ok(
+            crate::vendor::opcode::GAP_START_OBSERVATION_PROCEDURE => Ok(
                 VendorReturnParameters::GapStartObservationProcedure(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GAP_IS_DEVICE_BONDED => Ok(
+            crate::vendor::opcode::GAP_IS_DEVICE_BONDED => Ok(
                 VendorReturnParameters::GapIsDeviceBonded(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GATT_INIT => {
+            crate::vendor::opcode::GATT_INIT => {
                 Ok(VendorReturnParameters::GattInit(to_status(&bytes[3..])?))
             }
-            crate::vendor::stm32wb::opcode::GATT_ADD_SERVICE => Ok(
-                VendorReturnParameters::GattAddService(to_gatt_service(&bytes[3..])?),
-            ),
-            crate::vendor::stm32wb::opcode::GATT_INCLUDE_SERVICE => Ok(
+            crate::vendor::opcode::GATT_ADD_SERVICE => Ok(VendorReturnParameters::GattAddService(
+                to_gatt_service(&bytes[3..])?,
+            )),
+            crate::vendor::opcode::GATT_INCLUDE_SERVICE => Ok(
                 VendorReturnParameters::GattIncludeService(to_gatt_service(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GATT_ADD_CHARACTERISTIC => Ok(
+            crate::vendor::opcode::GATT_ADD_CHARACTERISTIC => Ok(
                 VendorReturnParameters::GattAddCharacteristic(to_gatt_characteristic(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GATT_ADD_CHARACTERISTIC_DESCRIPTOR => {
+            crate::vendor::opcode::GATT_ADD_CHARACTERISTIC_DESCRIPTOR => {
                 Ok(VendorReturnParameters::GattAddCharacteristicDescriptor(
                     to_gatt_characteristic_descriptor(&bytes[3..])?,
                 ))
             }
-            crate::vendor::stm32wb::opcode::GATT_UPDATE_CHARACTERISTIC_VALUE => Ok(
+            crate::vendor::opcode::GATT_UPDATE_CHARACTERISTIC_VALUE => Ok(
                 VendorReturnParameters::GattUpdateCharacteristicValue(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GATT_DELETE_CHARACTERISTIC => Ok(
+            crate::vendor::opcode::GATT_DELETE_CHARACTERISTIC => Ok(
                 VendorReturnParameters::GattDeleteCharacteristic(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GATT_DELETE_SERVICE => Ok(
+            crate::vendor::opcode::GATT_DELETE_SERVICE => Ok(
                 VendorReturnParameters::GattDeleteService(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GATT_DELETE_INCLUDED_SERVICE => Ok(
+            crate::vendor::opcode::GATT_DELETE_INCLUDED_SERVICE => Ok(
                 VendorReturnParameters::GattDeleteIncludedService(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GATT_SET_EVENT_MASK => Ok(
+            crate::vendor::opcode::GATT_SET_EVENT_MASK => Ok(
                 VendorReturnParameters::GattSetEventMask(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GATT_WRITE_WITHOUT_RESPONSE => Ok(
+            crate::vendor::opcode::GATT_WRITE_WITHOUT_RESPONSE => Ok(
                 VendorReturnParameters::GattWriteWithoutResponse(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GATT_SIGNED_WRITE_WITHOUT_RESPONSE => Ok(
+            crate::vendor::opcode::GATT_SIGNED_WRITE_WITHOUT_RESPONSE => Ok(
                 VendorReturnParameters::GattSignedWriteWithoutResponse(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GATT_CONFIRM_INDICATION => Ok(
+            crate::vendor::opcode::GATT_CONFIRM_INDICATION => Ok(
                 VendorReturnParameters::GattConfirmIndication(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GATT_WRITE_RESPONSE => Ok(
+            crate::vendor::opcode::GATT_WRITE_RESPONSE => Ok(
                 VendorReturnParameters::GattWriteResponse(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GATT_ALLOW_READ => Ok(
-                VendorReturnParameters::GattAllowRead(to_status(&bytes[3..])?),
-            ),
-            crate::vendor::stm32wb::opcode::GATT_SET_SECURITY_PERMISSION => Ok(
+            crate::vendor::opcode::GATT_ALLOW_READ => Ok(VendorReturnParameters::GattAllowRead(
+                to_status(&bytes[3..])?,
+            )),
+            crate::vendor::opcode::GATT_SET_SECURITY_PERMISSION => Ok(
                 VendorReturnParameters::GattSetSecurityPermission(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GATT_SET_DESCRIPTOR_VALUE => Ok(
+            crate::vendor::opcode::GATT_SET_DESCRIPTOR_VALUE => Ok(
                 VendorReturnParameters::GattSetDescriptorValue(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GATT_READ_HANDLE_VALUE => Ok(
+            crate::vendor::opcode::GATT_READ_HANDLE_VALUE => Ok(
                 VendorReturnParameters::GattReadHandleValue(to_gatt_handle_value(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::GATT_READ_HANDLE_VALUE_OFFSET => {
+            crate::vendor::opcode::GATT_READ_HANDLE_VALUE_OFFSET => {
                 Ok(VendorReturnParameters::GattReadHandleValueOffset(
                     to_gatt_handle_value(&bytes[3..])?,
                 ))
             }
-            crate::vendor::stm32wb::opcode::GATT_UPDATE_LONG_CHARACTERISTIC_VALUE => Ok(
+            crate::vendor::opcode::GATT_UPDATE_LONG_CHARACTERISTIC_VALUE => Ok(
                 VendorReturnParameters::GattUpdateLongCharacteristicValue(to_status(&bytes[3..])?),
             ),
-            crate::vendor::stm32wb::opcode::L2CAP_CONN_PARAM_UPDATE_RESP => Ok(
+            crate::vendor::opcode::L2CAP_CONN_PARAM_UPDATE_RESP => Ok(
                 VendorReturnParameters::L2CapConnectionParameterUpdateResponse(to_status(
                     &bytes[3..],
                 )?),
@@ -871,8 +871,8 @@ fn to_gap_bonded_devices(bytes: &[u8]) -> Result<GapBondedDevices, crate::event:
     }
 }
 
-/// Parameters returned by the [GATT Add Service](crate::vendor::stm32wb::command::gatt::Commands::add_service) and [GATT
-/// Include Service](crate::vendor::stm32wb::command::gatt::Commands::include_service) commands.
+/// Parameters returned by the [GATT Add Service](crate::vendor::command::gatt::Commands::add_service) and [GATT
+/// Include Service](crate::vendor::command::gatt::Commands::include_service) commands.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct GattService {
@@ -884,7 +884,7 @@ pub struct GattService {
     /// When this service is added to the server, a handle is allocated by the server to this
     /// service. Also server allocates a range of handles for this service from `service_handle` to
     /// `service_handle +
-    /// [max_attribute_records](crate::vendor::stm32wb::command::gatt::ServiceParameters::max_attribute_records)`.
+    /// [max_attribute_records](crate::vendor::command::gatt::ServiceParameters::max_attribute_records)`.
     pub service_handle: AttributeHandle,
 }
 
@@ -897,7 +897,7 @@ fn to_gatt_service(bytes: &[u8]) -> Result<GattService, crate::event::Error> {
     })
 }
 
-/// Parameters returned by the [GATT Add Characteristic](crate::vendor::stm32wb::command::gatt::Commands::add_characteristic)
+/// Parameters returned by the [GATT Add Characteristic](crate::vendor::command::gatt::Commands::add_characteristic)
 /// command.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
@@ -919,7 +919,7 @@ fn to_gatt_characteristic(bytes: &[u8]) -> Result<GattCharacteristic, crate::eve
 }
 
 /// Parameters returned by the [GATT Add Characteristic
-/// Descriptor](crate::vendor::stm32wb::command::gatt::Commands::add_characteristic_descriptor) command.
+/// Descriptor](crate::vendor::command::gatt::Commands::add_characteristic_descriptor) command.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct GattCharacteristicDescriptor {
@@ -941,7 +941,7 @@ fn to_gatt_characteristic_descriptor(
     })
 }
 
-/// Parameters returned by the [GATT Read Handle Value](crate::vendor::stm32wb::command::gatt::Commands::read_handle_value)
+/// Parameters returned by the [GATT Read Handle Value](crate::vendor::command::gatt::Commands::read_handle_value)
 /// command.
 #[derive(Copy, Clone)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
