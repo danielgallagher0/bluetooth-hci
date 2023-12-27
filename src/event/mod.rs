@@ -192,6 +192,10 @@ pub enum Error {
     /// recognized. Includes the unrecognized byte.
     BadPhy(u8),
 
+    /// For the [Hardware Error](Event::HardwareError) event: The error code was not recongnized.
+    /// Includes the unrecongnized code.
+    BadHardwareError(u8),
+
     /// A vendor-specific error was detected when deserializing a vendor-specific event.
     Vendor(VendorError),
 }
@@ -559,17 +563,28 @@ fn to_command_status(buffer: &[u8]) -> Result<CommandStatus, Error> {
 /// failure has occurred in the Controller.
 ///
 /// Defined in Vol 2, Part E, Section 7.7.16 of the spec.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct HardwareError {
-    /// These hardware codes will be implementation-specific, and can be assigned to indicate
-    /// various hardware problems.
-    pub code: u8,
+pub enum HardwareError {
+    /// Bluecore act2 error detected.
+    Act2 = 0x01,
+    /// Bluecore time overrun error detected.
+    TimeOverrun = 0x02,
+    /// Internal FIFO full.
+    FifoFull = 0x03,
+    /// ISR delay error detected (from cut 2.2).
+    IsrDelay = 0x04,
 }
 
 fn to_hardware_error(payload: &[u8]) -> Result<HardwareError, Error> {
     require_len!(payload, 1);
-    Ok(HardwareError { code: payload[0] })
+    match payload[0] {
+        0x01 => Ok(HardwareError::Act2),
+        0x02 => Ok(HardwareError::TimeOverrun),
+        0x03 => Ok(HardwareError::FifoFull),
+        0x04 => Ok(HardwareError::IsrDelay),
+        err => Err(Error::BadHardwareError(err)),
+    }
 }
 
 /// The [`Number of Completed Packets`](Event::NumberOfCompletedPackets) event is used by the
