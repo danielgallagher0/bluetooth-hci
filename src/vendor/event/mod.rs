@@ -83,9 +83,19 @@ pub enum VendorEvent {
     /// device after connecting to it.
     GapAddressNotResolved(ConnectionHandle),
 
+    /// This event is sent only during SC Pairing, when Numeric Comparison
+    /// Association model is selected, in order to show the Numeric Value generated,
+    /// and to ask for Confirmation to the User. When this event is received, the
+    /// application has to respond with the
+    /// [numeric_comparison_value_confirm_yes_no](super::command::gap::GapCommands::numeric_comparison_value_confirm_yes_no)
+    /// command.
     NumericComparisonValue(NumericComparisonValue),
 
-    KeypressNotification(u8),
+    /// This event is sent only during SC Pairing, when Keypress Notifications are
+    /// supported, in order to show the input type signaled by the peer device,
+    /// having Keyboard only I/O capabilities. When this event is received, no
+    /// action is required to the User.
+    KeypressNotification(KeypressNotification),
 
     /// This event is generated when the central device responds to the L2CAP connection update
     /// request packet. For more info see
@@ -102,6 +112,9 @@ pub enum VendorEvent {
     /// [`l2cap_connection_parameter_update_response`](crate::l2cap::Commands::connection_parameter_update_response).
     L2CapConnectionUpdateRequest(L2CapConnectionUpdateRequest),
 
+    /// This event is generated upon receipt of a valid Command Reject packet (e.g.
+    /// when the Central responds to the Connection Update Request packet with a
+    /// Command Reject packet).
     L2CapCommandReject(L2CapCommandReject),
 
     /// This event is generated to the application by the ATT server when a client modifies any
@@ -2537,10 +2550,18 @@ fn to_att_prepare_write_permit_request(
     })
 }
 
+/// This event is sent only during SC Pairing, when Numeric Comparison
+/// Association model is selected, in order to show the Numeric Value generated,
+/// and to ask for Confirmation to the User. When this event is received, the
+/// application has to respond with the
+/// [numeric_comparison_value_confirm_yes_no](super::command::gap::GapCommands::numeric_comparison_value_confirm_yes_no)
+/// command.
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct NumericComparisonValue {
+    /// Handle of the connection where this event occured
     pub connection_handle: ConnectionHandle,
+    /// Generated numeric value
     pub numeric_value: u32,
 }
 
@@ -2555,18 +2576,68 @@ fn to_numeric_comparison_value(
     })
 }
 
-fn to_keypress_notification(buffer: &[u8]) -> Result<u8, crate::event::Error> {
-    require_len!(buffer, 1);
+#[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+/// This event is sent only during SC Pairing, when Keypress Notifications are
+/// supported, in order to show the input type signaled by the peer device,
+/// having Keyboard only I/O capabilities. When this event is received, no
+/// action is required to the User.
+pub struct KeypressNotification {
+    /// Handle of the connection where this event occured
+    pub connection_handle: ConnectionHandle,
+    /// Type of Keypress input notified/signaled by peer device
+    /// (having Keyboard only I/O capabilities.
+    pub notification_type: KeypressNotificationType,
+}
 
-    Ok(buffer[0])
+#[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+/// Type of Keypress input notified/signaled by peer device
+/// (having Keyboard only I/O capabilities.
+pub enum KeypressNotificationType {
+    EntryStarted = 0x00,
+    DigitEntered = 0x01,
+    DigitErased = 0x02,
+    PasskeyCleared = 0x03,
+    EntryCompleted = 0x04,
+    Reserved,
+}
+
+impl From<u8> for KeypressNotificationType {
+    fn from(value: u8) -> Self {
+        match value {
+            0x00 => KeypressNotificationType::EntryStarted,
+            0x01 => KeypressNotificationType::DigitEntered,
+            0x02 => KeypressNotificationType::DigitErased,
+            0x03 => KeypressNotificationType::PasskeyCleared,
+            0x04 => KeypressNotificationType::EntryCompleted,
+            _ => KeypressNotificationType::Reserved,
+        }
+    }
+}
+
+fn to_keypress_notification(buffer: &[u8]) -> Result<KeypressNotification, crate::event::Error> {
+    require_len!(buffer, 3);
+
+    Ok(KeypressNotification {
+        connection_handle: ConnectionHandle(LittleEndian::read_u16(&buffer[0..])),
+        notification_type: KeypressNotificationType::from(buffer[2]),
+    })
 }
 
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+/// This event is generated upon receipt of a valid Command Reject packet (e.g.
+/// when the Central responds to the Connection Update Request packet with a
+/// Command Reject packet).
 pub struct L2CapCommandReject {
+    /// Handle of the connection where this event occurred
     pub conn_handle: ConnectionHandle,
+    /// This is the identifier which associate the request to the response.
     pub identifier: u8,
+    /// Reason
     pub reason: u16,
+    /// Data field associated with Reason
     pub data: [u8; 247],
 }
 
