@@ -218,8 +218,29 @@ pub enum Error {
 
 /// Low-level configuration parameters for the controller.
 pub struct ConfigData {
+    /// Offset of the element in the configuration data structure which has to be written.
+    ///
+    /// Values:
+    ///- 0x00: CONFIG_DATA_PUBADDR_OFFSET;
+    ///  Bluetooth public address; 6 bytes
+    ///- 0x08: CONFIG_DATA_ER_OFFSET;
+    ///  Encryption root key used to derive LTK and CSRK; 16 bytes
+    ///- 0x18: CONFIG_DATA_IR_OFFSET;
+    ///  Identity root key used to derive LTK and CSRK; 16 bytes
+    ///- 0x2E: CONFIG_DATA_RANDOM_ADDRESS_OFFSET;
+    ///  Static Random Address; 6 bytes
+    ///- 0xB0: CONFIG_DATA_SMP_MODE_OFFSET;
+    ///  SMP mode (0: "normal", 1: "bypass", 2: "no blacklist"); 1 byte
+    ///- 0xC0: CONFIG_DATA_LL_SCAN_CHAN_MAP_OFFSET (only for STM32WB);
+    ///  LL scan channel map (same format as Primary_Adv_Channel_Map); 1
+    ///  byte
+    ///- 0xC1: CONFIG_DATA_LL_BG_SCAN_MODE_OFFSET (only for STM32WB);
+    ///  LL background scan mode (0: "BG scan disabled", 1: "BG scan
+    ///  enabled"); 1 byte
     offset: u8,
+    /// Length of the value to be written
     length: u8,
+    /// Data to be written
     value_buf: [u8; ConfigData::MAX_LENGTH],
 }
 
