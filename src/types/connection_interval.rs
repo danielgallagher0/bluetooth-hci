@@ -5,8 +5,7 @@ use core::cmp;
 use core::time::Duration;
 
 /// Define a connection interval range with its latency and supervision timeout. This value is
-/// passed to the controller, which determines the [actual connection
-/// interval](crate::types::FixedConnectionInterval).
+/// passed to the controller, which determines the [actual connection interval](crate::types::FixedConnectionInterval).
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct ConnectionInterval {

@@ -179,10 +179,10 @@ fn command_status_vendor_status() {
 
 #[test]
 fn hardware_error() {
-    let buffer = [0x10, 1, 0x12];
+    let buffer = [0x10, 1, 0x01];
     match TestEvent::new(Packet(&buffer)) {
         Ok(Event::HardwareError(event)) => {
-            assert_eq!(event.code, 0x12);
+            assert_eq!(event, HardwareError::Act2);
         }
         other => panic!("Did not get hardware error: {:?}", other),
     }

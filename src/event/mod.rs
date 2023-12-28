@@ -121,9 +121,8 @@ pub enum Error {
     /// unrecognized byte.
     BadStatus(u8),
 
-    /// For the [Connection Complete](Event::ConnectionComplete) or [Data Buffer
-    /// Overflow](Event::DataBufferOverflow) events: the link type was not recognized (reserved for
-    /// future use). Includes the unrecognized byte.
+    /// For the [Connection Complete](Event::ConnectionComplete) or [Data Buffer Overflow](Event::DataBufferOverflow)
+    /// events: the link type was not recognized (reserved for future use). Includes the unrecognized byte.
     BadLinkType(u8),
 
     /// For the [Connection Complete](Event::ConnectionComplete) event: the encryption enabled value
@@ -147,23 +146,23 @@ pub enum Error {
     /// include a flag that is reserved for future use).
     BadCommandFlag,
 
-    /// For the [Command Complete](Event::CommandComplete) event, for the [LE Read Channel
-    /// Map](command::ReturnParameters::LeReadChannelMap) command return parameters: The returned
-    /// channel map includes a reserved bit.
+    /// For the [Command Complete](Event::CommandComplete) event, for the
+    /// [LE Read Channel Map](command::ReturnParameters::LeReadChannelMap) command return parameters:
+    /// The returned channel map includes a reserved bit.
     InvalidChannelMap([u8; 5]),
 
-    /// For the [Command Complete](Event::CommandComplete) event, for the [LE Read Supported
-    /// States](command::ReturnParameters::LeReadSupportedStates) command return parameters: The
-    /// returned supported states bitfield includes a reserved bit.
+    /// For the [Command Complete](Event::CommandComplete) event, for the
+    /// [LE Read Supported States](command::ReturnParameters::LeReadSupportedStates) command return parameters:
+    /// The returned supported states bitfield includes a reserved bit.
     InvalidLeStates(u64),
 
     /// For the [LE Connection Complete](Event::LeConnectionComplete) event: The connection role was
     /// not recognized. Includes the unrecognized byte.
     BadLeConnectionRole(u8),
 
-    /// For the [LE Connection Complete](Event::LeConnectionComplete) or [LE Advertising
-    /// Report](Event::LeAdvertisingReport) events: The address type was not recognized. Includes
-    /// the unrecognized byte.
+    /// For the [LE Connection Complete](Event::LeConnectionComplete) or
+    /// [LE Advertising Report](Event::LeAdvertisingReport) events: The address type was not recognized.
+    /// Includes the unrecognized byte.
     BadLeAddressType(u8),
 
     /// For the [LE Connection Complete](Event::LeConnectionComplete) event: The returned connection
@@ -191,6 +190,10 @@ pub enum Error {
     /// For the [LE PHY Update Complete](Event::LePhyUpdateComplete) event: The PHY type was not
     /// recognized. Includes the unrecognized byte.
     BadPhy(u8),
+
+    /// For the [Hardware Error](Event::HardwareError) event: The error code was not recongnized.
+    /// Includes the unrecongnized code.
+    BadHardwareError(u8),
 
     /// A vendor-specific error was detected when deserializing a vendor-specific event.
     Vendor(VendorError),
@@ -369,8 +372,8 @@ fn try_into_encryption_enabled(value: u8) -> Result<bool, Error> {
 /// terminated.
 ///
 /// Note: When a physical link fails, one Disconnection Complete event will be returned for each
-/// logical channel on the physical link with the corresponding [connection
-/// handle](DisconnectionComplete::conn_handle) as a parameter.
+/// logical channel on the physical link with the corresponding
+/// [connection handle](DisconnectionComplete::conn_handle) as a parameter.
 ///
 /// See the Bluetooth v4.1 spec, Vol 2, Part E, Section 7.7.5.
 #[derive(Copy, Clone, Debug)]
@@ -385,7 +388,7 @@ pub struct DisconnectionComplete {
     /// Indicates the reason for the disconnection if the disconnection was successful. If the
     /// disconnection was not successful, the value of the reason parameter can be ignored by the
     /// Host. For example, this can be the case if the Host has issued the
-    /// [Disconnect](crate::host::Hci::disconnect) command and there was a parameter error, or the
+    /// [Disconnect](crate::host::HostHci::disconnect) command and there was a parameter error, or the
     /// command was not presently allowed, or a connection handle that didn't correspond to a
     /// connection was given.
     pub reason: Status,
@@ -481,7 +484,7 @@ pub struct RemoteVersionInformation {
     pub status: Status,
 
     /// Connection Handle which was used for the
-    /// [`read_remote_version_information`](crate::host::Hci::read_remote_version_information)
+    /// [`read_remote_version_information`](crate::host::HostHci::read_remote_version_information)
     /// command.  The connection handle shall be for an ACL connection.
     pub conn_handle: ConnectionHandle,
 
@@ -559,17 +562,28 @@ fn to_command_status(buffer: &[u8]) -> Result<CommandStatus, Error> {
 /// failure has occurred in the Controller.
 ///
 /// Defined in Vol 2, Part E, Section 7.7.16 of the spec.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct HardwareError {
-    /// These hardware codes will be implementation-specific, and can be assigned to indicate
-    /// various hardware problems.
-    pub code: u8,
+pub enum HardwareError {
+    /// Bluecore act2 error detected.
+    Act2 = 0x01,
+    /// Bluecore time overrun error detected.
+    TimeOverrun = 0x02,
+    /// Internal FIFO full.
+    FifoFull = 0x03,
+    /// ISR delay error detected (from cut 2.2).
+    IsrDelay = 0x04,
 }
 
 fn to_hardware_error(payload: &[u8]) -> Result<HardwareError, Error> {
     require_len!(payload, 1);
-    Ok(HardwareError { code: payload[0] })
+    match payload[0] {
+        0x01 => Ok(HardwareError::Act2),
+        0x02 => Ok(HardwareError::TimeOverrun),
+        0x03 => Ok(HardwareError::FifoFull),
+        0x04 => Ok(HardwareError::IsrDelay),
+        err => Err(Error::BadHardwareError(err)),
+    }
 }
 
 /// The [`Number of Completed Packets`](Event::NumberOfCompletedPackets) event is used by the
@@ -724,12 +738,11 @@ fn to_encryption_key_refresh_complete(
 /// Indicates to both of the Hosts forming the connection that a new connection has been
 /// created. Upon the creation of the connection a connection handle shall be assigned by the
 /// Controller, and passed to the Host in this event. If the connection establishment fails this
-/// event shall be provided to the Host that had issued the [LE Create
-/// Connection](crate::host::Hci::le_create_connection) command.
+/// event shall be provided to the Host that had issued the [LE Create Connection](crate::host::HostHci::le_create_connection)
+/// command.
 ///
-/// This event indicates to the Host which issued a [LE Create
-/// Connection](crate::host::Hci::le_create_connection) command and received a [Command
-/// Status](Event::CommandStatus) event if the connection establishment failed or was successful.
+/// This event indicates to the Host which issued a [LE Create Connection](crate::host::Hci::le_create_connection)
+/// command and received a [Command Status](Event::CommandStatus) event if the connection establishment failed or was successful.
 ///
 /// Defined in Vol 2, Part E, Section 7.7.65.1 of the spec.
 #[derive(Copy, Clone, Debug)]
@@ -781,8 +794,8 @@ impl TryFrom<u8> for ConnectionRole {
     }
 }
 
-/// Values for the central (master) clock accuracy as returned by the [LE Connection
-/// Complete](Event::LeConnectionComplete) event.
+/// Values for the central (master) clock accuracy as returned by the
+/// [LE Connection Complete](Event::LeConnectionComplete) event.
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum CentralClockAccuracy {
@@ -844,7 +857,7 @@ fn to_le_connection_complete(payload: &[u8]) -> Result<LeConnectionComplete, Err
 /// from multiple devices in one event.
 ///
 /// For Bluetooth Version 5.0: This event shall only be generated if scanning was enabled using the
-/// [LE Set Scan Enable](crate::host::Hci::le_set_scan_enable) command. It only reports advertising
+/// [LE Set Scan Enable](crate::host::HostHci::le_set_scan_enable) command. It only reports advertising
 /// events that used legacy advertising PDUs.
 ///
 /// Defined in Vol 2, Part E, Section 7.7.65.2 of the spec.
@@ -919,8 +932,8 @@ impl Debug for LeAdvertisingReport {
     }
 }
 
-/// Iterator over the individual LE advertisement responses in the [LE Advertising
-/// Report](Event::LeAdvertisingReport) event.
+/// Iterator over the individual LE advertisement responses in the
+/// [LE Advertising Report](Event::LeAdvertisingReport) event.
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LeAdvertisingReportIterator<'a> {
     inner_iter: LeAdvertisingReportInnerIterator<'a>,
@@ -999,7 +1012,7 @@ pub struct LeAdvertisement<'a> {
 
 /// Types of advertisement reports.
 ///
-/// See [`LeAdvertisement`]($crate::event::LeAdvertisement).
+/// See [`LeAdvertisement`](crate::event::LeAdvertisement).
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum AdvertisementEvent {
@@ -1049,14 +1062,14 @@ fn to_le_advertising_report(payload: &[u8]) -> Result<LeAdvertisingReport, Error
 /// be issued.
 ///
 /// On a central device, this event shall be issued if the
-/// [`connection_update`](crate::host::Hci::le_connection_update) command was sent.
+/// [`connection_update`](crate::host::HostHci::le_connection_update) command was sent.
 ///
 /// Note: This event can be issued autonomously by the central device's Controller if it decides to
 /// change the connection interval based on the range of allowable connection intervals for that
 /// connection.
 ///
 /// Note: The parameter values returned in this event may be different from the parameter values
-/// provided by the Host through the [LE Connection Update](crate::host::Hci::le_connection_update)
+/// provided by the Host through the [LE Connection Update](crate::host::HostHci::le_connection_update)
 /// command or the LE Remote Connection Parameter Request Reply command (Section 7.8.31).
 ///
 /// Defined in Vol 2, Part E, Section 7.7.65.3 of the spec.

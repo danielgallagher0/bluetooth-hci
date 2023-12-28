@@ -8,7 +8,7 @@ use crate::{
 };
 use byteorder::{ByteOrder, LittleEndian};
 
-/// L2Cap-specific commands for the [`ActiveBlueNRG`](crate::ActiveBlueNRG).
+/// L2Cap-specific commands.
 pub trait L2capCommands {
     /// Send an L2CAP connection parameter update request from the peripheral to the central
     /// device.
@@ -20,8 +20,7 @@ pub trait L2capCommands {
     /// # Generated events
     ///
     /// A [command status](crate::event::Event::CommandStatus) event on the receipt of the command and
-    /// an [L2CAP Connection Update
-    /// Response](crate::event::BlueNRGEvent::L2CapConnectionUpdateResponse) event when the master
+    /// an [L2CAP Connection Update Response](crate::vendor::event::L2CapConnectionUpdateResponse) event when the master
     /// responds to the request (accepts or rejects).
     async fn connection_parameter_update_request(
         &mut self,
@@ -29,7 +28,7 @@ pub trait L2capCommands {
     );
 
     /// This command should be sent in response to the
-    /// [`L2CapConnectionUpdateResponse`](crate::event::BlueNRGEvent::L2CapConnectionUpdateResponse)
+    /// [`L2CapConnectionUpdateResponse`](crate::vendor::event::L2CapConnectionUpdateResponse)
     /// event from the controller. The accept parameter has to be set to true if the connection
     /// parameters given in the event are acceptable.
     ///
@@ -39,9 +38,7 @@ pub trait L2capCommands {
     ///
     /// # Generated events
     ///
-    /// A [Command
-    /// Complete](crate::event::command::ReturnParameters::L2CapConnectionParameterUpdateResponse)
-    /// event is generated.
+    /// A [Command Complete](crate::event::command::CommandComplete) event is generated.
     async fn connection_parameter_update_response(
         &mut self,
         params: &ConnectionParameterUpdateResponse,
@@ -63,7 +60,7 @@ impl<T: Controller> L2capCommands for T {
 }
 
 /// Parameters for the
-/// [`connection_parameter_update_request`](Commands::connection_parameter_update_request)
+/// [`connection_parameter_update_request`](L2capCommands::connection_parameter_update_request)
 /// command.
 pub struct ConnectionParameterUpdateRequest {
     /// Connection handle of the link which the connection parameter update request has to be sent.
@@ -85,30 +82,30 @@ impl ConnectionParameterUpdateRequest {
 }
 
 /// Parameters for the
-/// [`connection_parameter_update_response`](Commands::connection_parameter_update_response)
+/// [`connection_parameter_update_response`](L2capCommands::connection_parameter_update_response)
 /// command.
 pub struct ConnectionParameterUpdateResponse {
-    /// [Connection handle](crate::event::L2CapConnectionUpdateRequest::conn_handle) received in the
-    /// [`L2CapConnectionUpdateRequest`](crate::event::BlueNRGEvent::L2CapConnectionUpdateRequest)
+    /// [Connection handle](crate::vendor::event::L2CapConnectionUpdateRequest::conn_handle) received in the
+    /// [`L2CapConnectionUpdateRequest`](crate::vendor::event::L2CapConnectionUpdateRequest)
     /// event.
     pub conn_handle: crate::ConnectionHandle,
 
-    /// [Connection interval](crate::event::L2CapConnectionUpdateRequest::conn_interval) received in
+    /// [Connection interval](crate::vendor::event::L2CapConnectionUpdateRequest::conn_interval) received in
     /// the
-    /// [`L2CapConnectionUpdateRequest`](crate::event::BlueNRGEvent::L2CapConnectionUpdateRequest)
+    /// [`L2CapConnectionUpdateRequest`](crate::vendor::event::L2CapConnectionUpdateRequest)
     /// event.
     pub conn_interval: ConnectionInterval,
 
     /// Expected length of connection event needed for this connection.
     pub expected_connection_length_range: ExpectedConnectionLength,
 
-    /// [Identifier](crate::event::L2CapConnectionUpdateRequest::identifier) received in the
-    /// [`L2CapConnectionUpdateRequest`](crate::event::BlueNRGEvent::L2CapConnectionUpdateRequest)
+    /// [Identifier](crate::vendor::event::L2CapConnectionUpdateRequest::identifier) received in the
+    /// [`L2CapConnectionUpdateRequest`](crate::vendor::event::L2CapConnectionUpdateRequest)
     /// event.
     pub identifier: u8,
 
     /// True if the parameters from the
-    /// [event](crate::event::BlueNRGEvent::L2CapConnectionUpdateRequest) are acceptable.
+    /// [event](crate::vendor::event::L2CapConnectionUpdateRequest) are acceptable.
     pub accepted: bool,
 }
 

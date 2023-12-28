@@ -10,9 +10,9 @@ use core::time::Duration;
 /// to enable the Controller to determine the best advertising interval given other activities,
 /// though this implementation allows them to be equal.
 ///
-/// For [high duty cycle directed
-/// advertising](AdvertisingType::ConnectableDirectedHighDutyCycle), the advertising interval is
-/// not used and shall be ignored.  This implementation sends 0 for both fields in that case.
+/// For [high duty cycle directed advertising](AdvertisingType::ConnectableDirectedHighDutyCycle),
+/// the advertising interval is not used and shall be ignored.  This implementation sends 0
+/// for both fields in that case.
 ///
 /// The advertising interval min and advertising interval max shall not be set to less than 100
 /// ms if the advertising type is [`ScannableUndirected`](AdvertisingType::ScannableUndirected)
@@ -38,9 +38,8 @@ impl AdvertisingInterval {
     /// Serializes the minimum range of the interval (2 bytes), the maximum range of the interval (2
     /// bytes), and the advertising type (1 byte).
     ///
-    /// If the advertising type is [high duty cycle
-    /// directed](AdvertisingType::ConnectableDirectedHighDutyCycle), the advertising interval is
-    /// not used and shall be ignored.  This implementation sends 0 for both fields in that case.
+    /// If the advertising type is [high duty cycle directed](AdvertisingType::ConnectableDirectedHighDutyCycle),
+    /// the advertising interval is not used and shall be ignored.  This implementation sends 0 for both fields in that case.
     ///
     /// # Panics
     ///
@@ -151,7 +150,7 @@ pub enum AdvertisingIntervalError {
 }
 
 /// The advertising type is used in the
-/// [`AdvertisingParameters`]($crate::host::AdvertisingParameters) to determine the packet type that
+/// [`AdvertisingParameters`](crate::host::AdvertisingParameters) to determine the packet type that
 /// is used for advertising when advertising is enabled.
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq)]

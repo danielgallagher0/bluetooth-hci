@@ -1,7 +1,7 @@
 //! Return parameters for HCI commands.
 //!
-//! This module defines the return parameters that can be returned in a [Command
-//! Complete](super::Event::CommandComplete) event for every HCI command.
+//! This module defines the return parameters that can be returned in a
+//! [Command Complete](super::Event::CommandComplete) event for every HCI command.
 //!
 //! For the Command Complete event, see the Bluetooth specification, v4.1 or later, Vol 2, Part E,
 //! Section 7.7.14.
@@ -184,127 +184,127 @@ pub enum ReturnParameters {
     /// HCI command packets the Host is allowed to send.
     Spontaneous,
 
-    /// Status returned by the [Set Event Mask](crate::host::Hci::set_event_mask) command.
+    /// Status returned by the [Set Event Mask](crate::host::HostHci::set_event_mask) command.
     SetEventMask(Status),
 
-    /// Status returned by the [Reset](crate::host::Hci::reset) command.
+    /// Status returned by the [Reset](crate::host::HostHci::reset) command.
     Reset(Status),
 
-    /// [Read Transmit Power Level](crate::host::Hci::read_tx_power_level) return parameters.
+    /// [Read Transmit Power Level](crate::host::HostHci::read_tx_power_level) return parameters.
     ReadTxPowerLevel(TxPowerLevel),
 
-    /// Local version info returned by the [Read Local Version
-    /// Information](crate::host::Hci::read_local_version_information) command.
+    /// Local version info returned by the
+    /// [Read Local Version Information](crate::host::HostHci::read_local_version_information) command.
     ReadLocalVersionInformation(LocalVersionInfo),
 
-    /// Supported commands returned by the [Read Local Supported
-    /// Commands](crate::host::Hci::read_local_supported_commands) command.
+    /// Supported commands returned by the
+    /// [Read Local Supported Commands](crate::host::HostHci::read_local_supported_commands) command.
     ReadLocalSupportedCommands(LocalSupportedCommands),
 
-    /// Supported features returned by the [Read Local Supported
-    /// Features](crate::host::Hci::read_local_supported_features) command.
+    /// Supported features returned by the
+    /// [Read Local Supported Features](crate::host::HostHci::read_local_supported_features) command.
     ReadLocalSupportedFeatures(LocalSupportedFeatures),
 
-    /// BD ADDR returned by the [Read BD ADDR](crate::host::Hci::read_bd_addr) command.
+    /// BD ADDR returned by the [Read BD ADDR](crate::host::HostHci::read_bd_addr) command.
     ReadBdAddr(ReadBdAddr),
 
-    /// RSSI returned by the [Read RSSI](crate::host::Hci::read_rssi) command.
+    /// RSSI returned by the [Read RSSI](crate::host::HostHci::read_rssi) command.
     ReadRssi(ReadRssi),
 
-    /// Status returned by the [LE Set Event Mask](crate::host::Hci::le_set_event_mask) command.
+    /// Status returned by the [LE Set Event Mask](crate::host::HostHci::le_set_event_mask) command.
     LeSetEventMask(Status),
 
-    /// Parameters returned by the [LE Read Buffer Size](crate::host::Hci::le_read_buffer_size)
+    /// Parameters returned by the [LE Read Buffer Size](crate::host::HostHci::le_read_buffer_size)
     /// command.
     LeReadBufferSize(LeReadBufferSize),
 
-    /// Parameters returned by the [LE Read Local Supported
-    /// Features](crate::host::Hci::le_read_local_supported_features) command.
+    /// Parameters returned by the
+    /// [LE Read Local Supported Features](crate::host::HostHci::le_read_local_supported_features) command.
     LeReadLocalSupportedFeatures(LeSupportedFeatures),
 
-    /// Status returned by the [LE Set Random Address](crate::host::Hci::le_set_random_address)
+    /// Status returned by the [LE Set Random Address](crate::host::HostHci::le_set_random_address)
     /// command.
     LeSetRandomAddress(Status),
 
-    /// Status returned by the [LE Set Advertising
-    /// Parameters](crate::host::Hci::le_set_advertising_parameters) command.
+    /// Status returned by the
+    /// [LE Set Advertising Parameters](crate::host::HostHci::le_set_advertising_parameters) command.
     LeSetAdvertisingParameters(Status),
 
-    /// Parameters returned by the [LE Read Advertising Channel TX
-    /// Power](crate::host::Hci::le_read_advertising_channel_tx_power) command.
+    /// Parameters returned by the
+    /// [LE Read Advertising Channel TX Power](crate::host::HostHci::le_read_advertising_channel_tx_power) command.
     LeReadAdvertisingChannelTxPower(LeAdvertisingChannelTxPower),
 
-    /// Status returned by the [LE Set Advertising Data](crate::host::Hci::le_set_advertising_data)
+    /// Status returned by the [LE Set Advertising Data](crate::host::HostHci::le_set_advertising_data)
     /// command.
     LeSetAdvertisingData(Status),
 
-    /// Status returned by the [LE Set Scan Response
-    /// Data](crate::host::Hci::le_set_scan_response_data) command.
+    /// Status returned by the
+    /// [LE Set Scan Response Data](crate::host::HostHci::le_set_scan_response_data) command.
     LeSetScanResponseData(Status),
 
-    /// Status returned by the [LE Set Advertising
-    /// Enable](crate::host::Hci::le_set_advertising_enable) command.
+    /// Status returned by the
+    /// [LE Set Advertising Enable](crate::host::HostHci::le_set_advertising_enable) command.
     LeSetAdvertisingEnable(Status),
 
-    /// Status returned by the [LE Set Scan Parameters](crate::host::Hci::le_set_scan_parameters)
+    /// Status returned by the [LE Set Scan Parameters](crate::host::HostHci::le_set_scan_parameters)
     /// command.
     LeSetScanParameters(Status),
 
-    /// Status returned by the [LE Set Scan Enable](crate::host::Hci::le_set_scan_enable) command.
+    /// Status returned by the [LE Set Scan Enable](crate::host::HostHci::le_set_scan_enable) command.
     LeSetScanEnable(Status),
 
-    /// Status returned by the [LE Create Connection
-    /// Cancel](crate::host::Hci::le_create_connection_cancel) command.
+    /// Status returned by the
+    /// [LE Create Connection Cancel](crate::host::HostHci::le_create_connection_cancel) command.
     LeCreateConnectionCancel(Status),
 
-    /// Status and white list size returned by the [LE Read White List
-    /// Size](crate::host::Hci::le_read_white_list_size) command.
+    /// Status and white list size returned by the
+    /// [LE Read White List Size](crate::host::HostHci::le_read_white_list_size) command.
     LeReadWhiteListSize(Status, usize),
 
-    /// Status returned by the [LE Clear White List](crate::host::Hci::le_clear_white_list) command.
+    /// Status returned by the [LE Clear White List](crate::host::HostHci::le_clear_white_list) command.
     LeClearWhiteList(Status),
 
-    /// Status returned by the [LE Add Device to White
-    /// List](crate::host::Hci::le_add_device_to_white_list) command.
+    /// Status returned by the
+    /// [LE Add Device to White List](crate::host::HostHci::le_add_device_to_white_list) command.
     LeAddDeviceToWhiteList(Status),
 
-    /// Status returned by the [LE Remove Device from White
-    /// List](crate::host::Hci::le_remove_device_from_white_list) command.
+    /// Status returned by the
+    /// [LE Remove Device from White List](crate::host::HostHci::le_remove_device_from_white_list) command.
     LeRemoveDeviceFromWhiteList(Status),
 
-    /// Status returned by the [LE Set Host Channel
-    /// Classification](crate::host::Hci::le_set_host_channel_classification) command.
+    /// Status returned by the
+    /// [LE Set Host Channel Classification](crate::host::HostHci::le_set_host_channel_classification) command.
     LeSetHostChannelClassification(Status),
 
-    /// Parameters returned by the [LE Read Channel Map](crate::host::Hci::le_read_channel_map)
+    /// Parameters returned by the [LE Read Channel Map](crate::host::HostHci::le_read_channel_map)
     /// command.
     LeReadChannelMap(ChannelMapParameters),
 
-    /// Parameters returned by the [LE Encrypt](crate::host::Hci::le_encrypt) command.
+    /// Parameters returned by the [LE Encrypt](crate::host::HostHci::le_encrypt) command.
     LeEncrypt(EncryptedReturnParameters),
 
-    /// Parameters returned by the [LE Rand](crate::host::Hci::le_rand) command.
+    /// Parameters returned by the [LE Rand](crate::host::HostHci::le_rand) command.
     LeRand(LeRandom),
 
-    /// Parameters returned by the [LE Long Term Key Request
-    /// Reply](crate::host::Hci::le_long_term_key_request_reply) command.
+    /// Parameters returned by the
+    /// [LE Long Term Key Request Reply](crate::host::HostHci::le_long_term_key_request_reply) command.
     LeLongTermKeyRequestReply(LeLongTermRequestReply),
 
-    /// Parameters returned by the [LE Long Term Key Request Negative
-    /// Reply](crate::host::Hci::le_long_term_key_request_negative_reply) command.
+    /// Parameters returned by the
+    /// [LE Long Term Key Request Negative Reply](crate::host::HostHci::le_long_term_key_request_negative_reply) command.
     LeLongTermKeyRequestNegativeReply(LeLongTermRequestReply),
 
-    /// Parameters returned by the [LE Read States](crate::host::Hci::le_read_supported_states))
+    /// Parameters returned by the [LE Read States](crate::host::HostHci::le_read_supported_states))
     /// command.
     LeReadSupportedStates(LeReadSupportedStates),
 
-    /// Status returned by the [LE Receiver Test](crate::host::Hci::le_receiver_test) command.
+    /// Status returned by the [LE Receiver Test](crate::host::HostHci::le_receiver_test) command.
     LeReceiverTest(Status),
 
-    /// Status returned by the [LE Transmitter Test](crate::host::Hci::le_transmitter_test) command.
+    /// Status returned by the [LE Transmitter Test](crate::host::HostHci::le_transmitter_test) command.
     LeTransmitterTest(Status),
 
-    /// Parameters returned by the [LE Test End](crate::host::Hci::le_test_end) command.
+    /// Parameters returned by the [LE Test End](crate::host::HostHci::le_test_end) command.
     LeTestEnd(LeTestEnd),
 
     /// Parameters returned by vendor-specific commands.
@@ -315,7 +315,7 @@ fn to_status(bytes: &[u8]) -> Result<Status, crate::event::Error> {
     bytes[0].try_into().map_err(super::rewrap_bad_status)
 }
 
-/// Values returned by the [Read Transmit Power Level](crate::host::Hci::read_tx_power_level)
+/// Values returned by the [Read Transmit Power Level](crate::host::HostHci::read_tx_power_level)
 /// command.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
@@ -341,8 +341,8 @@ fn to_tx_power_level(bytes: &[u8]) -> Result<TxPowerLevel, crate::event::Error> 
     })
 }
 
-/// Values returned by [Read Local Version
-/// Information](crate::host::Hci::read_local_version_information) command.
+/// Values returned by
+/// [Read Local Version Information](crate::host::HostHci::read_local_version_information) command.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LocalVersionInfo {
@@ -351,8 +351,8 @@ pub struct LocalVersionInfo {
 
     /// The version information of the HCI layer.
     ///
-    /// See the Bluetooth [Assigned
-    /// Numbers](https://www.bluetooth.com/specifications/assigned-numbers/host-controller-interface).
+    /// See the Bluetooth
+    /// [Assigned Numbers](https://www.bluetooth.com/specifications/assigned-numbers/host-controller-interface).
     pub hci_version: u8,
 
     /// Revision of the Current HCI in the BR/EDR Controller.  This value is implementation
@@ -365,8 +365,8 @@ pub struct LocalVersionInfo {
     /// [PAL]: https://www.bluetooth.com/specifications/assigned-numbers/protocol-adaptation-layer
     pub lmp_version: u8,
 
-    /// Manufacturer Name of the BR/EDR Controller.  See Bluetooth [Assigned
-    /// Numbers](https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers)
+    /// Manufacturer Name of the BR/EDR Controller.  See Bluetooth
+    /// [Assigned Numbers](https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers)
     pub manufacturer_name: u16,
 
     /// Subversion of the Current [LMP] or [PAL] in the Controller. This value is implementation
@@ -390,8 +390,8 @@ fn to_local_version_info(bytes: &[u8]) -> Result<LocalVersionInfo, crate::event:
     })
 }
 
-/// Values returned by the [Read Local Supported
-/// Commands](crate::host::Hci::read_local_supported_commands) command.
+/// Values returned by the
+/// [Read Local Supported Commands](crate::host::HostHci::read_local_supported_commands) command.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LocalSupportedCommands {
@@ -1007,8 +1007,8 @@ fn to_supported_commands(bytes: &[u8]) -> Result<LocalSupportedCommands, crate::
     })
 }
 
-/// Values returned by the [Read Local Supported
-/// Features](crate::host::Hci::read_local_supported_features) command.
+/// Values returned by the
+/// [Read Local Supported Features](crate::host::HostHci::read_local_supported_features) command.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LocalSupportedFeatures {
@@ -1263,7 +1263,7 @@ fn to_supported_features(bytes: &[u8]) -> Result<LocalSupportedFeatures, crate::
     })
 }
 
-/// Values returned by the [Read BD ADDR](crate::host::Hci::read_bd_addr) command.
+/// Values returned by the [Read BD ADDR](crate::host::HostHci::read_bd_addr) command.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct ReadBdAddr {
@@ -1284,7 +1284,7 @@ fn to_bd_addr(bytes: &[u8]) -> Result<ReadBdAddr, crate::event::Error> {
     })
 }
 
-/// Values returned by the [Read RSSI](crate::host::Hci::read_rssi) command.
+/// Values returned by the [Read RSSI](crate::host::HostHci::read_rssi) command.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct ReadRssi {
@@ -1319,7 +1319,7 @@ fn to_read_rssi(bytes: &[u8]) -> Result<ReadRssi, crate::event::Error> {
     })
 }
 
-/// Values returned by the [LE Read Buffer Size](crate::host::Hci::le_read_buffer_size) command.
+/// Values returned by the [LE Read Buffer Size](crate::host::HostHci::le_read_buffer_size) command.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LeReadBufferSize {
@@ -1355,8 +1355,8 @@ fn to_le_read_buffer_status(bytes: &[u8]) -> Result<LeReadBufferSize, crate::eve
     })
 }
 
-/// Values returned by the [LE Read Local Supported
-/// Features](crate::host::Hci::le_read_local_supported_features) command.
+/// Values returned by the
+/// [LE Read Local Supported Features](crate::host::HostHci::le_read_local_supported_features) command.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LeSupportedFeatures {
@@ -1369,10 +1369,10 @@ pub struct LeSupportedFeatures {
 
 #[cfg(not(feature = "defmt"))]
 bitflags::bitflags! {
-    /// Possible LE features for the [LE Read Local Supported
-    /// Features](::host::Hci::le_read_local_supported_features) command.  See the Bluetooth
-    /// specification, Vol 6, Part B, Section 4.6.  See Table 4.3 (v4.1 of the spec), Table 4.4
-    /// (v4.2 and v5.0).
+    /// Possible LE features for the
+    /// [LE Read Local Supported Features](crate::host::HostHci::le_read_local_supported_features) command.
+    /// See the Bluetooth specification, Vol 6, Part B, Section 4.6.  See Table 4.3 (v4.1 of the spec),
+    /// Table 4.4 (v4.2 and v5.0).
     #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
     pub struct LeFeatures : u64 {
         /// LE Encryption.  Valid from controller to controller.
@@ -1414,10 +1414,10 @@ bitflags::bitflags! {
 
 #[cfg(feature = "defmt")]
 defmt::bitflags! {
-    /// Possible LE features for the [LE Read Local Supported
-    /// Features](::host::Hci::le_read_local_supported_features) command.  See the Bluetooth
-    /// specification, Vol 6, Part B, Section 4.6.  See Table 4.3 (v4.1 of the spec), Table 4.4
-    /// (v4.2 and v5.0).
+    /// Possible LE features for the
+    /// [LE Read Local Supported Features](::host::Hci::le_read_local_supported_features) command.
+    /// See the Bluetooth specification, Vol 6, Part B, Section 4.6.  See Table 4.3 (v4.1 of the spec),
+    /// Table 4.4 (v4.2 and v5.0).
     #[derive(Default)]
     pub struct LeFeatures : u64 {
         /// LE Encryption.  Valid from controller to controller.
@@ -1467,8 +1467,9 @@ fn to_le_local_supported_features(
     })
 }
 
-/// Values returned by the [LE Read Advertising Channel TX
-/// Power](crate::host::Hci::le_read_advertising_channel_tx_power) command.
+/// Values returned by the
+/// [LE Read Advertising Channel TX Power](crate::host::HostHci::le_read_advertising_channel_tx_power)
+/// command.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LeAdvertisingChannelTxPower {
@@ -1495,7 +1496,7 @@ fn to_le_set_advertise_enable(status: Status) -> ReturnParameters {
     ReturnParameters::LeSetAdvertisingEnable(status)
 }
 
-/// Parameters returned by the [LE Read Channel Map](crate::host::Hci::le_read_channel_map) command.
+/// Parameters returned by the [LE Read Channel Map](crate::host::HostHci::le_read_channel_map) command.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct ChannelMapParameters {
@@ -1523,7 +1524,7 @@ fn to_le_channel_map_parameters(bytes: &[u8]) -> Result<ChannelMapParameters, cr
     })
 }
 
-/// Parameters returned by the [LE Encrypt](crate::host::Hci::le_encrypt) command.
+/// Parameters returned by the [LE Encrypt](crate::host::HostHci::le_encrypt) command.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct EncryptedReturnParameters {
@@ -1561,7 +1562,7 @@ fn to_le_encrypted_data(bytes: &[u8]) -> Result<EncryptedReturnParameters, crate
     })
 }
 
-/// Return parameters for the [LE Rand](crate::host::Hci::le_rand) command.
+/// Return parameters for the [LE Rand](crate::host::HostHci::le_rand) command.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LeRandom {
@@ -1581,8 +1582,8 @@ fn to_random_number(bytes: &[u8]) -> Result<LeRandom, crate::event::Error> {
     })
 }
 
-/// Parameters returned by the [LE LTK Request
-/// Reply](crate::host::Hci::le_long_term_key_request_reply) command.
+/// Parameters returned by the
+/// [LE LTK Request Reply](crate::host::HostHci::le_long_term_key_request_reply) command.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LeLongTermRequestReply {
@@ -1602,8 +1603,8 @@ fn to_le_ltk_request_reply(bytes: &[u8]) -> Result<LeLongTermRequestReply, crate
     })
 }
 
-/// Parameters returned by the [LE Read Supported
-/// States](crate::host::Hci::le_read_supported_states) command.
+/// Parameters returned by the
+/// [LE Read Supported States](crate::host::HostHci::le_read_supported_states) command.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LeReadSupportedStates {
@@ -1617,8 +1618,8 @@ pub struct LeReadSupportedStates {
 
 #[cfg(not(feature = "defmt"))]
 bitflags::bitflags! {
-    /// Possible LE states or state combinations for the [LE Read Supported
-    /// States](::host::Hci::le_read_supported_states) command.
+    /// Possible LE states or state combinations for the
+    /// [LE Read Supported States](crate::host::HostHci::le_read_supported_states) command.
     #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
     pub struct LeStates : u64 {
         /// Non-connectable advertising state alone.
@@ -1710,8 +1711,8 @@ bitflags::bitflags! {
 
 #[cfg(feature = "defmt")]
 defmt::bitflags! {
-    /// Possible LE states or state combinations for the [LE Read Supported
-    /// States](::host::Hci::le_read_supported_states) command.
+    /// Possible LE states or state combinations for the
+    /// [LE Read Supported States](crate::host::HostHci::le_read_supported_states) command.
     #[derive(Default)]
     pub struct LeStates : u64 {
         /// Non-connectable advertising state alone.
@@ -1812,7 +1813,7 @@ fn to_le_read_states(bytes: &[u8]) -> Result<LeReadSupportedStates, crate::event
     })
 }
 
-/// Parameters returned by the [LE Test End](crate::host::Hci::le_test_end) command.
+/// Parameters returned by the [LE Test End](crate::host::HostHci::le_test_end) command.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LeTestEnd {
