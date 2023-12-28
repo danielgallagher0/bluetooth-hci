@@ -6,7 +6,7 @@ use byteorder::{ByteOrder, LittleEndian};
 
 use crate::Controller;
 
-/// Vendor-specific HCI commands for the [`ActiveBlueNRG`](crate::ActiveBlueNRG).
+/// Vendor-specific HCI commands.
 pub trait HalCommands {
     /// This command is intended to retrieve the firmware revision number.
     ///
@@ -16,8 +16,8 @@ pub trait HalCommands {
     ///
     /// # Generated events
     ///
-    /// The controller will generate a [command
-    /// complete](crate::event::command::ReturnParameters::HalGetFirmwareRevision) event.
+    /// The controller will generate a
+    /// [command complete](crate::event::command::CommandComplete) event.
     async fn get_firmware_revision(&mut self);
 
     /// This command writes a value to a low level configure data structure. It is useful to setup
@@ -29,8 +29,7 @@ pub trait HalCommands {
     ///
     /// # Generated events
     ///
-    /// The controller will generate a [command
-    /// complete](crate::event::command::ReturnParameters::HalWriteConfigData) event.
+    /// The controller will generate a [command complete](crate::event::command::CommandComplete) event.
     async fn write_config_data(&mut self, config: &ConfigData);
 
     /// This command requests the value in the low level configure data structure.
@@ -41,8 +40,7 @@ pub trait HalCommands {
     ///
     /// # Generated events
     ///
-    /// The controller will generate a [command
-    /// complete](crate::event::command::ReturnParameters::HalReadConfigData) event.
+    /// The controller will generate a [command complete](crate::event::command::CommandComplete) event.
     async fn read_config_data(&mut self, param: ConfigParameter);
 
     /// This command sets the TX power level of the BlueNRG-MS.
@@ -63,8 +61,7 @@ pub trait HalCommands {
     ///
     /// # Generated events
     ///
-    /// The controller will generate a [command
-    /// complete](crate::event::command::ReturnParameters::HalSetTxPowerLevel) event.
+    /// The controller will generate a [command complete](crate::event::command::CommandComplete) event.
     async fn set_tx_power_level(&mut self, level: PowerLevel);
 
     /// Retrieve the number of packets sent in the last TX direct test.
@@ -86,8 +83,7 @@ pub trait HalCommands {
     ///
     /// # Generated events
     ///
-    /// The controller will generate a [command
-    /// complete](crate::event::command::ReturnParameters::HalGetTxTestPacketCount) event.
+    /// The controller will generate a [command complete](crate::event::command::CommandComplete) event.
     async fn get_tx_test_packet_count(&mut self);
 
     /// This command starts a carrier frequency, i.e. a tone, on a specific channel.
@@ -97,7 +93,7 @@ pub trait HalCommands {
     /// 2.404 GHz etc.
     ///
     /// This command should not be used when normal Bluetooth activities are ongoing.
-    /// The tone should be stopped by [`stop_tone`](Commands::stop_tone) command.
+    /// The tone should be stopped by [`stop_tone`](HalCommands::stop_tone) command.
     ///
     /// # Errors
     ///
@@ -106,11 +102,10 @@ pub trait HalCommands {
     ///
     /// # Generated events
     ///
-    /// The controller will generate a [command
-    /// complete](crate::event::command::ReturnParameters::HalStartTone) event.
+    /// The controller will generate a [command complete](crate::event::command::CommandComplete) event.
     async fn start_tone(&mut self, channel: u8, freq_offset: u8) -> Result<(), Error>;
 
-    /// Stops the previously started by the [`start_tone`](Commands::start_tone) command.
+    /// Stops the previously started by the [`start_tone`](HalCommands::start_tone) command.
     ///
     /// # Errors
     ///
@@ -118,8 +113,7 @@ pub trait HalCommands {
     ///
     /// # Generated events
     ///
-    /// The controller will generate a [command
-    /// complete](crate::event::command::ReturnParameters::HalStopTone) event.
+    /// The controller will generate a [command complete](crate::event::command::CommandComplete) event.
     async fn stop_tone(&mut self);
 
     /// This command is intended to return the Link Layer Status and Connection Handles.
@@ -130,8 +124,7 @@ pub trait HalCommands {
     ///
     /// # Generated events
     ///
-    /// The controller will generate a [command
-    /// complete](crate::event::command::ReturnParameters::HalGetLinkStatus) event.
+    /// The controller will generate a [command complete](crate::event::command::CommandComplete) event.
     async fn get_link_status(&mut self);
 
     /// This command is intended to retrieve information about the current Anchor Interval and
@@ -143,8 +136,7 @@ pub trait HalCommands {
     ///
     /// # Generated events
     ///
-    /// The controller will generate a [command
-    /// complete](crate::event::command::ReturnParameters::HalGetAnchorPeriod) event.
+    /// The controller will generate a [command complete](crate::event::command::CommandComplete) event.
     async fn get_anchor_period(&mut self);
 }
 
@@ -219,7 +211,7 @@ impl<T: Controller> HalCommands for T {
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Error {
-    /// For the [Start Tone](Commands::start_tone) command, the channel was greater than the maximum
+    /// For the [Start Tone](HalCommands::start_tone) command, the channel was greater than the maximum
     /// allowed channel (39). The invalid channel is returned.
     InvalidChannel(u8),
 }
@@ -256,7 +248,7 @@ impl ConfigData {
     /// Builder for [ConfigData].
     ///
     /// The controller allows us to write any _contiguous_ portion of the [ConfigData] structure in
-    /// [`write_config_data`](Commands::write_config_data).  The builder associated functions allow
+    /// [`write_config_data`](HalCommands::write_config_data).  The builder associated functions allow
     /// us to start with any field, and the returned builder allows only either chaining the next
     /// field or building the structure to write.
     pub fn public_address(addr: crate::BdAddr) -> ConfigDataDiversifierBuilder {
@@ -274,7 +266,7 @@ impl ConfigData {
     /// Builder for [ConfigData].
     ///
     /// The controller allows us to write any _contiguous_ portion of the [ConfigData] structure in
-    /// [`write_config_data`](Commands::write_config_data).  The builder associated functions allow
+    /// [`write_config_data`](HalCommands::write_config_data).  The builder associated functions allow
     /// us to start with any field, and the returned builder allows only either chaining the next
     /// field or building the structure to write.
     pub fn random_address(addr: crate::BdAddr) -> ConfigDataDiversifierBuilder {
@@ -292,7 +284,7 @@ impl ConfigData {
     /// Builder for [ConfigData].
     ///
     /// The controller allows us to write any _contiguous_ portion of the [ConfigData] structure in
-    /// [`write_config_data`](Commands::write_config_data).  The builder associated functions allow
+    /// [`write_config_data`](HalCommands::write_config_data).  The builder associated functions allow
     /// us to start with any field, and the returned builder allows only either chaining the next
     /// field or building the structure to write.
     pub fn diversifier(d: u16) -> ConfigDataEncryptionRootBuilder {
@@ -309,7 +301,7 @@ impl ConfigData {
     /// Builder for [ConfigData].
     ///
     /// The controller allows us to write any _contiguous_ portion of the [ConfigData] structure in
-    /// [`write_config_data`](Commands::write_config_data).  The builder associated functions allow
+    /// [`write_config_data`](HalCommands::write_config_data).  The builder associated functions allow
     /// us to start with any field, and the returned builder allows only either chaining the next
     /// field or building the structure to write.
     pub fn encryption_root(key: &crate::host::EncryptionKey) -> ConfigDataIdentityRootBuilder {
@@ -326,7 +318,7 @@ impl ConfigData {
     /// Builder for [ConfigData].
     ///
     /// The controller allows us to write any _contiguous_ portion of the [ConfigData] structure in
-    /// [`write_config_data`](Commands::write_config_data).  The builder associated functions allow
+    /// [`write_config_data`](HalCommands::write_config_data).  The builder associated functions allow
     /// us to start with any field, and the returned builder allows only either chaining the next
     /// field or building the structure to write.
     pub fn identity_root(key: &crate::host::EncryptionKey) -> ConfigDataLinkLayerOnlyBuilder {
@@ -342,7 +334,7 @@ impl ConfigData {
     /// Builder for [ConfigData].
     ///
     /// The controller allows us to write any _contiguous_ portion of the [ConfigData] structure in
-    /// [`write_config_data`](Commands::write_config_data).  The builder associated functions allow
+    /// [`write_config_data`](HalCommands::write_config_data).  The builder associated functions allow
     /// us to start with any field, and the returned builder allows only either chaining the next
     /// field or building the structure to write.
     pub fn link_layer_only(ll_only: bool) -> ConfigDataRoleBuilder {
@@ -358,7 +350,7 @@ impl ConfigData {
     /// Builder for [ConfigData].
     ///
     /// The controller allows us to write any _contiguous_ portion of the [ConfigData] structure in
-    /// [`write_config_data`](Commands::write_config_data).  The builder associated functions allow
+    /// [`write_config_data`](HalCommands::write_config_data).  The builder associated functions allow
     /// us to start with any field, and the returned builder allows only either chaining the next
     /// field or building the structure to write.
     pub fn role(role: Role) -> ConfigDataCompleteBuilder {
@@ -522,7 +514,7 @@ pub enum Role {
 }
 
 /// Configuration parameters that are readable by the
-/// [`read_config_data`](Commands::read_config_data) command.
+/// [`read_config_data`](HalCommands::read_config_data) command.
 #[repr(u8)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum ConfigParameter {
