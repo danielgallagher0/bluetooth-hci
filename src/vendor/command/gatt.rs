@@ -6,7 +6,7 @@ use core::ops::Range;
 
 use byteorder::{ByteOrder, LittleEndian};
 
-use crate::{vendor::event::AttributeHandle, Controller};
+use crate::{vendor::event::AttributeHandle, ConnectionHandle, Controller};
 
 /// GATT-specific.
 pub trait GattCommands {
@@ -2325,7 +2325,14 @@ impl<'a> UpdateCharacteristicValueExt<'a> {
     fn copy_into_slice(&self, bytes: &mut [u8]) -> usize {
         assert!(bytes.len() >= self.len());
 
-        LittleEndian::write_u16(&mut bytes[0..2], self.conn_handle_to_notify as u16);
+        LittleEndian::write_u16(
+            &mut bytes[0..2],
+            match self.conn_handle_to_notify {
+                ConnectionHandleToNotify::NotifyAll => 0x0000,
+                ConnectionHandleToNotify::NotifyOneUnenhanced(handle) => handle.0,
+                ConnectionHandleToNotify::NotifyOneEnhanced(handle) => handle.0,
+            },
+        );
         LittleEndian::write_u16(&mut bytes[2..4], self.service_handle.0);
         LittleEndian::write_u16(&mut bytes[4..6], self.characteristic_handle.0);
         bytes[6] = self.update_type.bits();
@@ -2345,13 +2352,13 @@ impl<'a> UpdateCharacteristicValueExt<'a> {
 #[derive(Clone, Copy)]
 pub enum ConnectionHandleToNotify {
     /// Notify all subscribed clients on their unenhanced ATT bearer
-    NotifyAll = 0x0000,
+    NotifyAll,
     /// Notify one client on the specified unenhanced ATT bearer (the parameter us the
-    /// connection handle)
-    NotifyOneUnenhanced = 0x0EFF,
+    /// connection handle) (0x0001 .. 0x0EFF)
+    NotifyOneUnenhanced(ConnectionHandle),
     /// Notfiy one client on the specified enhanced ATT bearer (the LST-byte of the
-    /// parameter is the connection-oriented channel index)
-    NotifyOneEnhanced = 0xEA1F,
+    /// parameter is the connection-oriented channel index) (0xEA00 .. 0xEA1F)
+    NotifyOneEnhanced(ConnectionHandle),
 }
 
 #[cfg(not(feature = "defmt"))]
